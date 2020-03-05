@@ -3,7 +3,7 @@ import morgan from "morgan";
 import { createConnection, Connection } from "typeorm";
 
 import Config from "./utils/config";
-import UserRouter from "./routes/exampleRouter";
+import UserRouter from "./routes/userRouter";
 import UserController from "./controllers/userController";
 import { handleNotFoundError, handleError, handleServerStatusRequest } from "./utils/expressUtils";
 import AuthMiddleware from "./middleware/authMiddleware";
@@ -24,8 +24,6 @@ async function start() {
         console.log(error);
         return;
     }
-    console.log(dbConnection.isConnected);
-    console.log("exit2");
 
     const app = express();
     if (config.isDev()) {
@@ -49,8 +47,8 @@ async function start() {
         .on("error", e => {
             console.log(`Cannot run app: ${e.message}`);
         })
-        .on("close", () => {
-            // disconnect from database
+        .on("close", async () => {
+            await dbConnection.close();
         });
 }
 

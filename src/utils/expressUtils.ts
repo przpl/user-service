@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { isArray } from "util";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
@@ -73,10 +73,12 @@ export function handleError(err: any, res: Response, isDev: boolean) {
 
 export function handleNotFoundError(res: Response) {
     const response = {
-        errors: [{
-            id: "resourceNotFound",
-            message: "The requested resource could not be found.",
-        }],
+        errors: [
+            {
+                id: "resourceNotFound",
+                message: "The requested resource could not be found.",
+            },
+        ],
     };
     res.status(404).json(response);
 }

@@ -2,19 +2,29 @@ import { Request, Response, NextFunction } from "express";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
+import { UserManager } from "../managers/userManger";
+import { UserExistsException } from "../exceptions/userExceptions";
 
 export default class UserController {
-    public async login(req: Request, res: Response, next: NextFunction) {
+    private _userManager = new UserManager();
+
+    public async register(req: Request, res: Response, next: NextFunction) {
+        const { email, password } = req.body;
+
         try {
-            // foo.bar();
+            await this._userManager.register(email, password);
         } catch (error) {
-            const errorsList: ErrorResponse[] = [
-                {
-                    id: "unknown",
-                    message: "Unknown error. Please try again.",
-                },
-            ];
-            return forwardError(next, errorsList);
+            const errorsList: ErrorResponse[] = [];
+            let responseCode = 500;
+            if (error instanceof UserExistsException) {
+                errorsList.push({
+                    id: "userAlreadyExists",
+                    message: `User with e-mail ${email} already exists.`,
+                });
+                responseCode = 400;
+            }
+
+            return forwardError(next, errorsList, responseCode);
         }
 
         res.send();
