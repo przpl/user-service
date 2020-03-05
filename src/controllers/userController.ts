@@ -5,6 +5,7 @@ import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
 import { UserManager } from "../managers/userManger";
 import { UserExistsException } from "../exceptions/userExceptions";
+import { User } from "../interfaces/user";
 
 export default class UserController {
     private _userManager = new UserManager();
@@ -12,8 +13,9 @@ export default class UserController {
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
 
+        let user: User;
         try {
-            await this._userManager.register(email, password);
+            user = await this._userManager.register(email, password);
         } catch (error) {
             const errorsList: ErrorResponse[] = [];
             let responseCode = 500;
@@ -28,6 +30,6 @@ export default class UserController {
             return forwardError(next, errorsList, responseCode);
         }
 
-        res.send();
+        res.json({ user: user });
     }
 }
