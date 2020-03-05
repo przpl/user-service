@@ -22,10 +22,19 @@
   "author": "Trifinity.io",
   "license": "ISC",
   "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.2",
+    "@types/morgan": "^1.7.37",
     "@types/node": "^12.12.6",
     "concurrently": "^5.1.0",
     "nodemon": "^2.0.2",
-    "typescript": "^3.7.5",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "morgan": "^1.9.1",
     "prettier": "1.19.1",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.14.0",
