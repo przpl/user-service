@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { isArray } from "util";
+import HttpStatus from "http-status-codes";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
 import Config from "./config";
 
 export function handleServerStatusRequest(config: Config, req: Request, res: Response) {
     if (config.administrationKey && config.administrationKey !== req.query.administrationKey) {
-        return res.status(404).send();
+        return res.status(HttpStatus.NOT_FOUND).send();
     }
 
     const currentTime = new Date();
@@ -39,7 +40,7 @@ function bytesToMb(bytes: number): string {
     return (bytes / 1_000_000).toFixed(2) + " MB";
 }
 
-export function forwardError(next: NextFunction, errors: ErrorResponse[], responseStatusCode = 500) {
+export function forwardError(next: NextFunction, errors?: ErrorResponse[], responseStatusCode = HttpStatus.INTERNAL_SERVER_ERROR) {
     const error = {
         responseErrorsList: errors,
         responseStatusCode: responseStatusCode,
@@ -52,11 +53,11 @@ export function handleError(err: any, res: Response, isDev: boolean) {
         return res.send();
     }
 
-    if (err.responseStatusCode === 404) {
+    if (err.responseStatusCode === HttpStatus.NOT_FOUND) {
         return handleNotFoundError(res);
     }
 
-    res.status(err.responseStatusCode || 500);
+    res.status(err.responseStatusCode || HttpStatus.INTERNAL_SERVER_ERROR);
 
     const response: any = { errors: [] };
     if (err.responseErrorsList && isArray(err.responseErrorsList)) {
@@ -80,5 +81,5 @@ export function handleNotFoundError(res: Response) {
             },
         ],
     };
-    res.status(404).json(response);
+    res.status(HttpStatus.NOT_FOUND).json(response);
 }

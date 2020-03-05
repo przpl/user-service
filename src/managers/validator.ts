@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { check, validationResult } from "express-validator";
+import HttpStatus from "http-status-codes";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
@@ -20,7 +21,7 @@ export default class Validator {
                     data: errors.array(),
                 },
             ];
-            return forwardError(next, errorsList, 400);
+            return forwardError(next, errorsList, HttpStatus.BAD_REQUEST);
         }
 
         next();

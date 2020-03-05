@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import HttpStatus from "http-status-codes";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
@@ -21,7 +22,7 @@ export default class UserController {
                     id: "userAlreadyExists",
                     message: `User with e-mail ${email} already exists.`,
                 });
-                responseCode = 400;
+                responseCode = HttpStatus.BAD_REQUEST;
             }
 
             return forwardError(next, errorsList, responseCode);

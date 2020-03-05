@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import HttpStatus from "http-status-codes";
 
 import { forwardError } from "../utils/expressUtils";
 
@@ -9,7 +10,7 @@ export default class AuthMiddleware {
         if (req.headers.authorization === this._masterKey) {
             next();
         } else {
-            forwardError(next, [], 401);
+            forwardError(next, [], HttpStatus.UNAUTHORIZED);
         }
     };
 }
