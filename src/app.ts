@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
+import { createConnection, Connection } from "typeorm";
 
 import Config from "./utils/config";
 import UserRouter from "./routes/exampleRouter";
@@ -15,6 +16,16 @@ async function start() {
         console.error(error.message);
         return;
     }
+
+    let dbConnection: Connection;
+    try {
+        dbConnection = await createConnection();
+    } catch (error) {
+        console.log(error);
+        return;
+    }
+    console.log(dbConnection.isConnected);
+    console.log("exit2");
 
     const app = express();
     if (config.isDev()) {
