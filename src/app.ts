@@ -5,8 +5,11 @@ import { createConnection, Connection } from "typeorm";
 import Config from "./utils/config";
 import UserRouter from "./routes/userRouter";
 import UserController from "./controllers/userController";
-import { handleNotFoundError, handleError, handleServerStatusRequest } from "./utils/expressUtils";
+import { handleNotFoundError, handleError } from "./utils/expressUtils";
 import AuthMiddleware from "./middleware/authMiddleware";
+import ServiceRouter from "./routes/serviceRouter";
+import { UserManager } from "./managers/userManger";
+import ServiceController from "./controllers/serviceController";
 
 async function start() {
     const config = new Config();
@@ -32,11 +35,13 @@ async function start() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
-    app.get("/api/service-status", (req, res) => handleServerStatusRequest(config, req, res));
-
     const authMiddleware = new AuthMiddleware(config.masterKey);
-    const exampleController = new UserController();
-    app.use("/api/user", UserRouter.getExpressRouter(exampleController, authMiddleware));
+
+    const serviceController = new ServiceController(config);
+    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
+
+    const userController = new UserController(new UserManager());
+    app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));

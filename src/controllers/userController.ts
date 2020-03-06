@@ -8,7 +8,7 @@ import { UserExistsException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 
 export default class UserController {
-    private _userManager = new UserManager();
+    constructor(private _userManager: UserManager) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
