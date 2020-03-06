@@ -38,7 +38,7 @@ async function start() {
     const authMiddleware = new AuthMiddleware(config.masterKey);
 
     const serviceController = new ServiceController(config);
-    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
+    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController, authMiddleware));
 
     const userController = new UserController(new UserManager());
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware));

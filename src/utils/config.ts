@@ -32,4 +32,20 @@ export default class Config {
     public get masterKey(): string {
         return process.env.MASTER_KEY;
     }
+
+    public get emailMaxLength(): number {
+        return Number(process.env.EMAIL_MAX_LENGHT || 60);
+    }
+
+    public get passwordMaxLength(): number {
+        return Number(process.env.PASSWORD_MAX_LENGHT || 128);
+    }
+
+    public get tokenTTLMinutes(): number {
+        return Number(process.env.JWT_TOKEN_TTL_MINUTES || 15);
+    }
+
+    public get jwtPrivateKey(): string {
+        return process.env.JWT_PRIVATE_KEY;
+    }
 }

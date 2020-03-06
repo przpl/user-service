@@ -6,7 +6,7 @@ import Config from "../utils/config";
 export default class ServiceController {
     constructor(private _config: Config) {}
 
-    public async status(req: Request, res: Response, next: NextFunction) {
+    public status(req: Request, res: Response, next: NextFunction) {
         if (this._config.administrationKey && this._config.administrationKey !== req.query.administrationKey) {
             return res.status(HttpStatus.UNAUTHORIZED).send();
         }
@@ -26,6 +26,16 @@ export default class ServiceController {
         };
 
         res.send(data);
+    }
+
+    public getConfig(req: Request, res: Response, next: NextFunction) {
+        const response = {
+            emailMaxLength: this._config.emailMaxLength,
+            passwordMaxLength: this._config.passwordMaxLength,
+            tokenTTLMinutes: this._config.tokenTTLMinutes,
+        };
+
+        res.json(response);
     }
 
     private formatMemoryUsage(usage: NodeJS.MemoryUsage) {
