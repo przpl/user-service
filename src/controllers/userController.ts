@@ -30,10 +30,16 @@ export default class UserController {
             return forwardError(next, errorsList, responseCode);
         }
 
+        // TODO notify other services about new user, send data to queue
+
         const refreshToken = this._userManager.issueRefreshToken(user.id);
         const decoded = this._userManager.decodeRefreshToken(refreshToken);
         const accessToken = this._userManager.issueAccessToken(decoded);
 
         res.json({ user: user, refreshToken: refreshToken, accessToken: accessToken });
     }
+
+    public async login(req: Request, res: Response, next: NextFunction) {}
+
+    public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {}
 }
