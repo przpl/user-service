@@ -30,6 +30,10 @@ export default class UserController {
             return forwardError(next, errorsList, responseCode);
         }
 
-        res.json({ user: user });
+        const refreshToken = this._userManager.issueRefreshToken(user.id);
+        const decoded = this._userManager.decodeRefreshToken(refreshToken);
+        const accessToken = this._userManager.issueAccessToken(decoded);
+
+        res.json({ user: user, refreshToken: refreshToken, accessToken: accessToken });
     }
 }

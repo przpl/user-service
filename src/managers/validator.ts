@@ -5,8 +5,19 @@ import HttpStatus from "http-status-codes";
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
 
+// TODO max length from config, validation of other fields based on config file
 export default class Validator {
-    private _register = [check("email").isLength({ min: 1 }), check("password").isLength({ min: 1 })];
+    private _register = [
+        check("email")
+            .isString()
+            .isLength({ min: 5, max: 70 })
+            .trim()
+            .isEmail()
+            .normalizeEmail(),
+        check("password")
+            .isString()
+            .isLength({ min: 6, max: 128 }),
+    ];
 
     get register() {
         return [...this._register, this.validate];

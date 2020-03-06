@@ -6,7 +6,6 @@ import Config from "./utils/config";
 import UserRouter from "./routes/userRouter";
 import UserController from "./controllers/userController";
 import { handleNotFoundError, handleError } from "./utils/expressUtils";
-import AuthMiddleware from "./middleware/authMiddleware";
 import ServiceRouter from "./routes/serviceRouter";
 import { UserManager } from "./managers/userManger";
 import ServiceController from "./controllers/serviceController";
@@ -35,13 +34,11 @@ async function start() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
-    const authMiddleware = new AuthMiddleware(config.masterKey);
-
     const serviceController = new ServiceController(config);
-    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController, authMiddleware));
+    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController)); // TODO endpoints that allows hot reloading .env variables
 
-    const userController = new UserController(new UserManager());
-    app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware));
+    const userController = new UserController(new UserManager(config.jwtPrivateKey, config.tokenTTLMinutes));
+    app.use("/api/user", UserRouter.getExpressRouter(userController));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));

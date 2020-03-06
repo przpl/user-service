@@ -28,6 +28,7 @@ export default class ServiceController {
         res.send(data);
     }
 
+    // TODO do usunięcia, klucz JWT powinien być zduplikowany w konfigu, lepiej nie przesyłać go przez sieć, przy connect biblioteka może sprawdzać czy mają kompatybilne klucze
     public getConfig(req: Request, res: Response, next: NextFunction) {
         const response = {
             emailMaxLength: this._config.emailMaxLength,
