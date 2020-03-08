@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { getRepository } from "typeorm";
 
 import { UserEntity } from "../dal/entities/User";
 import { UserExistsException } from "../exceptions/userExceptions";
@@ -41,6 +42,27 @@ export class UserManager {
         }
 
         return { id: user.id, email: user.email };
+    }
+
+    public async login(email: string, password: string): Promise<User> {
+        const repository = getRepository(UserEntity);
+
+        const user = await repository.findOne({
+            where: {
+                email: email,
+            },
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
+        if (!isPasswordMatch) {
+            return null;
+        }
+
+        return user;
     }
 
     public issueRefreshToken(userId: number | string): string {

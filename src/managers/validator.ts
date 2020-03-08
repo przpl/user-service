@@ -7,7 +7,7 @@ import { ErrorResponse } from "../interfaces/errorResponse";
 
 // TODO max length from config, validation of other fields based on config file
 export default class Validator {
-    private _register = [
+    private _login = [
         check("email")
             .isString()
             .isLength({ min: 5, max: 70 })
@@ -19,8 +19,12 @@ export default class Validator {
             .isLength({ min: 6, max: 128 }),
     ];
 
+    get login() {
+        return [...this._login, this.validate];
+    }
+
     get register() {
-        return [...this._register, this.validate];
+        return [...this._login, this.validate];
     }
 
     private validate(req: Request, res: Response, next: NextFunction) {

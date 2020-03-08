@@ -32,14 +32,29 @@ export default class UserController {
 
         // TODO notify other services about new user, send data to queue
 
+        this.sendTokens(res, user);
+    }
+
+    public async login(req: Request, res: Response, next: NextFunction) {
+        const { email, password } = req.body;
+        const user = await this._userManager.login(email, password);
+        if (!user) {
+            return res.status(HttpStatus.UNAUTHORIZED).send();
+        }
+
+        this.sendTokens(res, user);
+    }
+
+    public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {}
+
+    // TODO: return access token
+    public async confirmAccount(req: Request, res: Response, next: NextFunction) {}
+
+    private sendTokens(res: Response, user: User) {
         const refreshToken = this._userManager.issueRefreshToken(user.id);
         const decoded = this._userManager.decodeRefreshToken(refreshToken);
         const accessToken = this._userManager.issueAccessToken(decoded);
 
         res.json({ user: user, refreshToken: refreshToken, accessToken: accessToken });
     }
-
-    public async login(req: Request, res: Response, next: NextFunction) {}
-
-    public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {}
 }

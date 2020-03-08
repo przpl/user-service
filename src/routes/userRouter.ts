@@ -10,6 +10,8 @@ export default class UserRouter {
 
         router.post("/register", validator.register, (req: Request, res: Response, next: NextFunction) => controller.register(req, res, next));
 
+        router.post("/login", validator.login, (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next));
+
         return router;
     }
 }
