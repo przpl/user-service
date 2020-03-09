@@ -17,7 +17,23 @@ async function start() {
         config.load(__dirname + "/.env");
     } catch (error) {
         console.error(error.message);
-        return;
+        process.exit(1);
+    }
+
+    let atLeastOneError = false;
+    const configValidationResult = config.validate();
+    if (configValidationResult.length > 0) {
+        for (const result of configValidationResult) {
+            if (result.severity === "error") {
+                atLeastOneError = true;
+                console.error(`Config validation error: ${result.variableName} - ${result.message}`);
+            } else {
+                console.warn(`Config validation warning: ${result.variableName} - ${result.message}`);
+            }
+        }
+        if (atLeastOneError) {
+            process.exit(1);
+        }
     }
 
     let dbConnection: Connection;
@@ -47,8 +63,10 @@ async function start() {
     app.listen(config.port, () => {
         console.log(`App is running at http://localhost:${config.port} in ${app.get("env")} mode`);
     })
-        .on("error", e => {
+        .on("error", async e => {
             console.log(`Cannot run app: ${e.message}`);
+            await dbConnection.close();
+            process.exit(1);
         })
         .on("close", async () => {
             await dbConnection.close();

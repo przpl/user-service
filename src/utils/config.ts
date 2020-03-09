@@ -1,12 +1,22 @@
 import dotenv from "dotenv";
 
+export interface ConfigValidationResult {
+    variableName: string;
+    message: string;
+    severity: "warning" | "error";
+}
+
 export default class Config {
     public load(envPath: string) {
         const result = dotenv.config({ path: envPath });
         if (result.error) {
             throw new Error(`Cannot load .env file: ${result.error}`);
         }
-        process.env.NODE_ENV = process.env.NODE_ENV || "production";
+        let nodeEnv = "production";
+        if (process.env.NODE_ENV === "development") {
+            nodeEnv = "development";
+        }
+        process.env.NODE_ENV = nodeEnv;
     }
 
     public get serviceId(): string {
@@ -51,5 +61,41 @@ export default class Config {
 
     public get emailSigKey(): string {
         return process.env.EMAIL_SIG_KEY;
+    }
+
+    public validate(): ConfigValidationResult[] {
+        const result: ConfigValidationResult[] = [];
+        if (!this.administrationKey) {
+            result.push({
+                variableName: "ADMINISTRATION_KEY",
+                message: "It's recommended to protect administration endpoint with a key",
+                severity: "warning",
+            });
+        }
+
+        if (!this.masterKey || this.masterKey.length < 32) {
+            result.push({
+                variableName: "MASTER_KEY",
+                message: "Minimum required length is 32 characters",
+                severity: "error",
+            });
+        }
+
+        if (!this.jwtPrivateKey || this.jwtPrivateKey.length < 32) {
+            result.push({
+                variableName: "JWT_PRIVATE_KEY",
+                message: "Minimum required length is 32 characters",
+                severity: "error",
+            });
+        }
+
+        if (!this.emailSigKey || this.emailSigKey.length < 32) {
+            result.push({
+                variableName: "EMAIL_SIG_KEY",
+                message: "Minimum required length is 32 characters",
+                severity: "error",
+            });
+        }
+        return result;
     }
 }
