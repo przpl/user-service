@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
 import Config from "../utils/config";
+import { toUnixTimestamp } from "../utils/timeUtils";
 
 export default class ServiceController {
     constructor(private _config: Config) {}
@@ -19,7 +20,7 @@ export default class ServiceController {
                 value: this._config.environment,
             },
             currentTime: {
-                unixTimestamp: this.toUnixTimestamp(currentTime),
+                unixTimestamp: toUnixTimestamp(currentTime),
                 utcString: currentTime.toUTCString(),
             },
             memoryUsage: this.formatMemoryUsage(process.memoryUsage()),
@@ -50,9 +51,5 @@ export default class ServiceController {
 
     private bytesToMb(bytes: number): string {
         return (bytes / 1_000_000).toFixed(2) + " MB";
-    }
-
-    private toUnixTimestamp(date: Date): number {
-        return Math.round(+date / 1000);
     }
 }

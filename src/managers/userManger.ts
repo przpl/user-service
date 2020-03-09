@@ -7,6 +7,7 @@ import { UserEntity } from "../dal/entities/userEntity";
 import { UserExistsException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
+import { unixTimestamp } from "../utils/timeUtils";
 
 const SALT_ROUNDS = 12;
 
@@ -85,7 +86,7 @@ export class UserManager {
     public issueRefreshToken(userId: number | string): string {
         const dataToSign: RefreshToken = {
             sub: userId,
-            iat: this.unixTimestamp(),
+            iat: unixTimestamp(),
             typ: JwtType.refresh,
         };
         return jwt.sign(dataToSign, this._jwtPrivateKey);
@@ -96,7 +97,7 @@ export class UserManager {
             throw new InvalidJwtTypeException("Token is not a refresh token");
         }
 
-        const now = this.unixTimestamp();
+        const now = unixTimestamp();
         const dataToSign = {
             sub: refreshToken.sub,
             iat: now,
@@ -121,9 +122,5 @@ export class UserManager {
             throw new InvalidJwtTypeException("Token is not an access token");
         }
         return decoded;
-    }
-
-    private unixTimestamp(): number {
-        return Math.trunc(+new Date() / 1000);
     }
 }
