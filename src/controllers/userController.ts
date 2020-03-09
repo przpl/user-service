@@ -68,6 +68,22 @@ export default class UserController {
         this.sendTokens(res, user);
     }
 
+    public async changePassword(req: Request, res: Response, next: NextFunction) {
+        const { oldPassword, newPassword } = req.body;
+
+        try {
+            await this._userManager.changePassword(req.user.sub, oldPassword, newPassword);
+        } catch (error) {
+            const errors: ErrorResponse[] = [];
+            let responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+            if (error instanceof InvalidPasswordException) {
+                errors.push({ id: "invalidOldPassword" });
+                responseCode = HttpStatus.UNAUTHORIZED;
+            }
+            return forwardError(next, errors, responseCode);
+        }
+    }
+
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const { refreshToken } = req.body;
 
@@ -76,12 +92,15 @@ export default class UserController {
             decoded = this._jwtService.decodeRefreshToken(refreshToken);
         } catch (error) {
             const errors: ErrorResponse[] = [];
+            let responseCode = HttpStatus.BAD_REQUEST;
             if (error?.message.toLowerCase().includes("invalid signature")) {
                 errors.push({ id: "invalidJwtSignature" });
             } else if (error instanceof InvalidJwtTypeException) {
                 errors.push({ id: "invalidJwtType" });
+            } else {
+                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             }
-            return forwardError(next, errors, HttpStatus.BAD_REQUEST);
+            return forwardError(next, errors, responseCode);
         }
 
         const accessToken = this._jwtService.issueAccessToken(decoded);

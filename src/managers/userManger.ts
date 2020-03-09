@@ -40,12 +40,7 @@ export class UserManager {
     public async login(email: string, password: string): Promise<User> {
         const repository = getRepository(UserEntity);
 
-        const user = await repository.findOne({
-            where: {
-                email: email,
-            },
-        });
-
+        const user = await repository.findOne({ where: { email: email } });
         if (!user) {
             await bcrypt.hash(password, SALT_ROUNDS); // ? prevents time attack
             throw new UserNotExistsException();
@@ -63,19 +58,23 @@ export class UserManager {
         return user;
     }
 
+    public async changePassword(id: string, oldPassword: string, newPassword: string) {
+        const repository = getRepository(UserEntity);
+        const user = await repository.findOne({ where: { id: id } });
+        const isPasswordMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+        if (!isPasswordMatch) {
+            throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
+        }
+        user.passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+        await user.save();
+    }
+
     public async updateEmailConfirmed(email: string, newStatus: boolean) {
         const repository = getRepository(UserEntity);
-
-        const user = await repository.findOne({
-            where: {
-                email: email,
-            },
-        });
-
+        const user = await repository.findOne({ where: { email: email } });
         if (!user) {
             throw new UserNotExistsException("Cannot update email confirmed status. User not exists");
         }
-
         user.emailConfirmed = newStatus;
         await user.save();
     }

@@ -10,7 +10,8 @@ import ServiceRouter from "./routes/serviceRouter";
 import { UserManager } from "./managers/userManger";
 import ServiceController from "./controllers/serviceController";
 import { JwtService } from "./services/jwtService";
-import Validator from "./managers/validator";
+import Validator from "./middleware/validator";
+import AuthMiddleware from "./middleware/authMiddleware";
 
 async function start() {
     const config = new Config();
@@ -59,7 +60,8 @@ async function start() {
     const userManager = new UserManager(config.emailSigKey);
     const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
     const userController = new UserController(userManager, jwtService, config.jsonConfig);
-    app.use("/api/user", UserRouter.getExpressRouter(userController, validator));
+    const authMiddleware = new AuthMiddleware(jwtService);
+    app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));
