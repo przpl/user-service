@@ -41,7 +41,7 @@ async function start() {
         dbConnection = await createConnection();
     } catch (error) {
         console.log(error);
-        return;
+        process.exit(1);
     }
 
     const app = express();
