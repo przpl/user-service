@@ -3,7 +3,7 @@ import { getRepository } from "typeorm";
 import crypto from "crypto";
 
 import { UserEntity } from "../dal/entities/userEntity";
-import { UserExistsException, UserNotExistsException } from "../exceptions/userExceptions";
+import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 
 const SALT_ROUNDS = 12;
@@ -48,12 +48,16 @@ export class UserManager {
 
         if (!user) {
             await bcrypt.hash(password, SALT_ROUNDS); // ? prevents time attack
-            return null;
+            throw new UserNotExistsException();
         }
 
         const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isPasswordMatch) {
-            return null;
+            throw new InvalidPasswordException();
+        }
+
+        if (!user.emailConfirmed) {
+            throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
         return user;

@@ -4,7 +4,7 @@ import HttpStatus from "http-status-codes";
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
 import { UserManager } from "../managers/userManger";
-import { UserExistsException } from "../exceptions/userExceptions";
+import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
 import { JwtService, RefreshToken } from "../services/jwtService";
@@ -40,9 +40,21 @@ export default class UserController {
 
     public async login(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
-        const user = await this._userManager.login(email, password);
-        if (!user) {
-            return res.status(HttpStatus.UNAUTHORIZED).send(); // ? we cannot inform user if account not exists or password is wrong
+        let user: User;
+        try {
+            user = await this._userManager.login(email, password);
+        } catch (error) {
+            const errors: ErrorResponse[] = [];
+            let responseCode = HttpStatus.UNAUTHORIZED;
+            if (error instanceof UserNotExistsException || error instanceof InvalidPasswordException) {
+                errors.push({ id: "invalidCredentials" });
+            } else if (error instanceof UserNotConfirmedException) {
+                errors.push({ id: "emailNotConfirmed" });
+                responseCode = HttpStatus.FORBIDDEN;
+            } else {
+                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            return forwardError(next, errors, responseCode);
         }
 
         this.sendTokens(res, user);

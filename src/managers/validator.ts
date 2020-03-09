@@ -82,7 +82,7 @@ export default class Validator {
                     data: errors.array(),
                 },
             ];
-            return forwardError(next, errorsList, HttpStatus.BAD_REQUEST);
+            return forwardError(next, errorsList, HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         next();
