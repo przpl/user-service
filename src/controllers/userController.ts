@@ -3,13 +3,14 @@ import HttpStatus from "http-status-codes";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
-import { UserManager, RefreshToken } from "../managers/userManger";
+import { UserManager } from "../managers/userManger";
 import { UserExistsException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
+import { JwtService, RefreshToken } from "../services/jwtService";
 
 export default class UserController {
-    constructor(private _userManager: UserManager) {}
+    constructor(private _userManager: UserManager, private _jwtService: JwtService) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -51,7 +52,7 @@ export default class UserController {
 
         let decoded: RefreshToken;
         try {
-            decoded = this._userManager.decodeRefreshToken(refreshToken);
+            decoded = this._jwtService.decodeRefreshToken(refreshToken);
         } catch (error) {
             const errors: ErrorResponse[] = [];
             if (error?.message.toLowerCase().includes("invalid signature")) {
@@ -62,7 +63,7 @@ export default class UserController {
             return forwardError(next, errors, HttpStatus.BAD_REQUEST);
         }
 
-        const accessToken = this._userManager.issueAccessToken(decoded);
+        const accessToken = this._jwtService.issueAccessToken(decoded);
         res.json({ accessToken: accessToken });
     }
 
@@ -70,9 +71,9 @@ export default class UserController {
     public async confirmAccount(req: Request, res: Response, next: NextFunction) {}
 
     private sendTokens(res: Response, user: User) {
-        const refreshToken = this._userManager.issueRefreshToken(user.id);
-        const decoded = this._userManager.decodeRefreshToken(refreshToken);
-        const accessToken = this._userManager.issueAccessToken(decoded);
+        const refreshToken = this._jwtService.issueRefreshToken(user.id);
+        const decoded = this._jwtService.decodeRefreshToken(refreshToken);
+        const accessToken = this._jwtService.issueAccessToken(decoded);
 
         const userProjection = {
             id: user.id,
