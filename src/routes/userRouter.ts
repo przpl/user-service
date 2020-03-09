@@ -16,6 +16,10 @@ export default class UserRouter {
             controller.refreshAccessToken(req, res, next)
         );
 
+        router.post("/email/confirm", validator.confirmEmail, (req: Request, res: Response, next: NextFunction) =>
+            controller.confirmEmail(req, res, next)
+        );
+
         return router;
     }
 }

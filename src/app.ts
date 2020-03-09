@@ -38,7 +38,7 @@ async function start() {
     const serviceController = new ServiceController(config);
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController)); // TODO endpoints that allows hot reloading .env variables
 
-    const userController = new UserController(new UserManager(), new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes));
+    const userController = new UserController(new UserManager(config.emailSigKey), new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes));
     app.use("/api/user", UserRouter.getExpressRouter(userController));
 
     app.use((req, res, next) => handleNotFoundError(res));

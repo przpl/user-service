@@ -9,22 +9,36 @@ const ERROR_MSG = {
     isEmail: "Not an e-mail",
     isJwt: "Not a JWT",
     isLength: "Length exceeded",
+    isHexadecimal: "Invalid format",
     isString: "Not a string",
 };
 
 // TODO max length from config, validation of other fields based on config file
 export default class Validator {
-    private _login = [
+    private _email = [
         check("email")
             .isString()
             .withMessage(ERROR_MSG.isString)
+            .trim()
             .isLength({ min: 5, max: 70 })
             .withMessage(ERROR_MSG.isLength)
-            .trim()
             .isEmail()
             .withMessage(ERROR_MSG.isEmail)
             .normalizeEmail(),
+    ];
 
+    private _emailSignature = [
+        check("signature")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: 64, max: 64 })
+            .withMessage(ERROR_MSG.isLength)
+            .isHexadecimal()
+            .withMessage(ERROR_MSG.isHexadecimal),
+    ];
+
+    private _password = [
         check("password")
             .isString()
             .withMessage(ERROR_MSG.isString)
@@ -36,23 +50,27 @@ export default class Validator {
         check("refreshToken")
             .isString()
             .withMessage(ERROR_MSG.isString)
+            .trim()
             .isLength({ min: 1, max: 2048 })
             .withMessage(ERROR_MSG.isLength)
-            .trim()
             .isJWT()
             .withMessage(ERROR_MSG.isJwt),
     ];
 
     get login() {
-        return [...this._login, this.validate];
+        return [...this._email, ...this._password, this.validate];
     }
 
     get register() {
-        return [...this._login, this.validate];
+        return [...this._email, ...this._password, this.validate];
     }
 
     get refreshToken() {
         return [...this._refreshToken, this.validate];
+    }
+
+    get confirmEmail() {
+        return [...this._email, ...this._emailSignature, this.validate];
     }
 
     private validate(req: Request, res: Response, next: NextFunction) {

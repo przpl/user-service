@@ -48,4 +48,8 @@ export default class Config {
     public get jwtPrivateKey(): string {
         return process.env.JWT_PRIVATE_KEY;
     }
+
+    public get emailSigKey(): string {
+        return process.env.EMAIL_SIG_KEY;
+    }
 }

@@ -33,6 +33,7 @@ export default class UserController {
         }
 
         // TODO notify other services about new user, send data to queue
+        // const emailSig = this._userManager.getEmailSignature(user.email);
 
         this.sendTokens(res, user);
     }
@@ -41,7 +42,7 @@ export default class UserController {
         const { email, password } = req.body;
         const user = await this._userManager.login(email, password);
         if (!user) {
-            return res.status(HttpStatus.UNAUTHORIZED).send();
+            return res.status(HttpStatus.UNAUTHORIZED).send(); // ? we cannot inform user if account not exists or password is wrong
         }
 
         this.sendTokens(res, user);
@@ -67,8 +68,21 @@ export default class UserController {
         res.json({ accessToken: accessToken });
     }
 
-    // TODO: return access token
-    public async confirmAccount(req: Request, res: Response, next: NextFunction) {}
+    // ? JWT should not be issued because broken email confirmation will enable attacker to issue tokens
+    public async confirmEmail(req: Request, res: Response, next: NextFunction) {
+        const { email, signature } = req.body;
+        const result = this._userManager.verifyEmailSignature(email, signature);
+        if (!result) {
+            return res.json({ result: false });
+        }
+        try {
+            await this._userManager.updateEmailConfirmed(email, result);
+        } catch (error) {
+            return res.json({ result: false });
+        }
+
+        res.json({ result: result });
+    }
 
     private sendTokens(res: Response, user: User) {
         const refreshToken = this._jwtService.issueRefreshToken(user.id);
