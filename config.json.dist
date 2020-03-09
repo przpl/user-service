@@ -1,0 +1,23 @@
+{
+    "fieldsValidation": {
+        "email": {
+            "maxLength": 70
+        },
+        "password": {
+            "maxLength": 128
+        },
+        "refreshToken": {
+            "maxLength": 1024
+        }
+    },
+    "payload": {
+        "register": [{
+            "name": "phone",
+            "isString": true,
+            "trim": true,
+            "isLength": {
+                "max": 10
+            }
+        }]
+    }
+}

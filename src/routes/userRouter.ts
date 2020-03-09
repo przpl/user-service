@@ -4,9 +4,8 @@ import UserController from "../controllers/userController";
 import Validator from "../managers/validator";
 
 export default class UserRouter {
-    static getExpressRouter(controller: UserController): Router {
+    static getExpressRouter(controller: UserController, validator: Validator): Router {
         const router = express.Router();
-        const validator = new Validator();
 
         router.post("/register", validator.register, (req: Request, res: Response, next: NextFunction) => controller.register(req, res, next));
 

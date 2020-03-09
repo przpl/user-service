@@ -8,9 +8,10 @@ import { UserExistsException, UserNotConfirmedException, UserNotExistsException,
 import { User } from "../interfaces/user";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
 import { JwtService, RefreshToken } from "../services/jwtService";
+import { JsonConfig } from "../utils/config";
 
 export default class UserController {
-    constructor(private _userManager: UserManager, private _jwtService: JwtService) {}
+    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _jsonConfig: JsonConfig) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -34,6 +35,13 @@ export default class UserController {
 
         // TODO notify other services about new user, send data to queue
         // const emailSig = this._userManager.getEmailSignature(user.email);
+        // const newUser: any = {
+        //     id: user.id,
+        //     email: user.email,
+        // };
+        // for (const field of this._jsonConfig.payload.register) {
+        //     newUser[field.name] = req.body[field.name];
+        // }
 
         this.sendTokens(res, user);
     }

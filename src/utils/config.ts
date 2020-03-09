@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import fs from "fs";
 
 export interface ConfigValidationResult {
     variableName: string;
@@ -6,8 +7,37 @@ export interface ConfigValidationResult {
     severity: "warning" | "error";
 }
 
+export interface PayloadField {
+    name: string;
+    isString: boolean;
+    trim: boolean;
+    isLength: {
+        min: number;
+        max: number;
+    };
+}
+
+export interface JsonConfig {
+    fieldsValidation: {
+        email: {
+            maxLength: number;
+        };
+        password: {
+            maxLength: number;
+        };
+        refreshToken: {
+            maxLength: number;
+        };
+    };
+    payload: {
+        register: PayloadField[];
+    };
+}
+
 export default class Config {
-    public load(envPath: string) {
+    private _jsonConfig: JsonConfig;
+
+    public load(envPath: string, jsonConfigPath: string) {
         const result = dotenv.config({ path: envPath });
         if (result.error) {
             throw new Error(`Cannot load .env file: ${result.error}`);
@@ -17,6 +47,11 @@ export default class Config {
             nodeEnv = "development";
         }
         process.env.NODE_ENV = nodeEnv;
+
+        if (!fs.existsSync(jsonConfigPath)) {
+            throw new Error("Cannot load config.json file");
+        }
+        this._jsonConfig = JSON.parse(fs.readFileSync(jsonConfigPath).toString());
     }
 
     public get serviceId(): string {
@@ -43,14 +78,6 @@ export default class Config {
         return process.env.MASTER_KEY;
     }
 
-    public get emailMaxLength(): number {
-        return Number(process.env.EMAIL_MAX_LENGHT || 60);
-    }
-
-    public get passwordMaxLength(): number {
-        return Number(process.env.PASSWORD_MAX_LENGHT || 128);
-    }
-
     public get tokenTTLMinutes(): number {
         return Number(process.env.JWT_TOKEN_TTL_MINUTES || 15);
     }
@@ -61,6 +88,10 @@ export default class Config {
 
     public get emailSigKey(): string {
         return process.env.EMAIL_SIG_KEY;
+    }
+
+    public get jsonConfig(): JsonConfig {
+        return this._jsonConfig;
     }
 
     public validate(): ConfigValidationResult[] {

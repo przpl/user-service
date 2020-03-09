@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { check, validationResult } from "express-validator";
+import { validationResult, body, ValidationChain } from "express-validator";
 import HttpStatus from "http-status-codes";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
+import { JsonConfig } from "../utils/config";
 
 const ERROR_MSG = {
     isEmail: "Not an e-mail",
@@ -13,56 +14,79 @@ const ERROR_MSG = {
     isString: "Not a string",
 };
 
+const HMAC_256_SIG_LENGTH = 64;
+
 // TODO max length from config, validation of other fields based on config file
 export default class Validator {
-    private _email = [
-        check("email")
+    private _email: ValidationChain[] = [];
+    private _emailSignature: ValidationChain[] = [
+        body("signature")
             .isString()
             .withMessage(ERROR_MSG.isString)
             .trim()
-            .isLength({ min: 5, max: 70 })
-            .withMessage(ERROR_MSG.isLength)
-            .isEmail()
-            .withMessage(ERROR_MSG.isEmail)
-            .normalizeEmail(),
-    ];
-
-    private _emailSignature = [
-        check("signature")
-            .isString()
-            .withMessage(ERROR_MSG.isString)
-            .trim()
-            .isLength({ min: 64, max: 64 })
+            .isLength({ min: HMAC_256_SIG_LENGTH, max: HMAC_256_SIG_LENGTH })
             .withMessage(ERROR_MSG.isLength)
             .isHexadecimal()
             .withMessage(ERROR_MSG.isHexadecimal),
     ];
+    private _password: ValidationChain[] = [];
+    private _refreshToken: ValidationChain[] = [];
+    private _register: ValidationChain[] = [];
 
-    private _password = [
-        check("password")
-            .isString()
-            .withMessage(ERROR_MSG.isString)
-            .isLength({ min: 6, max: 128 })
-            .withMessage(ERROR_MSG.isLength),
-    ];
+    constructor(jsonConfig: JsonConfig) {
+        this._email.push(
+            body("email")
+                .isString()
+                .withMessage(ERROR_MSG.isString)
+                .trim()
+                .isLength({ min: 5, max: jsonConfig.fieldsValidation.email.maxLength })
+                .withMessage(ERROR_MSG.isLength)
+                .isEmail()
+                .withMessage(ERROR_MSG.isEmail)
+                .normalizeEmail()
+        );
 
-    private _refreshToken = [
-        check("refreshToken")
-            .isString()
-            .withMessage(ERROR_MSG.isString)
-            .trim()
-            .isLength({ min: 1, max: 2048 })
-            .withMessage(ERROR_MSG.isLength)
-            .isJWT()
-            .withMessage(ERROR_MSG.isJwt),
-    ];
+        this._password.push(
+            body("password")
+                .isString()
+                .withMessage(ERROR_MSG.isString)
+                .isLength({ min: 6, max: jsonConfig.fieldsValidation.password.maxLength })
+                .withMessage(ERROR_MSG.isLength)
+        );
+
+        this._refreshToken.push(
+            body("refreshToken")
+                .isString()
+                .withMessage(ERROR_MSG.isString)
+                .trim()
+                .isLength({ min: 1, max: jsonConfig.fieldsValidation.refreshToken.maxLength })
+                .withMessage(ERROR_MSG.isLength)
+                .isJWT()
+                .withMessage(ERROR_MSG.isJwt)
+        );
+
+        for (const field of jsonConfig.payload.register) {
+            const validation = body(field.name);
+            if (field.isString) {
+                validation.isString().withMessage(ERROR_MSG.isString);
+            }
+            if (field.trim) {
+                validation.trim();
+            }
+            if (field.isLength) {
+                validation.isLength({ min: field.isLength.min, max: field.isLength.max }).withMessage(ERROR_MSG.isLength);
+            }
+
+            this._register.push(validation);
+        }
+    }
 
     get login() {
         return [...this._email, ...this._password, this.validate];
     }
 
     get register() {
-        return [...this._email, ...this._password, this.validate];
+        return [...this._email, ...this._password, ...this._register, this.validate];
     }
 
     get refreshToken() {

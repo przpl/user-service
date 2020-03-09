@@ -10,11 +10,12 @@ import ServiceRouter from "./routes/serviceRouter";
 import { UserManager } from "./managers/userManger";
 import ServiceController from "./controllers/serviceController";
 import { JwtService } from "./services/jwtService";
+import Validator from "./managers/validator";
 
 async function start() {
     const config = new Config();
     try {
-        config.load(__dirname + "/.env");
+        config.load(__dirname + "/.env", __dirname + "/config.json");
     } catch (error) {
         console.error(error.message);
         process.exit(1);
@@ -51,11 +52,14 @@ async function start() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
+    const validator = new Validator(config.jsonConfig);
     const serviceController = new ServiceController(config);
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController)); // TODO endpoints that allows hot reloading .env variables
 
-    const userController = new UserController(new UserManager(config.emailSigKey), new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes));
-    app.use("/api/user", UserRouter.getExpressRouter(userController));
+    const userManager = new UserManager(config.emailSigKey);
+    const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
+    const userController = new UserController(userManager, jwtService, config.jsonConfig);
+    app.use("/api/user", UserRouter.getExpressRouter(userController, validator));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));
