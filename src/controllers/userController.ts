@@ -3,9 +3,10 @@ import HttpStatus from "http-status-codes";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
-import { UserManager } from "../managers/userManger";
+import { UserManager, RefreshToken } from "../managers/userManger";
 import { UserExistsException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
+import { InvalidJwtTypeException } from "../exceptions/exceptions";
 
 export default class UserController {
     constructor(private _userManager: UserManager) {}
@@ -45,7 +46,25 @@ export default class UserController {
         this.sendTokens(res, user);
     }
 
-    public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {}
+    public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
+        const { refreshToken } = req.body;
+
+        let decoded: RefreshToken;
+        try {
+            decoded = this._userManager.decodeRefreshToken(refreshToken);
+        } catch (error) {
+            const errors: ErrorResponse[] = [];
+            if (error?.message.toLowerCase().includes("invalid signature")) {
+                errors.push({ id: "invalidJwtSignature" });
+            } else if (error instanceof InvalidJwtTypeException) {
+                errors.push({ id: "invalidJwtType" });
+            }
+            return forwardError(next, errors, HttpStatus.BAD_REQUEST);
+        }
+
+        const accessToken = this._userManager.issueAccessToken(decoded);
+        res.json({ accessToken: accessToken });
+    }
 
     // TODO: return access token
     public async confirmAccount(req: Request, res: Response, next: NextFunction) {}
