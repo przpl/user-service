@@ -74,6 +74,11 @@ export default class UserController {
         const decoded = this._userManager.decodeRefreshToken(refreshToken);
         const accessToken = this._userManager.issueAccessToken(decoded);
 
-        res.json({ user: user, refreshToken: refreshToken, accessToken: accessToken });
+        const userProjection = {
+            id: user.id,
+            email: user.email,
+        };
+
+        res.json({ user: userProjection, refreshToken: refreshToken, accessToken: accessToken });
     }
 }

@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { getRepository } from "typeorm";
 import { isNumber } from "util";
 
-import { UserEntity } from "../dal/entities/User";
+import { UserEntity } from "../dal/entities/userEntity";
 import { UserExistsException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
@@ -31,6 +31,10 @@ export class UserManager {
     constructor(private _jwtPrivateKey: string, tokenTTLMinutes: number) {
         if (!this._jwtPrivateKey) {
             throw new Error("JWT private key is required.");
+        }
+        this._jwtPrivateKey = this._jwtPrivateKey.trim();
+        if (this._jwtPrivateKey.length < 32) {
+            throw new Error("Minimum required JWT key length is 32 characters!");
         }
         if (!isNumber(tokenTTLMinutes) || tokenTTLMinutes <= 0) {
             throw new Error("Token TTL has to be number greater than 0 minutes.");
@@ -66,7 +70,7 @@ export class UserManager {
         });
 
         if (!user) {
-            await bcrypt.hash(password, SALT_ROUNDS); // prevent time attack
+            await bcrypt.hash(password, SALT_ROUNDS); // prevents time attack
             return null;
         }
 
