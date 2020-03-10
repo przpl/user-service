@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { UserEntity } from "../dal/entities/userEntity";
 import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
+import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
 
 const SALT_ROUNDS = 12;
 
@@ -69,6 +70,33 @@ export class UserManager {
         await user.save();
     }
 
+    public async generatePasswordResetCode(email: string): Promise<string> {
+        const userRepository = getRepository(UserEntity);
+        const user = await userRepository.findOne({ where: { email: email } });
+        if (!user) {
+            throw new UserNotExistsException();
+        }
+
+        // if (!user.emailConfirmed) {
+        //     throw new UserNotConfirmedException();
+        // }
+
+        const code = this.generateCode();
+        const passwordResetRepository = getRepository(PasswordResetEntity);
+        const passResetInDb = await passwordResetRepository.findOne({ where: { userId: user.id } });
+        if (passResetInDb) {
+            passResetInDb.code = code;
+            passResetInDb.createdAt = new Date();
+            await passResetInDb.save();
+        } else {
+            const passReset = new PasswordResetEntity();
+            passReset.userId = user.id;
+            passReset.code = code;
+            await passReset.save();
+        }
+        return code;
+    }
+
     public async confirmEmail(email: string): Promise<boolean> {
         const repository = getRepository(UserEntity);
         const user = await repository.findOne({ where: { email: email } });
@@ -94,5 +122,10 @@ export class UserManager {
         hmac.update(email);
         const expected = hmac.digest("hex").toLowerCase();
         return expected === signature.toLowerCase();
+    }
+
+    private generateCode(): string {
+        const code = crypto.randomBytes(4).toString("hex");
+        return code.toUpperCase();
     }
 }

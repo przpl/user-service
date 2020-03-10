@@ -1,23 +1,35 @@
 {
-    "fieldsValidation": {
+    "commonFields": {
         "email": {
-            "maxLength": 70
+            "isLength": {
+                "max": 70
+            }
         },
         "password": {
-            "maxLength": 128
+            "isLength": {
+                "min": 8,
+                "max": 128
+            },
+            "hasUppercase": true,
+            "hasLowercase": true,
+            "hasDigits": true,
+            "hasSymbols": true
         },
         "refreshToken": {
-            "maxLength": 1024
+            "isLength": {
+                "max": 1024
+            }
         }
     },
-    "payload": {
-        "register": [{
-            "name": "phone",
-            "isString": true,
-            "trim": true,
-            "isLength": {
-                "max": 10
+    "additionalFields": {
+        "registerEndpoint": {
+            "phone": {
+                "isString": true,
+                "trim": true,
+                "isLength": {
+                    "max": 10
+                }
             }
-        }]
+        }
     }
 }

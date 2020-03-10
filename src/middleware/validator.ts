@@ -132,6 +132,10 @@ export default class Validator {
         return [...this._email, ...this._emailSignature, this.validate];
     }
 
+    get forgotPassword() {
+        return [...this._email, this.validate];
+    }
+
     private validate(req: Request, res: Response, next: NextFunction) {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {

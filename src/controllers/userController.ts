@@ -86,6 +86,25 @@ export default class UserController {
         res.json({ result: true });
     }
 
+    public async forgotPassword(req: Request, res: Response, next: NextFunction) {
+        const { email } = req.body;
+        let code: string;
+        try {
+            code = await this._userManager.generatePasswordResetCode(email);
+        } catch (error) {
+            if (error instanceof UserNotExistsException) {
+                return res.json({ result: true });
+            } else if (error instanceof UserNotConfirmedException) {
+                return res.json({ result: true });
+            }
+            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        res.json({ result: true });
+
+        // TODO - send event, new password reset code was generated
+    }
+
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const { refreshToken } = req.body;
 

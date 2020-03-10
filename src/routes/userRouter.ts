@@ -13,10 +13,14 @@ export default class UserRouter {
         router.post("/login", validator.login, (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next));
 
         router.post(
-            "/password",
+            "/password/change",
             (req: Request, res: Response, next: NextFunction) => authMiddleware.authenticateUser(req, res, next),
             validator.changePassword,
             (req: Request, res: Response, next: NextFunction) => controller.changePassword(req, res, next)
+        );
+
+        router.post("/password/forgot", validator.forgotPassword, (req: Request, res: Response, next: NextFunction) =>
+            controller.forgotPassword(req, res, next)
         );
 
         router.post("/token/refresh", validator.refreshToken, (req: Request, res: Response, next: NextFunction) =>
