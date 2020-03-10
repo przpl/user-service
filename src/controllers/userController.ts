@@ -33,8 +33,7 @@ export default class UserController {
         }
 
         // TODO notify other services about new user, send data to queue
-        const emailSig = this._userManager.getEmailSignature(user.email);
-        console.log(emailSig);
+        // const emailSig = this._userManager.getEmailSignature(user.email);
         // const newUser: any = {
         //     id: user.id,
         //     email: user.email,
