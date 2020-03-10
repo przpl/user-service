@@ -69,14 +69,18 @@ export class UserManager {
         await user.save();
     }
 
-    public async updateEmailConfirmed(email: string, newStatus: boolean) {
+    public async confirmEmail(email: string): Promise<boolean> {
         const repository = getRepository(UserEntity);
         const user = await repository.findOne({ where: { email: email } });
         if (!user) {
             throw new UserNotExistsException("Cannot update email confirmed status. User not exists");
         }
-        user.emailConfirmed = newStatus;
+        if (user.emailConfirmed) {
+            return false;
+        }
+        user.emailConfirmed = true;
         await user.save();
+        return true;
     }
 
     public getEmailSignature(email: string): string {

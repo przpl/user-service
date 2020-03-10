@@ -110,12 +110,13 @@ export default class UserController {
     // ? JWT should not be issued because broken email confirmation will enable attacker to issue tokens
     public async confirmEmail(req: Request, res: Response, next: NextFunction) {
         const { email, signature } = req.body;
-        const result = this._userManager.verifyEmailSignature(email, signature);
-        if (!result) {
+        const sigCorrect = this._userManager.verifyEmailSignature(email, signature);
+        if (!sigCorrect) {
             return res.json({ result: false });
         }
+        let result: boolean;
         try {
-            await this._userManager.updateEmailConfirmed(email, result);
+            result = await this._userManager.confirmEmail(email);
         } catch (error) {
             return res.json({ result: false });
         }
