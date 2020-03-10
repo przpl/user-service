@@ -28,6 +28,9 @@ export interface PasswordFieldConfig extends FieldConfig {
 }
 
 export interface JsonConfig {
+    passwordReset: {
+        codeExpirationTimeInMinutes: number;
+    };
     commonFields: {
         email: FieldConfig;
         password: PasswordFieldConfig;

@@ -23,6 +23,10 @@ export default class UserRouter {
             controller.forgotPassword(req, res, next)
         );
 
+        router.post("/password/reset", validator.resetPassword, (req: Request, res: Response, next: NextFunction) =>
+            controller.resetPassword(req, res, next)
+        );
+
         router.post("/token/refresh", validator.refreshToken, (req: Request, res: Response, next: NextFunction) =>
             controller.refreshAccessToken(req, res, next)
         );

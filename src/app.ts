@@ -57,9 +57,9 @@ async function start() {
     const serviceController = new ServiceController(config);
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController)); // TODO endpoints that allows hot reloading .env variables
 
-    const userManager = new UserManager(config.emailSigKey);
+    const userManager = new UserManager(config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
     const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
-    const userController = new UserController(userManager, jwtService, config.jsonConfig);
+    const userController = new UserController(userManager, jwtService);
     const authMiddleware = new AuthMiddleware(jwtService);
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator));
 

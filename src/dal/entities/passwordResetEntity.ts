@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, CreateDateColumn, Column, PrimaryColumn } from "typeorm";
+import { Entity, BaseEntity, CreateDateColumn, PrimaryColumn, Column } from "typeorm";
 
 @Entity({ name: "password-reset" })
 export class PasswordResetEntity extends BaseEntity {

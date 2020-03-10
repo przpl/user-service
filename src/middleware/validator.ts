@@ -16,6 +16,7 @@ const ERROR_MSG = {
 };
 
 const HMAC_256_SIG_LENGTH = 64;
+const PASSWORD_RESET_CODE_LENGTH = 10;
 
 export default class Validator {
     private _email: ValidationChain[] = [];
@@ -33,6 +34,16 @@ export default class Validator {
     private _refreshToken: ValidationChain[] = [];
     private _register: ValidationChain[] = [];
     private _weakPassword: ValidationChain[] = [];
+    private _resetPassword: ValidationChain[] = [
+        body("code")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: PASSWORD_RESET_CODE_LENGTH, max: PASSWORD_RESET_CODE_LENGTH })
+            .withMessage(ERROR_MSG.isLength)
+            .isHexadecimal()
+            .withMessage(ERROR_MSG.isHexadecimal),
+    ];
 
     constructor(jsonConfig: JsonConfig) {
         const config = jsonConfig.commonFields;
@@ -134,6 +145,10 @@ export default class Validator {
 
     get forgotPassword() {
         return [...this._email, this.validate];
+    }
+
+    get resetPassword() {
+        return [...this._resetPassword, ...this._password, this.validate];
     }
 
     private validate(req: Request, res: Response, next: NextFunction) {

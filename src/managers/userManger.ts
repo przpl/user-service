@@ -6,17 +6,22 @@ import { UserEntity } from "../dal/entities/userEntity";
 import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
+import { unixTimestamp } from "../utils/timeUtils";
+import { ExpiredResetCodeException } from "../exceptions/exceptions";
 
 const SALT_ROUNDS = 12;
 
 export class UserManager {
-    constructor(private _emailSigKey: string) {
+    constructor(private _emailSigKey: string, private _passResetCodeTTLMinutes: number) {
         if (!this._emailSigKey) {
             throw new Error("Email signature key is required.");
         }
         this._emailSigKey = this._emailSigKey.trim();
         if (this._emailSigKey.length < 32) {
             throw new Error("Minimum required email signature length is 32 characters!");
+        }
+        if (this._passResetCodeTTLMinutes < 5) {
+            throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
         }
     }
 
@@ -70,6 +75,26 @@ export class UserManager {
         await user.save();
     }
 
+    public async resetPassword(resetCode: string, password: string) {
+        resetCode = resetCode.toUpperCase();
+        const passwordResetRepository = getRepository(PasswordResetEntity);
+        const passReset = await passwordResetRepository.findOne({ where: { code: resetCode } });
+        if (!passReset) {
+            throw new UserNotExistsException();
+        }
+
+        if (passReset.createdAt.getTime() / 1000 + this._passResetCodeTTLMinutes * 60 < unixTimestamp()) {
+            throw new ExpiredResetCodeException();
+        }
+
+        const userRepository = getRepository(UserEntity);
+        const user = await userRepository.findOne({ where: { id: passReset.userId } });
+        user.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        await user.save();
+
+        await passReset.remove();
+    }
+
     public async generatePasswordResetCode(email: string): Promise<string> {
         const userRepository = getRepository(UserEntity);
         const user = await userRepository.findOne({ where: { email: email } });
@@ -77,9 +102,9 @@ export class UserManager {
             throw new UserNotExistsException();
         }
 
-        // if (!user.emailConfirmed) {
-        //     throw new UserNotConfirmedException();
-        // }
+        if (!user.emailConfirmed) {
+            throw new UserNotConfirmedException();
+        }
 
         const code = this.generateCode();
         const passwordResetRepository = getRepository(PasswordResetEntity);
@@ -125,7 +150,8 @@ export class UserManager {
     }
 
     private generateCode(): string {
-        const code = crypto.randomBytes(4).toString("hex");
+        const expectedLength = 10;
+        const code = crypto.randomBytes(expectedLength / 2).toString("hex");
         return code.toUpperCase();
     }
 }

@@ -1,4 +1,7 @@
 {
+    "passwordReset": {
+        "codeExpirationTimeInMinutes": 1440
+    },
     "commonFields": {
         "email": {
             "isLength": {

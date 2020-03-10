@@ -6,12 +6,11 @@ import { ErrorResponse } from "../interfaces/errorResponse";
 import { UserManager } from "../managers/userManger";
 import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
-import { InvalidJwtTypeException } from "../exceptions/exceptions";
+import { InvalidJwtTypeException, ExpiredResetCodeException } from "../exceptions/exceptions";
 import { JwtService, RefreshToken } from "../services/jwtService";
-import { JsonConfig } from "../utils/config";
 
 export default class UserController {
-    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _jsonConfig: JsonConfig) {}
+    constructor(private _userManager: UserManager, private _jwtService: JwtService) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -102,7 +101,27 @@ export default class UserController {
 
         res.json({ result: true });
 
-        // TODO - send event, new password reset code was generated
+        // TODO - send event, new password reset code was generated - backend can send email
+    }
+
+    public async resetPassword(req: Request, res: Response, next: NextFunction) {
+        const { code, password } = req.body;
+        try {
+            await this._userManager.resetPassword(code, password);
+        } catch (error) {
+            const errors: ErrorResponse[] = [];
+            let responseCode = HttpStatus.BAD_REQUEST;
+            if (error instanceof UserNotExistsException) {
+                errors.push({ id: "invalidCode" });
+            } else if (error instanceof ExpiredResetCodeException) {
+                errors.push({ id: "codeExpired" });
+            } else {
+                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            return forwardError(next, errors, responseCode);
+        }
+
+        res.json({ result: true });
     }
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
