@@ -69,10 +69,10 @@ export default class UserController {
     }
 
     public async changePassword(req: Request, res: Response, next: NextFunction) {
-        const { oldPassword, newPassword } = req.body;
+        const { oldPassword, password } = req.body;
 
         try {
-            await this._userManager.changePassword(req.user.sub, oldPassword, newPassword);
+            await this._userManager.changePassword(req.user.sub, oldPassword, password);
         } catch (error) {
             const errors: ErrorResponse[] = [];
             let responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -82,6 +82,8 @@ export default class UserController {
             }
             return forwardError(next, errors, responseCode);
         }
+
+        res.json({ result: true });
     }
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {

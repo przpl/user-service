@@ -13,7 +13,7 @@ export default class AuthMiddleware {
         }
     }
 
-    public decodeAccessToken(req: Request, res: Response, next: NextFunction) {
+    public authenticateUser(req: Request, res: Response, next: NextFunction) {
         const bearerString = req.get("Authorization");
         if (!bearerString) {
             const errors: ErrorResponse[] = [{ id: "missingAuthorizationHeader" }];

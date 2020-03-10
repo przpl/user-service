@@ -14,7 +14,7 @@ export default class UserRouter {
 
         router.post(
             "/password",
-            (req: Request, res: Response, next: NextFunction) => authMiddleware.decodeAccessToken(req, res, next),
+            (req: Request, res: Response, next: NextFunction) => authMiddleware.authenticateUser(req, res, next),
             validator.changePassword,
             (req: Request, res: Response, next: NextFunction) => controller.changePassword(req, res, next)
         );

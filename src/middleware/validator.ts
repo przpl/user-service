@@ -32,6 +32,7 @@ export default class Validator {
     private _password: ValidationChain[] = [];
     private _refreshToken: ValidationChain[] = [];
     private _register: ValidationChain[] = [];
+    private _weakPassword: ValidationChain[] = [];
 
     constructor(jsonConfig: JsonConfig) {
         const config = jsonConfig.commonFields;
@@ -75,6 +76,14 @@ export default class Validator {
                 .withMessage(passwordErrorMsg)
         );
 
+        this._weakPassword.push(
+            body("password")
+                .isString()
+                .withMessage(ERROR_MSG.isString)
+                .isLength({ min: 1, max: config.password.isLength.max })
+                .withMessage(ERROR_MSG.isLength)
+        );
+
         this._refreshToken.push(
             body("refreshToken")
                 .isString()
@@ -104,7 +113,7 @@ export default class Validator {
     }
 
     get login() {
-        return [...this._email, ...this._password, this.validate];
+        return [...this._email, ...this._weakPassword, this.validate];
     }
 
     get register() {
