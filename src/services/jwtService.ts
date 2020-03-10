@@ -10,7 +10,7 @@ enum JwtType {
 }
 
 export interface RefreshToken {
-    sub: string | number;
+    sub: string;
     iat: number;
     typ: JwtType;
 }
@@ -20,7 +20,7 @@ export interface AccessToken extends RefreshToken {
 }
 
 export class JwtService {
-    private _tokenTimeToLiveSeconds: number;
+    private _tokenTTLSeconds: number;
 
     constructor(private _jwtPrivateKey: string, tokenTTLMinutes: number) {
         if (!this._jwtPrivateKey) {
@@ -30,13 +30,13 @@ export class JwtService {
         if (this._jwtPrivateKey.length < 32) {
             throw new Error("Minimum required JWT key length is 32 characters!");
         }
-        if (!isNumber(tokenTTLMinutes) || tokenTTLMinutes <= 0) {
-            throw new Error("Token TTL has to be number greater than 0 minutes.");
+        if (!isNumber(tokenTTLMinutes) || tokenTTLMinutes <= 1) {
+            throw new Error("Token TTL has to be number greater than 1 minute.");
         }
-        this._tokenTimeToLiveSeconds = tokenTTLMinutes * 60;
+        this._tokenTTLSeconds = tokenTTLMinutes * 60;
     }
 
-    public issueRefreshToken(userId: number | string): string {
+    public issueRefreshToken(userId: string): string {
         const dataToSign: RefreshToken = {
             sub: userId,
             iat: unixTimestamp(),
@@ -54,7 +54,7 @@ export class JwtService {
         const dataToSign = {
             sub: refreshToken.sub,
             iat: now,
-            exp: now + this._tokenTimeToLiveSeconds,
+            exp: now + this._tokenTTLSeconds,
             typ: JwtType.access,
             ...payload,
         };

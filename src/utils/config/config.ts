@@ -1,45 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
-
-export interface ConfigValidationResult {
-    variableName: string;
-    message: string;
-    severity: "warning" | "error";
-}
-
-export interface FieldConfig {
-    isString: boolean;
-    trim: boolean;
-    isLength: {
-        min: number;
-        max: number;
-    };
-    hasUppercase: boolean;
-    hasLowercase: boolean;
-    hasDigits: boolean;
-    hasSymbols: boolean;
-}
-
-export interface PasswordFieldConfig extends FieldConfig {
-    hasUppercase: boolean;
-    hasLowercase: boolean;
-    hasDigits: boolean;
-    hasSymbols: boolean;
-}
-
-export interface JsonConfig {
-    passwordReset: {
-        codeExpirationTimeInMinutes: number;
-    };
-    commonFields: {
-        email: FieldConfig;
-        password: PasswordFieldConfig;
-        refreshToken: FieldConfig;
-    };
-    additionalFields: {
-        registerEndpoint: { [key: string]: FieldConfig };
-    };
-}
+import { ConfigValidationResult } from "./configValidationResult";
+import { JsonConfig } from "./jsonConfig";
 
 export default class Config {
     private _jsonConfig: JsonConfig;
@@ -134,6 +96,7 @@ export default class Config {
                 severity: "error",
             });
         }
+
         return result;
     }
 }

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
-import Config from "../utils/config";
+import Config from "../utils/config/config";
 import { toUnixTimestamp } from "../utils/timeUtils";
 
 export default class ServiceController {
@@ -9,7 +9,7 @@ export default class ServiceController {
 
     public status(req: Request, res: Response, next: NextFunction) {
         if (this._config.administrationKey && this._config.administrationKey !== req.query.administrationKey) {
-            return res.status(HttpStatus.UNAUTHORIZED).send();
+            return res.status(HttpStatus.FORBIDDEN).send();
         }
 
         const currentTime = new Date();

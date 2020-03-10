@@ -1,18 +1,20 @@
-import bcrypt from "bcrypt";
 import { getRepository } from "typeorm";
-import crypto from "crypto";
 
 import { UserEntity } from "../dal/entities/userEntity";
 import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
-import { unixTimestamp } from "../utils/timeUtils";
+import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
+import { CryptoService } from "../services/cryptoService";
 
-const SALT_ROUNDS = 12;
+const PASS_RESET_CODE_LENGTH = 10;
 
 export class UserManager {
-    constructor(private _emailSigKey: string, private _passResetCodeTTLMinutes: number) {
+    private _userRepo = getRepository(UserEntity);
+    private _passResetRepo = getRepository(PasswordResetEntity);
+
+    constructor(private _crypto: CryptoService, private _emailSigKey: string, private _passResetCodeTTLMinutes: number) {
         if (!this._emailSigKey) {
             throw new Error("Email signature key is required.");
         }
@@ -28,7 +30,7 @@ export class UserManager {
     public async register(email: string, password: string): Promise<User> {
         const user = new UserEntity();
         user.email = email;
-        user.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        user.passwordHash = await this._crypto.hashPassword(password);
 
         try {
             await user.save();
@@ -44,15 +46,13 @@ export class UserManager {
     }
 
     public async login(email: string, password: string): Promise<User> {
-        const repository = getRepository(UserEntity);
-
-        const user = await repository.findOne({ where: { email: email } });
+        const user = await this._userRepo.findOne({ where: { email: email } });
         if (!user) {
-            await bcrypt.hash(password, SALT_ROUNDS); // ? prevents time attack
+            await this._crypto.hashPassword(password); // ? prevents time attack
             throw new UserNotExistsException();
         }
 
-        const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
+        const isPasswordMatch = await this._crypto.verifyPassword(password, user.passwordHash);
         if (!isPasswordMatch) {
             throw new InvalidPasswordException();
         }
@@ -65,39 +65,35 @@ export class UserManager {
     }
 
     public async changePassword(id: string, oldPassword: string, newPassword: string) {
-        const repository = getRepository(UserEntity);
-        const user = await repository.findOne({ where: { id: id } });
-        const isPasswordMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+        const user = await this._userRepo.findOne({ where: { id: id } });
+        const isPasswordMatch = await this._crypto.verifyPassword(oldPassword, user.passwordHash);
         if (!isPasswordMatch) {
             throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
         }
-        user.passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+        user.passwordHash = await this._crypto.hashPassword(newPassword);
         await user.save();
     }
 
     public async resetPassword(resetCode: string, password: string) {
         resetCode = resetCode.toUpperCase();
-        const passwordResetRepository = getRepository(PasswordResetEntity);
-        const passReset = await passwordResetRepository.findOne({ where: { code: resetCode } });
+        const passReset = await this._passResetRepo.findOne({ where: { code: resetCode } });
         if (!passReset) {
             throw new UserNotExistsException();
         }
 
-        if (passReset.createdAt.getTime() / 1000 + this._passResetCodeTTLMinutes * 60 < unixTimestamp()) {
+        if (this.isResetCodeExpired(passReset.createdAt)) {
             throw new ExpiredResetCodeException();
         }
 
-        const userRepository = getRepository(UserEntity);
-        const user = await userRepository.findOne({ where: { id: passReset.userId } });
-        user.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        const user = await this._userRepo.findOne({ where: { id: passReset.userId } });
+        user.passwordHash = await this._crypto.hashPassword(password);
         await user.save();
 
         await passReset.remove();
     }
 
     public async generatePasswordResetCode(email: string): Promise<string> {
-        const userRepository = getRepository(UserEntity);
-        const user = await userRepository.findOne({ where: { email: email } });
+        const user = await this._userRepo.findOne({ where: { email: email } });
         if (!user) {
             throw new UserNotExistsException();
         }
@@ -106,9 +102,8 @@ export class UserManager {
             throw new UserNotConfirmedException();
         }
 
-        const code = this.generateCode();
-        const passwordResetRepository = getRepository(PasswordResetEntity);
-        const passResetInDb = await passwordResetRepository.findOne({ where: { userId: user.id } });
+        const code = this._crypto.randomHex(PASS_RESET_CODE_LENGTH);
+        const passResetInDb = await this._passResetRepo.findOne({ where: { userId: user.id } });
         if (passResetInDb) {
             passResetInDb.code = code;
             passResetInDb.createdAt = new Date();
@@ -123,8 +118,7 @@ export class UserManager {
     }
 
     public async confirmEmail(email: string): Promise<boolean> {
-        const repository = getRepository(UserEntity);
-        const user = await repository.findOne({ where: { email: email } });
+        const user = await this._userRepo.findOne({ where: { email: email } });
         if (!user) {
             throw new UserNotExistsException("Cannot update email confirmed status. User not exists");
         }
@@ -137,21 +131,16 @@ export class UserManager {
     }
 
     public getEmailSignature(email: string): string {
-        const hmac = crypto.createHmac("sha256", this._emailSigKey);
-        hmac.update(email);
-        return hmac.digest("hex");
+        return this._crypto.hmacSignatureHex(email, this._emailSigKey);
     }
 
     public verifyEmailSignature(email: string, signature: string): boolean {
-        const hmac = crypto.createHmac("sha256", this._emailSigKey);
-        hmac.update(email);
-        const expected = hmac.digest("hex").toLowerCase();
-        return expected === signature.toLowerCase();
+        return this._crypto.verifyHmacSignature(email, signature, this._emailSigKey);
     }
 
-    private generateCode(): string {
-        const expectedLength = 10;
-        const code = crypto.randomBytes(expectedLength / 2).toString("hex");
-        return code.toUpperCase();
+    private isResetCodeExpired(createdAt: Date): boolean {
+        const secondsPerMinute = 60;
+        const inSeconds = toUnixTimestamp(createdAt);
+        return inSeconds + this._passResetCodeTTLMinutes * secondsPerMinute < unixTimestamp();
     }
 }

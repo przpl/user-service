@@ -1,4 +1,7 @@
 {
+    "security": {
+        "bcryptRounds": 12
+    },
     "passwordReset": {
         "codeExpirationTimeInMinutes": 1440
     },

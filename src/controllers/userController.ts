@@ -20,7 +20,7 @@ export default class UserController {
             user = await this._userManager.register(email, password);
         } catch (error) {
             const errorsList: ErrorResponse[] = [];
-            let responseCode = 500;
+            let responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             if (error instanceof UserExistsException) {
                 errorsList.push({
                     id: "userAlreadyExists",
@@ -33,7 +33,8 @@ export default class UserController {
         }
 
         // TODO notify other services about new user, send data to queue
-        // const emailSig = this._userManager.getEmailSignature(user.email);
+        const emailSig = this._userManager.getEmailSignature(user.email);
+        console.log(emailSig);
         // const newUser: any = {
         //     id: user.id,
         //     email: user.email,

@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import { createConnection, Connection } from "typeorm";
 
-import Config from "./utils/config";
+import Config from "./utils/config/config";
 import UserRouter from "./routes/userRouter";
 import UserController from "./controllers/userController";
 import { handleNotFoundError, handleError } from "./utils/expressUtils";
@@ -12,11 +12,14 @@ import ServiceController from "./controllers/serviceController";
 import { JwtService } from "./services/jwtService";
 import Validator from "./middleware/validator";
 import AuthMiddleware from "./middleware/authMiddleware";
+import { CryptoService } from "./services/cryptoService";
 
-async function start() {
+function loadConfig() {
+    const envPath = `${__dirname}/.env`;
+    const configPath = `${__dirname}/config.json`;
     const config = new Config();
     try {
-        config.load(__dirname + "/.env", __dirname + "/config.json");
+        config.load(envPath, configPath);
     } catch (error) {
         console.error(error.message);
         process.exit(1);
@@ -28,9 +31,9 @@ async function start() {
         for (const result of configValidationResult) {
             if (result.severity === "error") {
                 atLeastOneError = true;
-                console.error(`Config validation error: ${result.variableName} - ${result.message}`);
+                console.error(`\x1b[31mConfig validation error: ${result.variableName} - ${result.message}`);
             } else {
-                console.warn(`Config validation warning: ${result.variableName} - ${result.message}`);
+                console.warn(`\x1b[33mConfig validation warning: ${result.variableName} - ${result.message}`);
             }
         }
         if (atLeastOneError) {
@@ -38,13 +41,23 @@ async function start() {
         }
     }
 
-    let dbConnection: Connection;
+    return config;
+}
+
+async function connectToDb() {
+    let conn: Connection;
     try {
-        dbConnection = await createConnection();
+        conn = await createConnection();
     } catch (error) {
         console.log(error);
         process.exit(1);
     }
+    return conn;
+}
+
+async function start() {
+    const config = loadConfig();
+    const dbConnection = await connectToDb();
 
     const app = express();
     if (config.isDev()) {
@@ -53,14 +66,18 @@ async function start() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
-    const validator = new Validator(config.jsonConfig);
-    const serviceController = new ServiceController(config);
-    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController)); // TODO endpoints that allows hot reloading .env variables
-
-    const userManager = new UserManager(config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
     const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
-    const userController = new UserController(userManager, jwtService);
+    const cryptoService = new CryptoService(config.jsonConfig.security.bcryptRounds);
+
+    const validator = new Validator(config.jsonConfig);
     const authMiddleware = new AuthMiddleware(jwtService);
+
+    const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
+
+    const serviceController = new ServiceController(config);
+    const userController = new UserController(userManager, jwtService);
+
+    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator));
 
     app.use((req, res, next) => handleNotFoundError(res));

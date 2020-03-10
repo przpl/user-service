@@ -5,7 +5,7 @@ import PasswordValidator from "password-validator";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
-import { JsonConfig } from "../utils/config";
+import { JsonConfig } from "../utils/config/jsonConfig";
 
 const ERROR_MSG = {
     isEmail: "Not an e-mail",
@@ -19,6 +19,7 @@ const HMAC_256_SIG_LENGTH = 64;
 const PASSWORD_RESET_CODE_LENGTH = 10;
 
 export default class Validator {
+    // #region Validation chains
     private _email: ValidationChain[] = [];
     private _emailSignature: ValidationChain[] = [
         body("signature")
@@ -44,6 +45,17 @@ export default class Validator {
             .isHexadecimal()
             .withMessage(ERROR_MSG.isHexadecimal),
     ];
+    // #endregion
+
+    // #region Validators
+    public login = [...this._email, ...this._weakPassword, this.validate];
+    public register = [...this._email, ...this._password, ...this._register, this.validate];
+    public changePassword = [...this._password, this.validate];
+    public refreshToken = [...this._refreshToken, this.validate];
+    public confirmEmail = [...this._email, ...this._emailSignature, this.validate];
+    public forgotPassword = [...this._email, this.validate];
+    public resetPassword = [...this._resetPassword, ...this._password, this.validate];
+    // #endregion
 
     constructor(jsonConfig: JsonConfig) {
         const config = jsonConfig.commonFields;
@@ -121,34 +133,6 @@ export default class Validator {
 
             this._register.push(validation);
         }
-    }
-
-    get login() {
-        return [...this._email, ...this._weakPassword, this.validate];
-    }
-
-    get register() {
-        return [...this._email, ...this._password, ...this._register, this.validate];
-    }
-
-    get changePassword() {
-        return [...this._password, this.validate];
-    }
-
-    get refreshToken() {
-        return [...this._refreshToken, this.validate];
-    }
-
-    get confirmEmail() {
-        return [...this._email, ...this._emailSignature, this.validate];
-    }
-
-    get forgotPassword() {
-        return [...this._email, this.validate];
-    }
-
-    get resetPassword() {
-        return [...this._resetPassword, ...this._password, this.validate];
     }
 
     private validate(req: Request, res: Response, next: NextFunction) {

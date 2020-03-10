@@ -8,10 +8,6 @@ export default class ServiceRouter {
 
         router.get("/status", (req: Request, res: Response, next: NextFunction) => controller.status(req, res, next));
 
-        // router.get("/config", authMiddleware.authorizeMasterKey, (req: Request, res: Response, next: NextFunction) =>
-        //     controller.getConfig(req, res, next)
-        // );
-
         return router;
     }
 }
