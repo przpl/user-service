@@ -39,8 +39,8 @@ export default class UserController {
         //     id: user.id,
         //     email: user.email,
         // };
-        // for (const field of this._jsonConfig.payload.register) {
-        //     newUser[field.name] = req.body[field.name];
+        // for (const fieldName of Object.keys(this._jsonConfig.additionalFields.registerEndpoint)) {
+        //     newUser[fieldName] = req.body[fieldName];
         // }
 
         this.sendTokens(res, user);

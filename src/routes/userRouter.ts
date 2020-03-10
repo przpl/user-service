@@ -12,10 +12,10 @@ export default class UserRouter {
 
         router.post("/login", validator.login, (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next));
 
-        // TODO validate oldPassword and newPassword fields
         router.post(
             "/password",
             (req: Request, res: Response, next: NextFunction) => authMiddleware.decodeAccessToken(req, res, next),
+            validator.changePassword,
             (req: Request, res: Response, next: NextFunction) => controller.changePassword(req, res, next)
         );
 

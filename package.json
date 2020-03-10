@@ -49,6 +49,7 @@
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.9.1",
     "onchange": "^6.1.0",
+    "password-validator": "^5.0.3",
     "pg": "^7.18.2",
     "prettier": "1.19.1",
     "typeorm": "^0.2.24"

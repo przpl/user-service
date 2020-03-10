@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { validationResult, body, ValidationChain } from "express-validator";
 import HttpStatus from "http-status-codes";
+import PasswordValidator from "password-validator";
 
 import { forwardError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
@@ -8,15 +9,14 @@ import { JsonConfig } from "../utils/config";
 
 const ERROR_MSG = {
     isEmail: "Not an e-mail",
+    isHexadecimal: "Invalid format",
     isJwt: "Not a JWT",
     isLength: "Length exceeded",
-    isHexadecimal: "Invalid format",
     isString: "Not a string",
 };
 
 const HMAC_256_SIG_LENGTH = 64;
 
-// TODO max length from config, validation of other fields based on config file
 export default class Validator {
     private _email: ValidationChain[] = [];
     private _emailSignature: ValidationChain[] = [
@@ -34,24 +34,45 @@ export default class Validator {
     private _register: ValidationChain[] = [];
 
     constructor(jsonConfig: JsonConfig) {
+        const config = jsonConfig.commonFields;
         this._email.push(
             body("email")
                 .isString()
                 .withMessage(ERROR_MSG.isString)
                 .trim()
-                .isLength({ min: 5, max: jsonConfig.fieldsValidation.email.maxLength })
+                .isLength({ min: 5, max: config.email.isLength.max })
                 .withMessage(ERROR_MSG.isLength)
                 .isEmail()
                 .withMessage(ERROR_MSG.isEmail)
                 .normalizeEmail()
         );
 
+        let passwordErrorMsg = `Password should have minimum ${config.password.isLength.min} characters`;
+        const passwordSchema = new PasswordValidator();
+        passwordSchema.is().min(config.password.isLength.min);
+        passwordSchema.is().max(config.password.isLength.max);
+        if (config.password.hasDigits) {
+            passwordSchema.has().digits();
+            passwordErrorMsg += ", one digit";
+        }
+        if (config.password.hasSymbols) {
+            passwordSchema.has().symbols();
+            passwordErrorMsg += ", one symbol";
+        }
+        if (config.password.hasUppercase) {
+            passwordSchema.has().uppercase();
+            passwordErrorMsg += ", one uppercase";
+        }
+        if (config.password.hasLowercase) {
+            passwordSchema.has().lowercase();
+            passwordErrorMsg += ", one lowercase";
+        }
         this._password.push(
             body("password")
                 .isString()
                 .withMessage(ERROR_MSG.isString)
-                .isLength({ min: 6, max: jsonConfig.fieldsValidation.password.maxLength })
-                .withMessage(ERROR_MSG.isLength)
+                .custom(value => passwordSchema.validate(value))
+                .withMessage(passwordErrorMsg)
         );
 
         this._refreshToken.push(
@@ -59,14 +80,15 @@ export default class Validator {
                 .isString()
                 .withMessage(ERROR_MSG.isString)
                 .trim()
-                .isLength({ min: 1, max: jsonConfig.fieldsValidation.refreshToken.maxLength })
+                .isLength({ min: 1, max: config.refreshToken.isLength.max })
                 .withMessage(ERROR_MSG.isLength)
                 .isJWT()
                 .withMessage(ERROR_MSG.isJwt)
         );
 
-        for (const field of jsonConfig.payload.register) {
-            const validation = body(field.name);
+        for (const fieldName of Object.keys(jsonConfig.additionalFields.registerEndpoint)) {
+            const field = jsonConfig.additionalFields.registerEndpoint[fieldName];
+            const validation = body(fieldName);
             if (field.isString) {
                 validation.isString().withMessage(ERROR_MSG.isString);
             }
@@ -87,6 +109,10 @@ export default class Validator {
 
     get register() {
         return [...this._email, ...this._password, ...this._register, this.validate];
+    }
+
+    get changePassword() {
+        return [...this._password, this.validate];
     }
 
     get refreshToken() {

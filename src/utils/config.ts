@@ -7,30 +7,34 @@ export interface ConfigValidationResult {
     severity: "warning" | "error";
 }
 
-export interface PayloadField {
-    name: string;
+export interface FieldConfig {
     isString: boolean;
     trim: boolean;
     isLength: {
         min: number;
         max: number;
     };
+    hasUppercase: boolean;
+    hasLowercase: boolean;
+    hasDigits: boolean;
+    hasSymbols: boolean;
+}
+
+export interface PasswordFieldConfig extends FieldConfig {
+    hasUppercase: boolean;
+    hasLowercase: boolean;
+    hasDigits: boolean;
+    hasSymbols: boolean;
 }
 
 export interface JsonConfig {
-    fieldsValidation: {
-        email: {
-            maxLength: number;
-        };
-        password: {
-            maxLength: number;
-        };
-        refreshToken: {
-            maxLength: number;
-        };
+    commonFields: {
+        email: FieldConfig;
+        password: PasswordFieldConfig;
+        refreshToken: FieldConfig;
     };
-    payload: {
-        register: PayloadField[];
+    additionalFields: {
+        registerEndpoint: { [key: string]: FieldConfig };
     };
 }
 
