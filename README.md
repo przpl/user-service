@@ -1,16 +1,16 @@
+=============================================================================================================================
 Migrations
 
-1. Build app to make sure .js code is up to date
+1. Build app to make sure .js code in dist directory is up to date so TypeORM can detect all entities
 npm run build
 
-2. Create:
+2. Create migration:
 typeorm migration:generate -n AddSomeColumnToSome
 
-3. We want the migration file to be stored in respository. Move created migration file from dist/dal/migrations to src/dal/migrations.
-Add /* eslint-disable quotes */ at the top of the file to disable unecessary eslint errors.
-
-4. Build app:
+3. Build app to compile new migration:
 npm run build
 
 5. Run all migrations:
 typeorm migration:run
+
+=============================================================================================================================
