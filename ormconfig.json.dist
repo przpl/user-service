@@ -5,7 +5,7 @@
    "username": "postgres",
    "password": "password",
    "database": "DATABASE_NAME",
-   "synchronize": true,
+   "synchronize": false, // NOT SAFE TO SET TRUE IN PRODUCTION ENVIRONMENT, THIS WILL CAUSE AUTOMATIC MIGRATIONS
    "logging": false,
    "entities": [
       "dist/dal/entities/**/*.js"
