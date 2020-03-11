@@ -150,6 +150,12 @@ export default class Validator {
         this.forgotPassword = [...this._email, this.validate];
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
 
+        if (jsonConfig.security.reCaptcha.enabled) {
+            this.addReCaptchaValidators(jsonConfig);
+        }
+    }
+
+    private addReCaptchaValidators(jsonConfig: JsonConfig) {
         const recaptchaEnabled = jsonConfig.security.reCaptcha.protectedEndpoints;
         if (recaptchaEnabled.login) {
             this.login.unshift(this._recaptcha);
