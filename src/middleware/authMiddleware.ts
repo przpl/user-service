@@ -20,7 +20,7 @@ export default class AuthMiddleware {
             return forwardError(next, errors, HttpStatus.UNAUTHORIZED);
         }
 
-        const tokenWithoutBearerPrefix = bearerString.substring(7);
+        const tokenWithoutBearerPrefix = bearerString.split(" ")[1];
         try {
             req.user = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
         } catch (error) {
