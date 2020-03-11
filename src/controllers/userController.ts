@@ -42,7 +42,7 @@ export default class UserController {
         //     newUser[fieldName] = req.body[fieldName];
         // }
 
-        this.sendTokens(res, user);
+        res.json({ user });
     }
 
     public async login(req: Request, res: Response, next: NextFunction) {
