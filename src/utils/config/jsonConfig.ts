@@ -4,6 +4,17 @@ import { PasswordFieldConfig } from "./passwordFieldConfig";
 export interface JsonConfig {
     security: {
         bcryptRounds: number;
+        reCaptcha: {
+            enabled: boolean;
+            ssl: boolean;
+            protectedEndpoints: {
+                register: boolean;
+                login: boolean;
+                forgotPassword: boolean;
+                resetPassword: boolean;
+                confirmEmail: boolean;
+            };
+        };
     };
     passwordReset: {
         codeExpirationTimeInMinutes: number;

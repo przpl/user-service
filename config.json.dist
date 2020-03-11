@@ -1,6 +1,17 @@
 {
     "security": {
-        "bcryptRounds": 12
+        "bcryptRounds": 12,
+        "reCaptcha": {
+            "enabled": true,
+            "ssl": true,
+            "protectedEndpoints": {
+                "register": true,
+                "login": true,
+                "forgotPassword": true,
+                "resetPassword": true,
+                "confirmEmail": true
+            }
+        }
     },
     "passwordReset": {
         "codeExpirationTimeInMinutes": 1440

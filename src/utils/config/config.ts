@@ -63,6 +63,14 @@ export default class Config {
         return this._jsonConfig;
     }
 
+    public get recaptchaSiteKey(): string {
+        return process.env.RECAPTCHA_SITE_KEY;
+    }
+
+    public get recaptchaSecretKey(): string {
+        return process.env.RECAPTCHA_SECRET_KEY;
+    }
+
     public validate(): ConfigValidationResult[] {
         const result: ConfigValidationResult[] = [];
         if (!this.administrationKey) {

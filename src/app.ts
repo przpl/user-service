@@ -13,6 +13,7 @@ import { JwtService } from "./services/jwtService";
 import Validator from "./middleware/validator";
 import AuthMiddleware from "./middleware/authMiddleware";
 import { CryptoService } from "./services/cryptoService";
+import RecaptchaMiddleware from "./middleware/recaptchaMiddleware";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -71,6 +72,12 @@ async function start() {
 
     const validator = new Validator(config.jsonConfig);
     const authMiddleware = new AuthMiddleware(jwtService);
+    const captchaMiddleware = new RecaptchaMiddleware(
+        config.jsonConfig.security.reCaptcha.enabled,
+        config.recaptchaSiteKey,
+        config.recaptchaSecretKey,
+        config.jsonConfig.security.reCaptcha.ssl
+    );
 
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
 
@@ -78,7 +85,7 @@ async function start() {
     const userController = new UserController(userManager, jwtService);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
-    app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator));
+    app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));
