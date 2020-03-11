@@ -29,7 +29,7 @@ export default class UserController {
                 responseCode = HttpStatus.BAD_REQUEST;
             }
 
-            return forwardError(next, errorsList, responseCode);
+            return forwardError(next, errorsList, responseCode, error);
         }
 
         // TODO notify other services about new user, send data to queue
@@ -61,7 +61,7 @@ export default class UserController {
             } else {
                 responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             }
-            return forwardError(next, errors, responseCode);
+            return forwardError(next, errors, responseCode, error);
         }
 
         this.sendTokens(res, user);
@@ -79,7 +79,7 @@ export default class UserController {
                 errors.push({ id: "invalidOldPassword" });
                 responseCode = HttpStatus.UNAUTHORIZED;
             }
-            return forwardError(next, errors, responseCode);
+            return forwardError(next, errors, responseCode, error);
         }
 
         res.json({ result: true });
@@ -96,7 +96,7 @@ export default class UserController {
             } else if (error instanceof UserNotConfirmedException) {
                 return res.json({ result: true });
             }
-            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR);
+            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
 
         res.json({ result: true });
@@ -118,7 +118,7 @@ export default class UserController {
             } else {
                 responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             }
-            return forwardError(next, errors, responseCode);
+            return forwardError(next, errors, responseCode, error);
         }
 
         res.json({ result: true });
@@ -140,7 +140,7 @@ export default class UserController {
             } else {
                 responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             }
-            return forwardError(next, errors, responseCode);
+            return forwardError(next, errors, responseCode, error);
         }
 
         const accessToken = this._jwtService.issueAccessToken(decoded);

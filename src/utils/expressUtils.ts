@@ -4,10 +4,11 @@ import HttpStatus from "http-status-codes";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
 
-export function forwardError(next: NextFunction, errors?: ErrorResponse[], responseStatusCode = HttpStatus.INTERNAL_SERVER_ERROR) {
+export function forwardError(next: NextFunction, errors: ErrorResponse[], responseStatusCode: number, originalError?: any) {
     const error = {
         responseErrorsList: errors,
         responseStatusCode: responseStatusCode,
+        originalError: originalError,
     };
     next(error);
 }
@@ -29,8 +30,17 @@ export function handleError(err: any, res: Response, isDev: boolean) {
     }
 
     if (isDev) {
-        console.log(err.stack);
-        response.$devOnly = { message: err.message, stack: err.stack };
+        let message: string = err.message;
+        let stack: string = err.stack;
+        if (err.originalError) {
+            message = err.originalError.message;
+            stack = err.originalError.stack;
+        }
+
+        if (stack) {
+            console.log(stack);
+        }
+        response.$devOnly = { message: message, stack: stack };
     }
 
     res.json(response);

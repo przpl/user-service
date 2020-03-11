@@ -48,7 +48,7 @@ export default class RecaptchaMiddleware {
                 responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             }
 
-            return forwardError(next, errors, responseCode);
+            return forwardError(next, errors, responseCode, error);
         }
 
         next();
