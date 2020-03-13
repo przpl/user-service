@@ -13,6 +13,12 @@
             }
         }
     },
+    "externalLogin": {
+        "google": {
+            "enabled": true,
+            "clientId": "XYZ.apps.googleusercontent.com"
+        }
+    },
     "passwordReset": {
         "codeExpirationTimeInMinutes": 1440
     },

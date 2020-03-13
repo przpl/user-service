@@ -47,6 +47,16 @@ export default class Validator {
             .isHexadecimal()
             .withMessage(ERROR_MSG.isHexadecimal),
     ];
+    private _googleTokenId: ValidationChain[] = [
+        body("tokenId")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: 1, max: 2000 })
+            .withMessage(ERROR_MSG.isLength)
+            .isJWT()
+            .withMessage(ERROR_MSG.isJwt),
+    ];
     private _recaptcha: ValidationChain = body("recaptchaKey")
         .isString()
         .withMessage(ERROR_MSG.isString)
@@ -63,6 +73,7 @@ export default class Validator {
     public confirmEmail: ValidatorArray = [];
     public forgotPassword: ValidatorArray = [];
     public resetPassword: ValidatorArray = [];
+    public loginWithGoogle: ValidatorArray = [];
     // #endregion
 
     constructor(jsonConfig: JsonConfig) {
@@ -149,6 +160,7 @@ export default class Validator {
         this.confirmEmail = [...this._email, ...this._emailSignature, this.validate];
         this.forgotPassword = [...this._email, this.validate];
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
+        this.loginWithGoogle = [...this._googleTokenId, this.validate];
 
         if (jsonConfig.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(jsonConfig);

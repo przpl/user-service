@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
+import cors from "cors";
 import { createConnection, Connection } from "typeorm";
 
 import Config from "./utils/config/config";
@@ -14,6 +15,7 @@ import Validator from "./middleware/validator";
 import AuthMiddleware from "./middleware/authMiddleware";
 import { CryptoService } from "./services/cryptoService";
 import RecaptchaMiddleware from "./middleware/recaptchaMiddleware";
+import { configurePassport } from "./middleware/passport";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -64,8 +66,12 @@ async function start() {
     if (config.isDev()) {
         app.use(morgan("dev"));
     }
+    if (config.isCorsEnabled()) {
+        app.use(cors());
+    }
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
+    configurePassport(app, config.jsonConfig);
 
     const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
     const cryptoService = new CryptoService(config.jsonConfig.security.bcryptRounds);

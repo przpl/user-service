@@ -8,6 +8,8 @@ import { UserExistsException, UserNotConfirmedException, UserNotExistsException,
 import { User } from "../interfaces/user";
 import { InvalidJwtTypeException, ExpiredResetCodeException } from "../exceptions/exceptions";
 import { JwtService, RefreshToken } from "../services/jwtService";
+import { ExternalUser } from "../middleware/passport";
+import { ExternalLoginProvider } from "../dal/entities/externalLogin";
 
 export default class UserController {
     constructor(private _userManager: UserManager, private _jwtService: JwtService) {}
@@ -67,11 +69,24 @@ export default class UserController {
         this.sendTokens(res, user);
     }
 
+    public async loginWithGoogle(req: Request, res: Response, next: NextFunction) {
+        const externalUser = req.user as ExternalUser;
+
+        let user: User;
+        try {
+            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, ExternalLoginProvider.google);
+        } catch (error) {
+            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
+        }
+
+        this.sendTokens(res, user);
+    }
+
     public async changePassword(req: Request, res: Response, next: NextFunction) {
         const { oldPassword, password } = req.body;
 
         try {
-            await this._userManager.changePassword(req.user.sub, oldPassword, password);
+            await this._userManager.changePassword(req.authenticatedUser.sub, oldPassword, password);
         } catch (error) {
             const errors: ErrorResponse[] = [];
             let responseCode = HttpStatus.INTERNAL_SERVER_ERROR;

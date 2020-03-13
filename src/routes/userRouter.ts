@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction, Router } from "express";
+import passport from "passport";
 
 import UserController from "../controllers/userController";
 import Validator from "../middleware/validator";
@@ -31,9 +32,18 @@ export default class UserRouter {
             (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next)
         );
 
+        if (jsonConfig.externalLogin.google.enabled) {
+            router.post(
+                "/login/google",
+                validator.loginWithGoogle,
+                (req: Request, res: Response, next: NextFunction) => auth.authGoogle(req, res, next),
+                (req: Request, res: Response, next: NextFunction) => controller.loginWithGoogle(req, res, next)
+            );
+        }
+
         router.post(
             "/password/change",
-            (req: Request, res: Response, next: NextFunction) => auth.authenticateUser(req, res, next),
+            (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
             validator.changePassword,
             (req: Request, res: Response, next: NextFunction) => controller.changePassword(req, res, next)
         );

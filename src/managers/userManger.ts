@@ -7,12 +7,14 @@ import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
 import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
+import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
 
 const PASS_RESET_CODE_LENGTH = 10;
 
 export class UserManager {
     private _userRepo = getRepository(UserEntity);
     private _passResetRepo = getRepository(PasswordResetEntity);
+    private _externalLoginRepo = getRepository(ExternalLoginEntity);
 
     constructor(private _crypto: CryptoService, private _emailSigKey: string, private _passResetCodeTTLMinutes: number) {
         if (!this._emailSigKey) {
@@ -61,7 +63,27 @@ export class UserManager {
             throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
-        return user;
+        return { id: user.id, email: user.email };
+    }
+
+    public async loginOrRegisterExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<User> {
+        const loginInDb = await this._externalLoginRepo.findOne({ externalUserId: externalUserId, provider: loginProvider }); // make sure there aren't two different users across platforms with same user id
+        if (loginInDb) {
+            const userInDb = await this._userRepo.findOne({ id: loginInDb.userId });
+            return { id: userInDb.id, email: userInDb.email };
+        }
+
+        // TODO use transaciton, make sure user and externalLogin are always created together
+        const user = new UserEntity();
+        await user.save();
+
+        const login = new ExternalLoginEntity();
+        login.provider = ExternalLoginProvider.google;
+        login.externalUserId = externalUserId;
+        login.userId = user.id;
+        await login.save();
+
+        return { id: user.id, email: null };
     }
 
     public async changePassword(id: string, oldPassword: string, newPassword: string) {

@@ -16,6 +16,12 @@ export interface JsonConfig {
             };
         };
     };
+    externalLogin: {
+        google: {
+            enabled: boolean;
+            clientId: string;
+        };
+    };
     passwordReset: {
         codeExpirationTimeInMinutes: number;
     };
