@@ -17,6 +17,11 @@
         "google": {
             "enabled": true,
             "clientId": "XYZ.apps.googleusercontent.com"
+        },
+        "facebook": {
+            "enabled": true,
+            "clientId": "",
+            "clientSecret": ""
         }
     },
     "passwordReset": {

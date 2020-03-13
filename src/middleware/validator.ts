@@ -57,6 +57,14 @@ export default class Validator {
             .isJWT()
             .withMessage(ERROR_MSG.isJwt),
     ];
+    private _facebookAccessToken: ValidationChain[] = [
+        body("accessToken")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: 1, max: 1000 })
+            .withMessage(ERROR_MSG.isLength),
+    ];
     private _recaptcha: ValidationChain = body("recaptchaKey")
         .isString()
         .withMessage(ERROR_MSG.isString)
@@ -74,6 +82,7 @@ export default class Validator {
     public forgotPassword: ValidatorArray = [];
     public resetPassword: ValidatorArray = [];
     public loginWithGoogle: ValidatorArray = [];
+    public loginWithFacebook: ValidatorArray = [];
     // #endregion
 
     constructor(jsonConfig: JsonConfig) {
@@ -161,6 +170,7 @@ export default class Validator {
         this.forgotPassword = [...this._email, this.validate];
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
         this.loginWithGoogle = [...this._googleTokenId, this.validate];
+        this.loginWithFacebook = [...this._facebookAccessToken, this.validate];
 
         if (jsonConfig.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(jsonConfig);

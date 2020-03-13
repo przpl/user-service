@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction, Router } from "express";
-import passport from "passport";
 
 import UserController from "../controllers/userController";
 import Validator from "../middleware/validator";
@@ -38,6 +37,15 @@ export default class UserRouter {
                 validator.loginWithGoogle,
                 (req: Request, res: Response, next: NextFunction) => auth.authGoogle(req, res, next),
                 (req: Request, res: Response, next: NextFunction) => controller.loginWithGoogle(req, res, next)
+            );
+        }
+
+        if (jsonConfig.externalLogin.facebook.enabled) {
+            router.post(
+                "/login/facebook",
+                validator.loginWithFacebook,
+                (req: Request, res: Response, next: NextFunction) => auth.authFacebook(req, res, next),
+                (req: Request, res: Response, next: NextFunction) => controller.loginWithFacebook(req, res, next)
             );
         }
 

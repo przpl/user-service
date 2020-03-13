@@ -2,6 +2,7 @@ import core from "express";
 import passport from "passport";
 // @ts-ignore
 import GoogleTokenStrategy from "passport-google-id-token";
+import FacebookTokenStrategy from "passport-facebook-token";
 
 import { JsonConfig } from "../utils/config/jsonConfig";
 
@@ -41,23 +42,59 @@ interface GoogleParsedToken {
 }
 
 export function configurePassport(app: core.Express, config: JsonConfig) {
-    const externalLogin = config.externalLogin;
-    if (!externalLogin.google.enabled) {
+    if (!isAnyExternalLoginEnabled(config)) {
         return;
     }
 
+    const externalLogin = config.externalLogin;
+
     app.use(passport.initialize());
 
-    passport.use(
-        new GoogleTokenStrategy(
-            {
-                clientID: externalLogin.google.clientId,
-                passReqToCallback: true,
-            },
-            async (req: Request, parsedToken: GoogleParsedToken, googleId: string, done: DoneFunction) => {
-                const payload = parsedToken.payload;
-                return done(null, { id: payload.sub, email: payload.email, firstName: payload.given_name, lastName: payload.family_name });
-            }
-        )
+    if (externalLogin.google.enabled) {
+        passport.use(googleStrategy(config));
+    }
+    if (externalLogin.facebook.enabled) {
+        passport.use(facebookStrategy(config));
+    }
+}
+
+function googleStrategy(config: JsonConfig) {
+    return new GoogleTokenStrategy(
+        {
+            clientID: config.externalLogin.google.clientId,
+            passReqToCallback: true,
+        },
+        async (req: Request, parsedToken: GoogleParsedToken, googleId: string, done: DoneFunction) => {
+            const payload = parsedToken.payload;
+            return done(null, { id: payload.sub, email: payload.email, firstName: payload.given_name, lastName: payload.family_name });
+        }
     );
+}
+
+function facebookStrategy(config: JsonConfig) {
+    return new FacebookTokenStrategy(
+        {
+            clientID: config.externalLogin.facebook.clientId,
+            clientSecret: config.externalLogin.facebook.clientSecret,
+            passReqToCallback: true,
+        },
+        async (req, accessToken, refreshToken, profile, done) => {
+            return done(null, {
+                id: profile.id,
+                email: profile?.emails[0].value,
+                firstName: profile?.name.givenName,
+                lastName: profile?.name.familyName,
+            });
+        }
+    );
+}
+
+function isAnyExternalLoginEnabled(config: JsonConfig): boolean {
+    const cfg = config.externalLogin;
+    for (const key in cfg) {
+        if ((cfg as any)[key].enabled) {
+            return true;
+        }
+    }
+    return false;
 }

@@ -84,6 +84,21 @@ export default class UserController {
         this.sendTokens(res, user);
     }
 
+    public async loginWithFacebook(req: Request, res: Response, next: NextFunction) {
+        const externalUser = req.user as ExternalUser;
+
+        let user: User;
+        try {
+            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, ExternalLoginProvider.facebook);
+        } catch (error) {
+            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
+        }
+
+        // TODO notify other services about new user, send data to queue
+
+        this.sendTokens(res, user);
+    }
+
     public async changePassword(req: Request, res: Response, next: NextFunction) {
         const { oldPassword, password } = req.body;
 

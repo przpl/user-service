@@ -21,6 +21,11 @@ export interface JsonConfig {
             enabled: boolean;
             clientId: string;
         };
+        facebook: {
+            enabled: boolean;
+            clientId: string;
+            clientSecret: string;
+        };
     };
     passwordReset: {
         codeExpirationTimeInMinutes: number;
