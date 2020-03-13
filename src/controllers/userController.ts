@@ -79,6 +79,8 @@ export default class UserController {
             return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
 
+        // TODO notify other services about new user, send data to queue
+
         this.sendTokens(res, user);
     }
 
