@@ -1,8 +1,8 @@
 import { Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, PrimaryColumn, Column } from "typeorm";
 
 export enum ExternalLoginProvider {
-    facebook,
-    google,
+    facebook = 0,
+    google = 1,
 }
 
 @Entity({ name: "external-login" })
@@ -10,8 +10,8 @@ export class ExternalLoginEntity extends BaseEntity {
     @PrimaryColumn()
     externalUserId: string;
 
-    @PrimaryColumn("enum", { enum: ExternalLoginProvider })
-    provider: ExternalLoginProvider;
+    @Column({ type: "smallint" })
+    provider: number;
 
     @Column("uuid")
     userId: string; // TODO foreign key

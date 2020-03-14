@@ -29,6 +29,11 @@ export class UserManager {
         }
     }
 
+    public async getUserById(userId: string): Promise<User> {
+        const user = await this._userRepo.findOne({ where: { id: userId } });
+        return { id: user.id, email: user.email, twoFaMethod: user.twoFaMethod };
+    }
+
     public async register(email: string, password: string): Promise<User> {
         const user = new UserEntity();
         user.email = email;
@@ -63,7 +68,7 @@ export class UserManager {
             throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
-        return { id: user.id, email: user.email };
+        return { id: user.id, email: user.email, twoFaMethod: user.twoFaMethod };
     }
 
     public async loginOrRegisterExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<User> {
@@ -78,7 +83,7 @@ export class UserManager {
         await user.save();
 
         const login = new ExternalLoginEntity();
-        login.provider = ExternalLoginProvider.google;
+        login.provider = loginProvider;
         login.externalUserId = externalUserId;
         login.userId = user.id;
         await login.save();

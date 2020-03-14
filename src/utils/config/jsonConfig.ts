@@ -2,7 +2,12 @@ import { FieldConfig } from "./fieldConfig";
 import { PasswordFieldConfig } from "./passwordFieldConfig";
 
 export interface JsonConfig {
+    redis: {
+        host: string;
+        port: number;
+    };
     security: {
+        twoFaToken: boolean;
         bcryptRounds: number;
         reCaptcha: {
             enabled: boolean;

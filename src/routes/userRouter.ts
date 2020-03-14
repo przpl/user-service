@@ -5,6 +5,7 @@ import Validator from "../middleware/validator";
 import AuthMiddleware from "../middleware/authMiddleware";
 import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
 import { JsonConfig } from "../utils/config/jsonConfig";
+import { ExternalLoginProvider } from "../dal/entities/externalLogin";
 
 export default class UserRouter {
     static getExpressRouter(
@@ -36,7 +37,8 @@ export default class UserRouter {
                 "/login/google",
                 validator.loginWithGoogle,
                 (req: Request, res: Response, next: NextFunction) => auth.authGoogle(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => controller.loginWithGoogle(req, res, next)
+                (req: Request, res: Response, next: NextFunction) =>
+                    controller.loginWithExternalProvider(req, res, next, ExternalLoginProvider.google)
             );
         }
 
@@ -45,7 +47,14 @@ export default class UserRouter {
                 "/login/facebook",
                 validator.loginWithFacebook,
                 (req: Request, res: Response, next: NextFunction) => auth.authFacebook(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => controller.loginWithFacebook(req, res, next)
+                (req: Request, res: Response, next: NextFunction) =>
+                    controller.loginWithExternalProvider(req, res, next, ExternalLoginProvider.facebook)
+            );
+        }
+
+        if (jsonConfig.security.twoFaToken) {
+            router.post("/login/2fa", validator.loginWithTwoFa, (req: Request, res: Response, next: NextFunction) =>
+                controller.loginWithTwoFa(req, res, next)
             );
         }
 

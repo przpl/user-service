@@ -10,9 +10,12 @@ import { InvalidJwtTypeException, ExpiredResetCodeException } from "../exception
 import { JwtService, RefreshToken } from "../services/jwtService";
 import { ExternalUser } from "../middleware/passport";
 import { ExternalLoginProvider } from "../dal/entities/externalLogin";
+import { TwoFaMethod } from "../dal/entities/userEntity";
+import { TwoFaService } from "../services/twoFaService";
+import { unixTimestamp } from "../utils/timeUtils";
 
 export default class UserController {
-    constructor(private _userManager: UserManager, private _jwtService: JwtService) {}
+    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _twoFaService: TwoFaService) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -66,30 +69,38 @@ export default class UserController {
             return forwardError(next, errors, responseCode, error);
         }
 
-        this.sendTokens(res, user);
-    }
-
-    public async loginWithGoogle(req: Request, res: Response, next: NextFunction) {
-        const externalUser = req.user as ExternalUser;
-
-        let user: User;
-        try {
-            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, ExternalLoginProvider.google);
-        } catch (error) {
-            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
+        if (user.twoFaMethod !== TwoFaMethod.none) {
+            const tokenTtl = 120;
+            const token = await this._twoFaService.issueToken(user.id, req.ip, tokenTtl);
+            const expiresAt = unixTimestamp() + tokenTtl;
+            const userProjection = {
+                id: user.id,
+                email: user.email,
+            };
+            return res.json({ user: userProjection, twoFaToken: { value: token, expiresAt: expiresAt } });
         }
 
-        // TODO notify other services about new user, send data to queue
-
         this.sendTokens(res, user);
     }
 
-    public async loginWithFacebook(req: Request, res: Response, next: NextFunction) {
+    public async loginWithTwoFa(req: Request, res: Response, next: NextFunction) {
+        const { twoFaToken, userId } = req.body;
+
+        const result = await this._twoFaService.verifyToken(userId, twoFaToken, req.ip);
+        if (!result) {
+            return forwardError(next, [{ id: "invalid2FaToken" }], HttpStatus.UNAUTHORIZED);
+        }
+
+        const user = await this._userManager.getUserById(userId);
+        this.sendTokens(res, user);
+    }
+
+    public async loginWithExternalProvider(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {
         const externalUser = req.user as ExternalUser;
 
         let user: User;
         try {
-            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, ExternalLoginProvider.facebook);
+            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, provider);
         } catch (error) {
             return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
         }

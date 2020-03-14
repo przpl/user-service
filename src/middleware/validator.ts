@@ -13,15 +13,30 @@ const ERROR_MSG = {
     isJwt: "Not a JWT",
     isLength: "Length exceeded",
     isString: "Not a string",
+    isUUID: "Invalid format",
 };
 
+// TODO global const
+const USER_ID_LENGTH = 36;
 const HMAC_256_SIG_LENGTH = 64;
 const PASSWORD_RESET_CODE_LENGTH = 10;
+const TWO_FA_TOKEN_LENGHT = 64;
 
 type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, next: NextFunction) => void))[];
 
 export default class Validator {
+    // TODO arrays not needed?
     // #region Validation chains
+    private _userId: ValidationChain[] = [
+        body("userId")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: USER_ID_LENGTH, max: USER_ID_LENGTH })
+            .withMessage(ERROR_MSG.isLength)
+            .isUUID()
+            .withMessage(ERROR_MSG.isUUID),
+    ];
     private _email: ValidationChain[] = [];
     private _emailSignature: ValidationChain[] = [
         body("signature")
@@ -65,6 +80,16 @@ export default class Validator {
             .isLength({ min: 1, max: 1000 })
             .withMessage(ERROR_MSG.isLength),
     ];
+    private _twoFaToken: ValidationChain[] = [
+        body("twoFaToken")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: TWO_FA_TOKEN_LENGHT, max: TWO_FA_TOKEN_LENGHT })
+            .withMessage(ERROR_MSG.isLength)
+            .isHexadecimal()
+            .withMessage(ERROR_MSG.isHexadecimal),
+    ];
     private _recaptcha: ValidationChain = body("recaptchaKey")
         .isString()
         .withMessage(ERROR_MSG.isString)
@@ -83,6 +108,7 @@ export default class Validator {
     public resetPassword: ValidatorArray = [];
     public loginWithGoogle: ValidatorArray = [];
     public loginWithFacebook: ValidatorArray = [];
+    public loginWithTwoFa: ValidatorArray = [];
     // #endregion
 
     constructor(jsonConfig: JsonConfig) {
@@ -171,6 +197,7 @@ export default class Validator {
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
         this.loginWithGoogle = [...this._googleTokenId, this.validate];
         this.loginWithFacebook = [...this._facebookAccessToken, this.validate];
+        this.loginWithTwoFa = [...this._twoFaToken, ...this._userId, this.validate];
 
         if (jsonConfig.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(jsonConfig);

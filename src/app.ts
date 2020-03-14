@@ -16,6 +16,8 @@ import AuthMiddleware from "./middleware/authMiddleware";
 import { CryptoService } from "./services/cryptoService";
 import RecaptchaMiddleware from "./middleware/recaptchaMiddleware";
 import { configurePassport } from "./middleware/passport";
+import { TwoFaService } from "./services/twoFaService";
+import { CacheDb } from "./dal/cacheDb";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -71,10 +73,13 @@ async function start() {
     }
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
+    app.set("trust proxy", true);
     configurePassport(app, config.jsonConfig);
 
+    const cacheDb = new CacheDb(config.jsonConfig.redis.host, config.jsonConfig.redis.port);
     const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
     const cryptoService = new CryptoService(config.jsonConfig.security.bcryptRounds);
+    const twoFaService = new TwoFaService(cacheDb, cryptoService);
 
     const validator = new Validator(config.jsonConfig);
     const authMiddleware = new AuthMiddleware(jwtService);
@@ -88,7 +93,7 @@ async function start() {
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
 
     const serviceController = new ServiceController(config);
-    const userController = new UserController(userManager, jwtService);
+    const userController = new UserController(userManager, jwtService, twoFaService);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator, captchaMiddleware, config.jsonConfig));

@@ -1,5 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
+export enum TwoFaMethod {
+    none = 0,
+    code = 1,
+    email = 2,
+    sms = 3,
+}
+
 @Entity({ name: "user" })
 export class UserEntity extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
@@ -13,6 +20,9 @@ export class UserEntity extends BaseEntity {
 
     @Column({ default: false })
     emailConfirmed: boolean;
+
+    @Column({ type: "smallint", default: TwoFaMethod.none })
+    twoFaMethod: number;
 
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
