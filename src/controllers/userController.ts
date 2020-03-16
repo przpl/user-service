@@ -12,7 +12,7 @@ import { TwoFaService } from "../services/twoFaService";
 import { unixTimestamp } from "../utils/timeUtils";
 
 export default class UserController {
-    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _twoFaService: TwoFaService, private _appName: string) {}
+    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _twoFaService: TwoFaService) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -95,57 +95,6 @@ export default class UserController {
 
         const user = await this._userManager.getUserById(userId);
         this.sendTokens(res, user);
-    }
-
-    public async requestTwoFa(req: Request, res: Response, next: NextFunction) {
-        const user = await this._userManager.getUserById(req.authenticatedUser.sub);
-
-        if (!user.isLocalAccount) {
-            return forwardError(next, [{ id: "notLocalAccount" }], HttpStatus.CONFLICT);
-        }
-
-        if (user.twoFaMethod !== TwoFaMethod.none) {
-            return forwardError(next, [{ id: "twoFaAlreadyActivated" }], HttpStatus.CONFLICT);
-        }
-
-        const otpAuthPath = await this._twoFaService.issueHotpOtpAuth(req.authenticatedUser.sub, this._appName);
-
-        res.json({ otpAuthPath: otpAuthPath });
-    }
-
-    public async enableTwoFa(req: Request, res: Response, next: NextFunction) {
-        const userId = req.authenticatedUser.sub;
-        const { password, oneTimePassword } = req.body;
-
-        if (!(await this._twoFaService.verifyHtop(req.authenticatedUser.sub, oneTimePassword))) {
-            return forwardError(next, [{ id: "invalidOneTimePassword" }], HttpStatus.CONFLICT);
-        }
-
-        if (!(await this._userManager.verifyPassword(userId, password))) {
-            return forwardError(next, [{ id: "invalidPassword" }], HttpStatus.FORBIDDEN);
-        }
-
-        await this._userManager.enableHtopFa(userId);
-
-        res.json({ result: true });
-    }
-
-    public async disableTwoFa(req: Request, res: Response, next: NextFunction) {
-        const userId = req.authenticatedUser.sub;
-        const { password, oneTimePassword } = req.body;
-
-        // TODO duplicated validation
-        if (!(await this._twoFaService.verifyHtop(req.authenticatedUser.sub, oneTimePassword))) {
-            return forwardError(next, [{ id: "invalidOneTimePassword" }], HttpStatus.CONFLICT);
-        }
-
-        if (!(await this._userManager.verifyPassword(userId, password))) {
-            return forwardError(next, [{ id: "invalidPassword" }], HttpStatus.FORBIDDEN);
-        }
-
-        await this._userManager.disableHtopFa(userId);
-
-        res.json({ result: true });
     }
 
     private sendTokens(res: Response, user: User) {

@@ -26,6 +26,8 @@ import TokenController from "./controllers/tokenController";
 import TokenRouter from "./routes/tokenRouter";
 import ExternalUserController from "./controllers/externalUserController";
 import ExternalUserRouter from "./routes/externalUserRouter";
+import MfaController from "./controllers/mfaController";
+import MfaRouter from "./routes/mfaRouter";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -101,18 +103,20 @@ async function start() {
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
 
     const serviceController = new ServiceController(config);
-    const userController = new UserController(userManager, jwtService, twoFaService, config.jsonConfig.security.twoFaToken.appName);
+    const userController = new UserController(userManager, jwtService, twoFaService);
     const passwordCtrl = new PasswordController(userManager);
     const emailCtrl = new EmailController(userManager);
     const tokenCtrl = new TokenController(jwtService);
     const externalUserCtrl = new ExternalUserController(userManager, jwtService);
+    const mfaCtrl = new MfaController(userManager, twoFaService, config.jsonConfig.security.twoFaToken.appName);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
-    app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
+    app.use("/api/user", UserRouter.getExpressRouter(userController, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/email", EmailRouter.getExpressRouter(emailCtrl, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/token", TokenRouter.getExpressRouter(tokenCtrl, validator));
     app.use("/api/user/external-login", ExternalUserRouter.getExpressRouter(externalUserCtrl, authMiddleware, validator, config.jsonConfig));
+    app.use("/api/user/mfa", MfaRouter.getExpressRouter(mfaCtrl, authMiddleware, validator, config.jsonConfig));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));
