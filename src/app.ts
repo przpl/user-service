@@ -22,6 +22,8 @@ import PasswordRouter from "./routes/passwordRouter";
 import PasswordController from "./controllers/passwordController";
 import EmailController from "./controllers/emailController";
 import EmailRouter from "./routes/emailRouter";
+import TokenController from "./controllers/tokenController";
+import TokenRouter from "./routes/tokenRouter";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -100,11 +102,13 @@ async function start() {
     const userController = new UserController(userManager, jwtService, twoFaService, config.jsonConfig.security.twoFaToken.appName);
     const passwordCtrl = new PasswordController(userManager);
     const emailCtrl = new EmailController(userManager);
+    const tokenCtrl = new TokenController(jwtService);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/email", EmailRouter.getExpressRouter(emailCtrl, validator, captchaMiddleware, config.jsonConfig));
+    app.use("/api/user/token", TokenRouter.getExpressRouter(tokenCtrl, validator));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));

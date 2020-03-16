@@ -78,10 +78,6 @@ export default class UserRouter {
             );
         }
 
-        router.post("/token/refresh", validator.refreshToken, (req: Request, res: Response, next: NextFunction) =>
-            controller.refreshAccessToken(req, res, next)
-        );
-
         return router;
     }
 }

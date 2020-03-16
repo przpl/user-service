@@ -6,8 +6,7 @@ import { ErrorResponse } from "../interfaces/errorResponse";
 import { UserManager } from "../managers/userManger";
 import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
-import { InvalidJwtTypeException } from "../exceptions/exceptions";
-import { JwtService, RefreshToken } from "../services/jwtService";
+import { JwtService } from "../services/jwtService";
 import { ExternalUser } from "../middleware/passport";
 import { ExternalLoginProvider } from "../dal/entities/externalLogin";
 import { TwoFaMethod } from "../dal/entities/userEntity";
@@ -164,29 +163,6 @@ export default class UserController {
         // TODO notify other services about new user, send data to queue
 
         this.sendTokens(res, user);
-    }
-
-    public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
-        const { refreshToken } = req.body;
-
-        let decoded: RefreshToken;
-        try {
-            decoded = this._jwtService.decodeRefreshToken(refreshToken);
-        } catch (error) {
-            const errors: ErrorResponse[] = [];
-            let responseCode = HttpStatus.BAD_REQUEST;
-            if (error?.message.toLowerCase().includes("invalid signature")) {
-                errors.push({ id: "invalidJwtSignature" });
-            } else if (error instanceof InvalidJwtTypeException) {
-                errors.push({ id: "invalidJwtType" });
-            } else {
-                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
-            }
-            return forwardError(next, errors, responseCode, error);
-        }
-
-        const accessToken = this._jwtService.issueAccessToken(decoded);
-        res.json({ accessToken: accessToken });
     }
 
     private sendTokens(res: Response, user: User) {
