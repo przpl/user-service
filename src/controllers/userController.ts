@@ -71,7 +71,7 @@ export default class UserController {
 
         if (user.twoFaMethod !== TwoFaMethod.none) {
             const tokenTtl = 120;
-            const token = await this._twoFaService.issueToken(user.id, req.ip, tokenTtl);
+            const token = await this._twoFaService.issueLoginToken(user.id, req.ip, tokenTtl);
             const expiresAt = unixTimestamp() + tokenTtl;
             const userProjection = {
                 id: user.id,
@@ -84,15 +84,71 @@ export default class UserController {
     }
 
     public async loginWithTwoFa(req: Request, res: Response, next: NextFunction) {
-        const { twoFaToken, userId } = req.body;
+        const { twoFaToken, oneTimePassword, userId } = req.body;
 
-        const result = await this._twoFaService.verifyToken(userId, twoFaToken, req.ip);
-        if (!result) {
+        if (!(await this._twoFaService.verifyLoginToken(userId, twoFaToken, req.ip))) {
             return forwardError(next, [{ id: "invalid2FaToken" }], HttpStatus.UNAUTHORIZED);
         }
 
+        if (!(await this._twoFaService.verifyHtop(userId, oneTimePassword))) {
+            return forwardError(next, [{ id: "invalidOneTimePassword" }], HttpStatus.UNAUTHORIZED);
+        }
+
+        this._twoFaService.revokeLoginToken(userId);
+
         const user = await this._userManager.getUserById(userId);
         this.sendTokens(res, user);
+    }
+
+    public async requestTwoFa(req: Request, res: Response, next: NextFunction) {
+        const user = await this._userManager.getUserById(req.authenticatedUser.sub);
+
+        if (!user.isLocalAccount) {
+            return forwardError(next, [{ id: "notLocalAccount" }], HttpStatus.CONFLICT);
+        }
+
+        if (user.twoFaMethod !== TwoFaMethod.none) {
+            return forwardError(next, [{ id: "twoFaAlreadyActivated" }], HttpStatus.CONFLICT);
+        }
+
+        const otpAuthPath = await this._twoFaService.issueHotpOtpAuth(req.authenticatedUser.sub);
+
+        res.json({ otpAuthPath: otpAuthPath });
+    }
+
+    public async enableTwoFa(req: Request, res: Response, next: NextFunction) {
+        const userId = req.authenticatedUser.sub;
+        const { password, oneTimePassword } = req.body;
+
+        if (!(await this._twoFaService.verifyHtop(req.authenticatedUser.sub, oneTimePassword))) {
+            return forwardError(next, [{ id: "invalidOneTimePassword" }], HttpStatus.CONFLICT);
+        }
+
+        if (!(await this._userManager.verifyPassword(userId, password))) {
+            return forwardError(next, [{ id: "invalidPassword" }], HttpStatus.FORBIDDEN);
+        }
+
+        await this._userManager.enableHtopFa(userId);
+
+        res.json({ result: true });
+    }
+
+    public async disableTwoFa(req: Request, res: Response, next: NextFunction) {
+        const userId = req.authenticatedUser.sub;
+        const { password, oneTimePassword } = req.body;
+
+        // TODO duplicated validation
+        if (!(await this._twoFaService.verifyHtop(req.authenticatedUser.sub, oneTimePassword))) {
+            return forwardError(next, [{ id: "invalidOneTimePassword" }], HttpStatus.CONFLICT);
+        }
+
+        if (!(await this._userManager.verifyPassword(userId, password))) {
+            return forwardError(next, [{ id: "invalidPassword" }], HttpStatus.FORBIDDEN);
+        }
+
+        await this._userManager.disableHtopFa(userId);
+
+        res.json({ result: true });
     }
 
     public async loginWithExternalProvider(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {

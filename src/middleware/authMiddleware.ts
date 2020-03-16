@@ -40,19 +40,22 @@ export default class AuthMiddleware {
         }
 
         const tokenWithoutBearerPrefix = bearerString.split(" ")[1];
+        if (!tokenWithoutBearerPrefix) {
+            return forwardError(next, [{ id: "missingAccessToken" }], HttpStatus.UNAUTHORIZED);
+        }
+
         try {
             req.authenticatedUser = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
         } catch (error) {
-            const errors: ErrorResponse[] = [];
-            let responseCode = HttpStatus.UNAUTHORIZED;
-            if (error instanceof InvalidJwtTypeException) {
-                errors.push({ id: "invalidJwtType" });
-            } else if (error instanceof ExpiredJwtException) {
-                errors.push({ id: "tokenExpired" });
+            if (error.name === "JsonWebTokenError") {
+                return forwardError(next, [{ id: "invalidJwtSignature" }], HttpStatus.UNAUTHORIZED, error);
+            } else if (error.name === "TokenExpiredError") {
+                return forwardError(next, [{ id: "tokenExpired" }], HttpStatus.UNAUTHORIZED, error);
+            } else if (error instanceof InvalidJwtTypeException) {
+                return forwardError(next, [{ id: "invalidJwtType" }], HttpStatus.UNAUTHORIZED, error);
             } else {
-                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+                return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
             }
-            return forwardError(next, errors, responseCode, error);
         }
 
         next();

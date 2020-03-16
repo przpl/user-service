@@ -24,6 +24,9 @@ export class UserEntity extends BaseEntity {
     @Column({ type: "smallint", default: TwoFaMethod.none })
     twoFaMethod: number;
 
+    @Column({ nullable: true })
+    twoFaSecret: string;
+
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 

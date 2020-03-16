@@ -1,6 +1,6 @@
 import { getRepository } from "typeorm";
 
-import { UserEntity } from "../dal/entities/userEntity";
+import { UserEntity, TwoFaMethod } from "../dal/entities/userEntity";
 import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
@@ -31,7 +31,7 @@ export class UserManager {
 
     public async getUserById(userId: string): Promise<User> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        return { id: user.id, email: user.email, twoFaMethod: user.twoFaMethod };
+        return { id: user.id, email: user.email, twoFaMethod: user.twoFaMethod, isLocalAccount: Boolean(user.passwordHash) };
     }
 
     public async register(email: string, password: string): Promise<User> {
@@ -157,12 +157,29 @@ export class UserManager {
         return true;
     }
 
+    public async enableHtopFa(userId: string) {
+        const user = await this._userRepo.findOne({ where: { id: userId } });
+        user.twoFaMethod = TwoFaMethod.code;
+        await user.save();
+    }
+
+    public async disableHtopFa(userId: string) {
+        const user = await this._userRepo.findOne({ where: { id: userId } });
+        user.twoFaMethod = TwoFaMethod.none;
+        await user.save();
+    }
+
     public getEmailSignature(email: string): string {
         return this._crypto.hmacSignatureHex(email, this._emailSigKey);
     }
 
     public verifyEmailSignature(email: string, signature: string): boolean {
         return this._crypto.verifyHmacSignature(email, signature, this._emailSigKey);
+    }
+
+    public async verifyPassword(userId: string, password: string): Promise<boolean> {
+        const user = await this._userRepo.findOne({ id: userId });
+        return await this._crypto.verifyPassword(password, user.passwordHash);
     }
 
     private isResetCodeExpired(createdAt: Date): boolean {

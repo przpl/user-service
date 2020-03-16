@@ -56,6 +56,26 @@ export default class UserRouter {
             router.post("/login/2fa", validator.loginWithTwoFa, (req: Request, res: Response, next: NextFunction) =>
                 controller.loginWithTwoFa(req, res, next)
             );
+
+            router.get(
+                "/login/2fa",
+                (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+                (req: Request, res: Response, next: NextFunction) => controller.requestTwoFa(req, res, next)
+            );
+
+            router.put(
+                "/login/2fa",
+                validator.enableTwoFa,
+                (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+                (req: Request, res: Response, next: NextFunction) => controller.enableTwoFa(req, res, next)
+            );
+
+            router.delete(
+                "/login/2fa",
+                validator.disbleTwoFa,
+                (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+                (req: Request, res: Response, next: NextFunction) => controller.disableTwoFa(req, res, next)
+            );
         }
 
         router.post(

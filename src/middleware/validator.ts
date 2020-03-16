@@ -21,6 +21,7 @@ const USER_ID_LENGTH = 36;
 const HMAC_256_SIG_LENGTH = 64;
 const PASSWORD_RESET_CODE_LENGTH = 10;
 const TWO_FA_TOKEN_LENGHT = 64;
+const ONE_TIME_PASS_LENGHT = 6;
 
 type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, next: NextFunction) => void))[];
 
@@ -90,6 +91,16 @@ export default class Validator {
             .isHexadecimal()
             .withMessage(ERROR_MSG.isHexadecimal),
     ];
+    private _oneTimePassword: ValidationChain[] = [
+        body("oneTimePassword")
+            .isString()
+            .withMessage(ERROR_MSG.isString)
+            .trim()
+            .isLength({ min: ONE_TIME_PASS_LENGHT, max: ONE_TIME_PASS_LENGHT })
+            .withMessage(ERROR_MSG.isLength)
+            .isNumeric()
+            .withMessage(ERROR_MSG.isHexadecimal),
+    ];
     private _recaptcha: ValidationChain = body("recaptchaKey")
         .isString()
         .withMessage(ERROR_MSG.isString)
@@ -109,6 +120,8 @@ export default class Validator {
     public loginWithGoogle: ValidatorArray = [];
     public loginWithFacebook: ValidatorArray = [];
     public loginWithTwoFa: ValidatorArray = [];
+    public enableTwoFa: ValidatorArray = [];
+    public disbleTwoFa: ValidatorArray = [];
     // #endregion
 
     constructor(jsonConfig: JsonConfig) {
@@ -197,7 +210,9 @@ export default class Validator {
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
         this.loginWithGoogle = [...this._googleTokenId, this.validate];
         this.loginWithFacebook = [...this._facebookAccessToken, this.validate];
-        this.loginWithTwoFa = [...this._twoFaToken, ...this._userId, this.validate];
+        this.loginWithTwoFa = [...this._twoFaToken, ...this._oneTimePassword, ...this._userId, this.validate];
+        this.enableTwoFa = [...this._password, ...this._oneTimePassword, this.validate];
+        this.disbleTwoFa = [...this._password, ...this._oneTimePassword, this.validate];
 
         if (jsonConfig.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(jsonConfig);

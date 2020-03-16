@@ -74,6 +74,7 @@ export class JwtService {
         if (decoded.typ !== JwtType.access) {
             throw new InvalidJwtTypeException("Token is not an access token");
         }
+        // TODO it unecessary
         const now = unixTimestamp();
         if (decoded.exp < now) {
             throw new ExpiredJwtException();
