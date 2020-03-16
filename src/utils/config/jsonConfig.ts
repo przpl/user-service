@@ -21,6 +21,7 @@ export interface JsonConfig {
                 forgotPassword: boolean;
                 resetPassword: boolean;
                 confirmEmail: boolean;
+                resendEmail: boolean;
             };
         };
     };

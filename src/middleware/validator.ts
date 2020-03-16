@@ -115,6 +115,7 @@ export default class Validator {
     public changePassword: ValidatorArray = [];
     public refreshToken: ValidatorArray = [];
     public confirmEmail: ValidatorArray = [];
+    public resendEmail: ValidatorArray = [];
     public forgotPassword: ValidatorArray = [];
     public resetPassword: ValidatorArray = [];
     public loginWithGoogle: ValidatorArray = [];
@@ -206,6 +207,7 @@ export default class Validator {
         this.changePassword = [...this._password, this.validate];
         this.refreshToken = [...this._refreshToken, this.validate];
         this.confirmEmail = [...this._email, ...this._emailSignature, this.validate];
+        this.resendEmail = [...this._email, this.validate];
         this.forgotPassword = [...this._email, this.validate];
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
         this.loginWithGoogle = [...this._googleTokenId, this.validate];

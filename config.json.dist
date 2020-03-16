@@ -17,7 +17,8 @@
                 "login": true,
                 "forgotPassword": true,
                 "resetPassword": true,
-                "confirmEmail": true
+                "confirmEmail": true,
+                "resendEmail": true
             }
         }
     },

@@ -189,23 +189,6 @@ export default class UserController {
         res.json({ accessToken: accessToken });
     }
 
-    // ? JWT should not be issued because broken email confirmation will enable attacker to issue tokens
-    public async confirmEmail(req: Request, res: Response, next: NextFunction) {
-        const { email, signature } = req.body;
-        const sigCorrect = this._userManager.verifyEmailSignature(email, signature);
-        if (!sigCorrect) {
-            return res.json({ result: false });
-        }
-        let result: boolean;
-        try {
-            result = await this._userManager.confirmEmail(email);
-        } catch (error) {
-            return res.json({ result: false });
-        }
-
-        res.json({ result: result });
-    }
-
     private sendTokens(res: Response, user: User) {
         const refreshToken = this._jwtService.issueRefreshToken(user.id);
         const decoded = this._jwtService.decodeRefreshToken(refreshToken);
