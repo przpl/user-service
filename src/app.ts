@@ -18,6 +18,8 @@ import RecaptchaMiddleware from "./middleware/recaptchaMiddleware";
 import { configurePassport } from "./middleware/passport";
 import { TwoFaService } from "./services/twoFaService";
 import { CacheDb } from "./dal/cacheDb";
+import PasswordRouter from "./routes/passwordRouter";
+import PasswordController from "./controllers/passwordController";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -94,9 +96,11 @@ async function start() {
 
     const serviceController = new ServiceController(config);
     const userController = new UserController(userManager, jwtService, twoFaService, config.jsonConfig.security.twoFaToken.appName);
+    const passwordCtrl = new PasswordController(userManager);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
+    app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));
