@@ -7,8 +7,6 @@ import { UserManager } from "../managers/userManger";
 import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { JwtService } from "../services/jwtService";
-import { ExternalUser } from "../middleware/passport";
-import { ExternalLoginProvider } from "../dal/entities/externalLogin";
 import { TwoFaMethod } from "../dal/entities/userEntity";
 import { TwoFaService } from "../services/twoFaService";
 import { unixTimestamp } from "../utils/timeUtils";
@@ -148,21 +146,6 @@ export default class UserController {
         await this._userManager.disableHtopFa(userId);
 
         res.json({ result: true });
-    }
-
-    public async loginWithExternalProvider(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {
-        const externalUser = req.user as ExternalUser;
-
-        let user: User;
-        try {
-            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, provider);
-        } catch (error) {
-            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
-        }
-
-        // TODO notify other services about new user, send data to queue
-
-        this.sendTokens(res, user);
     }
 
     private sendTokens(res: Response, user: User) {
