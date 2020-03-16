@@ -1,18 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
-import { forwardError } from "../utils/expressUtils";
-import { ErrorResponse } from "../interfaces/errorResponse";
-import { UserManager } from "../managers/userManger";
-import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
-import { User } from "../interfaces/user";
-import { JwtService } from "../services/jwtService";
-import { TwoFaMethod } from "../dal/entities/userEntity";
-import { TwoFaService } from "../services/twoFaService";
-import { unixTimestamp } from "../utils/timeUtils";
+import { forwardError } from "../../utils/expressUtils";
+import { ErrorResponse } from "../../interfaces/errorResponse";
+import { UserManager } from "../../managers/userManger";
+import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../../exceptions/userExceptions";
+import { User } from "../../interfaces/user";
+import { JwtService } from "../../services/jwtService";
+import { TwoFaMethod } from "../../dal/entities/userEntity";
+import { TwoFaService } from "../../services/twoFaService";
+import { unixTimestamp } from "../../utils/timeUtils";
+import UserController from "./userController";
 
-export default class UserController {
-    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _twoFaService: TwoFaService) {}
+export default class LocalUserController extends UserController {
+    constructor(private _userManager: UserManager, jwtService: JwtService, private _twoFaService: TwoFaService) {
+        super(jwtService);
+    }
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -95,18 +98,5 @@ export default class UserController {
 
         const user = await this._userManager.getUserById(userId);
         this.sendTokens(res, user);
-    }
-
-    private sendTokens(res: Response, user: User) {
-        const refreshToken = this._jwtService.issueRefreshToken(user.id);
-        const decoded = this._jwtService.decodeRefreshToken(refreshToken);
-        const accessToken = this._jwtService.issueAccessToken(decoded);
-
-        const userProjection = {
-            id: user.id,
-            email: user.email,
-        };
-
-        res.json({ user: userProjection, refreshToken: refreshToken, accessToken: accessToken });
     }
 }

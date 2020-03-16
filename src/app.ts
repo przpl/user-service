@@ -4,8 +4,8 @@ import cors from "cors";
 import { createConnection, Connection } from "typeorm";
 
 import Config from "./utils/config/config";
-import UserRouter from "./routes/userRouter";
-import UserController from "./controllers/userController";
+import LocalUserRouter from "./routes/user/localUserRouter";
+import LocalUserController from "./controllers/user/localUserController";
 import { handleNotFoundError, handleError } from "./utils/expressUtils";
 import ServiceRouter from "./routes/serviceRouter";
 import { UserManager } from "./managers/userManger";
@@ -24,8 +24,8 @@ import EmailController from "./controllers/emailController";
 import EmailRouter from "./routes/emailRouter";
 import TokenController from "./controllers/tokenController";
 import TokenRouter from "./routes/tokenRouter";
-import ExternalUserController from "./controllers/externalUserController";
-import ExternalUserRouter from "./routes/externalUserRouter";
+import ExternalUserController from "./controllers/user/externalUserController";
+import ExternalUserRouter from "./routes/user/externalUserRouter";
 import MfaController from "./controllers/mfaController";
 import MfaRouter from "./routes/mfaRouter";
 
@@ -102,20 +102,20 @@ async function start() {
 
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
 
-    const serviceController = new ServiceController(config);
-    const userController = new UserController(userManager, jwtService, twoFaService);
+    const serviceCtrl = new ServiceController(config);
+    const localUserCtrl = new LocalUserController(userManager, jwtService, twoFaService);
+    const externalUserCtrl = new ExternalUserController(userManager, jwtService);
     const passwordCtrl = new PasswordController(userManager);
     const emailCtrl = new EmailController(userManager);
     const tokenCtrl = new TokenController(jwtService);
-    const externalUserCtrl = new ExternalUserController(userManager, jwtService);
     const mfaCtrl = new MfaController(userManager, twoFaService, config.jsonConfig.security.twoFaToken.appName);
 
-    app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
-    app.use("/api/user", UserRouter.getExpressRouter(userController, validator, captchaMiddleware, config.jsonConfig));
+    app.use("/api/service", ServiceRouter.getExpressRouter(serviceCtrl));
+    app.use("/api/user", LocalUserRouter.getExpressRouter(localUserCtrl, validator, captchaMiddleware, config.jsonConfig));
+    app.use("/api/user/external", ExternalUserRouter.getExpressRouter(externalUserCtrl, authMiddleware, validator, config.jsonConfig));
     app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/email", EmailRouter.getExpressRouter(emailCtrl, validator, captchaMiddleware, config.jsonConfig));
     app.use("/api/user/token", TokenRouter.getExpressRouter(tokenCtrl, validator));
-    app.use("/api/user/external-login", ExternalUserRouter.getExpressRouter(externalUserCtrl, authMiddleware, validator, config.jsonConfig));
     app.use("/api/user/mfa", MfaRouter.getExpressRouter(mfaCtrl, authMiddleware, validator, config.jsonConfig));
 
     app.use((req, res, next) => handleNotFoundError(res));

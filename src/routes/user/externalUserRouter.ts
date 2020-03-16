@@ -1,10 +1,10 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 
-import Validator from "../middleware/validator";
-import AuthMiddleware from "../middleware/authMiddleware";
-import { JsonConfig } from "../utils/config/jsonConfig";
-import { ExternalLoginProvider } from "../dal/entities/externalLogin";
-import ExternalUserController from "../controllers/externalUserController";
+import Validator from "../../middleware/validator";
+import AuthMiddleware from "../../middleware/authMiddleware";
+import { JsonConfig } from "../../utils/config/jsonConfig";
+import { ExternalLoginProvider } from "../../dal/entities/externalLogin";
+import ExternalUserController from "../../controllers/user/externalUserController";
 
 export default class ExternalUserRouter {
     static getExpressRouter(controller: ExternalUserController, auth: AuthMiddleware, validator: Validator, jsonConfig: JsonConfig): Router {
