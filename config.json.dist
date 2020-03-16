@@ -4,7 +4,10 @@
         "port": 6379
     },
     "security": {
-        "twoFaToken": true,
+        "twoFaToken": {
+            "enabled": true,
+            "appName": "App Name for Google Authenticator"
+        },
         "bcryptRounds": 12,
         "reCaptcha": {
             "enabled": true,

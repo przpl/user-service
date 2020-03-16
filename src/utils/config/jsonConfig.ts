@@ -7,7 +7,10 @@ export interface JsonConfig {
         port: number;
     };
     security: {
-        twoFaToken: boolean;
+        twoFaToken: {
+            enabled: boolean;
+            appName: string;
+        };
         bcryptRounds: number;
         reCaptcha: {
             enabled: boolean;

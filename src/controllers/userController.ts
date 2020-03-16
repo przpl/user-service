@@ -15,7 +15,7 @@ import { TwoFaService } from "../services/twoFaService";
 import { unixTimestamp } from "../utils/timeUtils";
 
 export default class UserController {
-    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _twoFaService: TwoFaService) {}
+    constructor(private _userManager: UserManager, private _jwtService: JwtService, private _twoFaService: TwoFaService, private _appName: string) {}
 
     public async register(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body;
@@ -111,7 +111,7 @@ export default class UserController {
             return forwardError(next, [{ id: "twoFaAlreadyActivated" }], HttpStatus.CONFLICT);
         }
 
-        const otpAuthPath = await this._twoFaService.issueHotpOtpAuth(req.authenticatedUser.sub);
+        const otpAuthPath = await this._twoFaService.issueHotpOtpAuth(req.authenticatedUser.sub, this._appName);
 
         res.json({ otpAuthPath: otpAuthPath });
     }

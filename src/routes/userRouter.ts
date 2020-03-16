@@ -52,7 +52,7 @@ export default class UserRouter {
             );
         }
 
-        if (jsonConfig.security.twoFaToken) {
+        if (jsonConfig.security.twoFaToken.enabled) {
             router.post("/login/2fa", validator.loginWithTwoFa, (req: Request, res: Response, next: NextFunction) =>
                 controller.loginWithTwoFa(req, res, next)
             );

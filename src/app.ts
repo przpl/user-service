@@ -93,7 +93,7 @@ async function start() {
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
 
     const serviceController = new ServiceController(config);
-    const userController = new UserController(userManager, jwtService, twoFaService);
+    const userController = new UserController(userManager, jwtService, twoFaService, config.jsonConfig.security.twoFaToken.appName);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceController));
     app.use("/api/user", UserRouter.getExpressRouter(userController, authMiddleware, validator, captchaMiddleware, config.jsonConfig));

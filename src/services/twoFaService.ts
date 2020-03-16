@@ -37,8 +37,8 @@ export class TwoFaService {
         await this._cache.removeTwoFaToken(userId);
     }
 
-    public async issueHotpOtpAuth(userId: string): Promise<string> {
-        const secret = speakeasy.generateSecret();
+    public async issueHotpOtpAuth(userId: string, name = "AppName"): Promise<string> {
+        const secret = speakeasy.generateSecret({ name: name });
         const user = await this._userRepo.findOne({ id: userId });
         user.twoFaSecret = secret.base32;
         await user.save();
