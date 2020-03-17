@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 
-import { forwardError } from "../../utils/expressUtils";
+import { forwardInternalError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
 import { User } from "../../interfaces/user";
 import { JwtService } from "../../services/jwtService";
@@ -21,7 +20,7 @@ export default class ExternalUserController extends UserController {
         try {
             user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, provider);
         } catch (error) {
-            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
+            return forwardInternalError(next, error);
         }
 
         // TODO notify other services about new user, send data to queue

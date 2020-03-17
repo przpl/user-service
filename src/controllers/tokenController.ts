@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
-import { forwardError } from "../utils/expressUtils";
-import { ErrorResponse } from "../interfaces/errorResponse";
+import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
 import { JwtService, RefreshToken } from "../services/jwtService";
 
@@ -16,16 +15,12 @@ export default class TokenController {
         try {
             decoded = this._jwtService.decodeRefreshToken(refreshToken);
         } catch (error) {
-            const errors: ErrorResponse[] = [];
-            let responseCode = HttpStatus.BAD_REQUEST;
             if (error?.message.toLowerCase().includes("invalid signature")) {
-                errors.push({ id: "invalidJwtSignature" });
+                return forwardError(next, "invalidJwtSignature", HttpStatus.BAD_REQUEST);
             } else if (error instanceof InvalidJwtTypeException) {
-                errors.push({ id: "invalidJwtType" });
-            } else {
-                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+                return forwardError(next, "invalidJwtType", HttpStatus.BAD_REQUEST);
             }
-            return forwardError(next, errors, responseCode, error);
+            return forwardInternalError(next, error);
         }
 
         const accessToken = this._jwtService.issueAccessToken(decoded);

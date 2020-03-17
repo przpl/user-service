@@ -7,9 +7,10 @@ export interface JsonConfig {
         port: number;
     };
     security: {
-        twoFaToken: {
+        mfa: {
             enabled: boolean;
             appName: string;
+            loginTokenTTLSeconds: number;
         };
         bcryptRounds: number;
         reCaptcha: {
@@ -37,7 +38,7 @@ export interface JsonConfig {
         };
     };
     passwordReset: {
-        codeExpirationTimeInMinutes: number;
+        codeTTLMinutes: number;
     };
     commonFields: {
         email: FieldConfig;

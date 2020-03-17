@@ -1,12 +1,23 @@
 import { Response, NextFunction } from "express";
-import { isArray } from "util";
+import { isArray, isString } from "util";
 import HttpStatus from "http-status-codes";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
 
-export function forwardError(next: NextFunction, errors: ErrorResponse[], responseStatusCode: number, originalError?: any) {
+export function forwardInternalError(next: NextFunction, originalError: object) {
+    forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, originalError);
+}
+
+export function forwardError(next: NextFunction, errors: ErrorResponse[] | string, responseStatusCode: number, originalError?: object) {
+    let errorsArray: ErrorResponse[] = [];
+    if (isString(errors)) {
+        errorsArray = [{ id: errors }];
+    } else {
+        errorsArray = errors;
+    }
+
     const error = {
-        responseErrorsList: errors,
+        responseErrorsList: errorsArray,
         responseStatusCode: responseStatusCode,
         originalError: originalError,
     };

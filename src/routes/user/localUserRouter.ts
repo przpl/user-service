@@ -24,9 +24,9 @@ export default class LocalUserRouter {
             (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next)
         );
 
-        if (jsonConfig.security.twoFaToken.enabled) {
-            router.post("/login/mfa", validator.loginWithTwoFa, (req: Request, res: Response, next: NextFunction) =>
-                controller.loginWithTwoFa(req, res, next)
+        if (jsonConfig.security.mfa.enabled) {
+            router.post("/login/mfa", validator.loginWithMfa, (req: Request, res: Response, next: NextFunction) =>
+                controller.loginWithMfa(req, res, next)
             );
         }
 

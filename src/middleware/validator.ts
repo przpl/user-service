@@ -53,6 +53,7 @@ export default class Validator {
     private _refreshToken: ValidationChain[] = [];
     private _register: ValidationChain[] = [];
     private _weakPassword: ValidationChain[] = [];
+    private _oldPassword: ValidationChain[] = [];
     private _resetPassword: ValidationChain[] = [
         body("code")
             .isString()
@@ -81,8 +82,8 @@ export default class Validator {
             .isLength({ min: 1, max: 1000 })
             .withMessage(ERROR_MSG.isLength),
     ];
-    private _twoFaToken: ValidationChain[] = [
-        body("twoFaToken")
+    private _mfaLoginToken: ValidationChain[] = [
+        body("mfaLoginToken")
             .isString()
             .withMessage(ERROR_MSG.isString)
             .trim()
@@ -120,9 +121,9 @@ export default class Validator {
     public resetPassword: ValidatorArray = [];
     public loginWithGoogle: ValidatorArray = [];
     public loginWithFacebook: ValidatorArray = [];
-    public loginWithTwoFa: ValidatorArray = [];
-    public enableTwoFa: ValidatorArray = [];
-    public disbleTwoFa: ValidatorArray = [];
+    public loginWithMfa: ValidatorArray = [];
+    public enableMfa: ValidatorArray = [];
+    public disbleMfa: ValidatorArray = [];
     // #endregion
 
     constructor(jsonConfig: JsonConfig) {
@@ -175,6 +176,14 @@ export default class Validator {
                 .withMessage(ERROR_MSG.isLength)
         );
 
+        this._oldPassword.push(
+            body("oldPassword")
+                .isString()
+                .withMessage(ERROR_MSG.isString)
+                .isLength({ min: 1, max: config.password.isLength.max })
+                .withMessage(ERROR_MSG.isLength)
+        );
+
         this._refreshToken.push(
             body("refreshToken")
                 .isString()
@@ -204,7 +213,7 @@ export default class Validator {
 
         this.login = [...this._email, ...this._weakPassword, this.validate];
         this.register = [...this._email, ...this._password, ...this._register, this.validate];
-        this.changePassword = [...this._password, this.validate];
+        this.changePassword = [...this._oldPassword, ...this._password, this.validate];
         this.refreshToken = [...this._refreshToken, this.validate];
         this.confirmEmail = [...this._email, ...this._emailSignature, this.validate];
         this.resendEmail = [...this._email, this.validate];
@@ -212,9 +221,9 @@ export default class Validator {
         this.resetPassword = [...this._resetPassword, ...this._password, this.validate];
         this.loginWithGoogle = [...this._googleTokenId, this.validate];
         this.loginWithFacebook = [...this._facebookAccessToken, this.validate];
-        this.loginWithTwoFa = [...this._twoFaToken, ...this._oneTimePassword, ...this._userId, this.validate];
-        this.enableTwoFa = [...this._password, ...this._oneTimePassword, this.validate];
-        this.disbleTwoFa = [...this._password, ...this._oneTimePassword, this.validate];
+        this.loginWithMfa = [...this._mfaLoginToken, ...this._oneTimePassword, ...this._userId, this.validate];
+        this.enableMfa = [...this._password, ...this._oneTimePassword, this.validate];
+        this.disbleMfa = [...this._password, ...this._oneTimePassword, this.validate];
 
         if (jsonConfig.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(jsonConfig);

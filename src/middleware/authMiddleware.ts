@@ -3,9 +3,9 @@ import HttpStatus from "http-status-codes";
 import passport from "passport";
 
 import { JwtService } from "../services/jwtService";
-import { forwardError } from "../utils/expressUtils";
+import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { ErrorResponse } from "../interfaces/errorResponse";
-import { InvalidJwtTypeException, ExpiredJwtException } from "../exceptions/exceptions";
+import { InvalidJwtTypeException } from "../exceptions/exceptions";
 
 export default class AuthMiddleware {
     private _googleAuthDelegate = passport.authenticate("google-id-token", { session: false });
@@ -54,7 +54,7 @@ export default class AuthMiddleware {
             } else if (error instanceof InvalidJwtTypeException) {
                 return forwardError(next, [{ id: "invalidJwtType" }], HttpStatus.UNAUTHORIZED, error);
             } else {
-                return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
+                return forwardInternalError(next, error);
             }
         }
 
@@ -63,7 +63,7 @@ export default class AuthMiddleware {
 
     private handleExternalLogin(next: NextFunction, error: any) {
         if (error) {
-            return forwardError(next, [{ id: "externalLoginFailed" }], HttpStatus.INTERNAL_SERVER_ERROR, error);
+            return forwardError(next, "externalLoginFailed", HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
         next();
     }

@@ -16,7 +16,7 @@ import AuthMiddleware from "./middleware/authMiddleware";
 import { CryptoService } from "./services/cryptoService";
 import RecaptchaMiddleware from "./middleware/recaptchaMiddleware";
 import { configurePassport } from "./middleware/passport";
-import { TwoFaService } from "./services/twoFaService";
+import { MfaService } from "./services/mfaService";
 import { CacheDb } from "./dal/cacheDb";
 import PasswordRouter from "./routes/passwordRouter";
 import PasswordController from "./controllers/passwordController";
@@ -89,7 +89,7 @@ async function start() {
     const cacheDb = new CacheDb(config.jsonConfig.redis.host, config.jsonConfig.redis.port);
     const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
     const cryptoService = new CryptoService(config.jsonConfig.security.bcryptRounds);
-    const twoFaService = new TwoFaService(cacheDb, cryptoService);
+    const mfaService = new MfaService(cacheDb, cryptoService, config.jsonConfig.security.mfa.loginTokenTTLSeconds);
 
     const validator = new Validator(config.jsonConfig);
     const authMiddleware = new AuthMiddleware(jwtService);
@@ -100,15 +100,15 @@ async function start() {
         config.jsonConfig.security.reCaptcha.ssl
     );
 
-    const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeExpirationTimeInMinutes);
+    const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeTTLMinutes);
 
     const serviceCtrl = new ServiceController(config);
-    const localUserCtrl = new LocalUserController(userManager, jwtService, twoFaService);
+    const localUserCtrl = new LocalUserController(userManager, jwtService, mfaService);
     const externalUserCtrl = new ExternalUserController(userManager, jwtService);
     const passwordCtrl = new PasswordController(userManager);
     const emailCtrl = new EmailController(userManager);
     const tokenCtrl = new TokenController(jwtService);
-    const mfaCtrl = new MfaController(userManager, twoFaService, config.jsonConfig.security.twoFaToken.appName);
+    const mfaCtrl = new MfaController(userManager, mfaService, config.jsonConfig);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceCtrl));
     app.use("/api/user", LocalUserRouter.getExpressRouter(localUserCtrl, validator, captchaMiddleware, config.jsonConfig));

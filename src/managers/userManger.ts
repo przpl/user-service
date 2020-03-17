@@ -1,6 +1,6 @@
 import { getRepository } from "typeorm";
 
-import { UserEntity, TwoFaMethod } from "../dal/entities/userEntity";
+import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
@@ -31,7 +31,7 @@ export class UserManager {
 
     public async getUserById(userId: string): Promise<User> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        return { id: user.id, email: user.email, twoFaMethod: user.twoFaMethod, isLocalAccount: Boolean(user.passwordHash) };
+        return { id: user.id, email: user.email, mfaMethod: user.mfaMethod, isLocalAccount: Boolean(user.passwordHash) };
     }
 
     public async register(email: string, password: string): Promise<User> {
@@ -68,7 +68,7 @@ export class UserManager {
             throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
-        return { id: user.id, email: user.email, twoFaMethod: user.twoFaMethod };
+        return { id: user.id, email: user.email, mfaMethod: user.mfaMethod };
     }
 
     public async loginOrRegisterExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<User> {
@@ -159,13 +159,13 @@ export class UserManager {
 
     public async enableHtopFa(userId: string) {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        user.twoFaMethod = TwoFaMethod.code;
+        user.mfaMethod = MfaMethod.code;
         await user.save();
     }
 
     public async disableHtopFa(userId: string) {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        user.twoFaMethod = TwoFaMethod.none;
+        user.mfaMethod = MfaMethod.none;
         await user.save();
     }
 

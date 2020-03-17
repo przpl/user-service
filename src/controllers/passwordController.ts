@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
-import { forwardError } from "../utils/expressUtils";
-import { ErrorResponse } from "../interfaces/errorResponse";
+import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { UserManager } from "../managers/userManger";
 import { UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
@@ -16,13 +15,10 @@ export default class PasswordController {
         try {
             await this._userManager.changePassword(req.authenticatedUser.sub, oldPassword, password);
         } catch (error) {
-            const errors: ErrorResponse[] = [];
-            let responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             if (error instanceof InvalidPasswordException) {
-                errors.push({ id: "invalidOldPassword" });
-                responseCode = HttpStatus.UNAUTHORIZED;
+                return forwardError(next, "invalidOldPassword", HttpStatus.UNAUTHORIZED);
             }
-            return forwardError(next, errors, responseCode, error);
+            return forwardInternalError(next, error);
         }
 
         res.json({ result: true });
@@ -39,7 +35,7 @@ export default class PasswordController {
             } else if (error instanceof UserNotConfirmedException) {
                 return res.json({ result: true });
             }
-            return forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, error);
+            return forwardInternalError(next, error);
         }
 
         res.json({ result: true });
@@ -52,16 +48,12 @@ export default class PasswordController {
         try {
             await this._userManager.resetPassword(code, password);
         } catch (error) {
-            const errors: ErrorResponse[] = [];
-            let responseCode = HttpStatus.BAD_REQUEST;
             if (error instanceof UserNotExistsException) {
-                errors.push({ id: "invalidCode" });
+                return forwardError(next, "invalidCode", HttpStatus.FORBIDDEN);
             } else if (error instanceof ExpiredResetCodeException) {
-                errors.push({ id: "codeExpired" });
-            } else {
-                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+                return forwardError(next, "codeExpired", HttpStatus.BAD_REQUEST);
             }
-            return forwardError(next, errors, responseCode, error);
+            return forwardInternalError(next, error);
         }
 
         res.json({ result: true });

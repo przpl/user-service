@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
-export enum TwoFaMethod {
+export enum MfaMethod {
     none = 0,
     code = 1,
     email = 2,
@@ -21,11 +21,11 @@ export class UserEntity extends BaseEntity {
     @Column({ default: false })
     emailConfirmed: boolean;
 
-    @Column({ type: "smallint", default: TwoFaMethod.none })
-    twoFaMethod: number;
+    @Column({ type: "smallint", default: MfaMethod.none })
+    mfaMethod: number;
 
     @Column({ nullable: true })
-    twoFaSecret: string;
+    mfaSecret: string;
 
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;

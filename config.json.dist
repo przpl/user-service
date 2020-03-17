@@ -4,9 +4,10 @@
         "port": 6379
     },
     "security": {
-        "twoFaToken": {
+        "mfa": {
             "enabled": true,
-            "appName": "App Name for Google Authenticator"
+            "appName": "App Name for Google Authenticator",
+            "loginTokenTTLSeconds": 300
         },
         "bcryptRounds": 12,
         "reCaptcha": {
@@ -34,7 +35,7 @@
         }
     },
     "passwordReset": {
-        "codeExpirationTimeInMinutes": 1440
+        "codeTTLMinutes": 1440
     },
     "commonFields": {
         "email": {

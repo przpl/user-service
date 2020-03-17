@@ -1,8 +1,8 @@
-import { TwoFaMethod } from "../dal/entities/userEntity";
+import { MfaMethod } from "../dal/entities/userEntity";
 
 export interface User {
     id: string;
     email: string;
-    twoFaMethod?: TwoFaMethod;
+    mfaMethod?: MfaMethod;
     isLocalAccount?: boolean;
 }
