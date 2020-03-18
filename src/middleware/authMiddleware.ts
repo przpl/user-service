@@ -4,7 +4,6 @@ import passport from "passport";
 
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
-import { ErrorResponse } from "../interfaces/errorResponse";
 import { InvalidJwtTypeException } from "../exceptions/exceptions";
 
 export default class AuthMiddleware {
@@ -28,34 +27,31 @@ export default class AuthMiddleware {
         const accessToken = req.body.accessToken;
         delete req.body.accessToken;
         req.body.access_token = accessToken;
-
         this._facebookAuthDelegate(req, res, (err: any) => this.handleExternalLogin(next, err));
     }
 
     public authJwt(req: Request, res: Response, next: NextFunction) {
         const bearerString = req.get("Authorization");
         if (!bearerString) {
-            const errors: ErrorResponse[] = [{ id: "missingAuthorizationHeader" }];
-            return forwardError(next, errors, HttpStatus.UNAUTHORIZED);
+            return forwardError(next, "missingAuthorizationHeader", HttpStatus.UNAUTHORIZED);
         }
 
         const tokenWithoutBearerPrefix = bearerString.split(" ")[1];
         if (!tokenWithoutBearerPrefix) {
-            return forwardError(next, [{ id: "missingAccessToken" }], HttpStatus.UNAUTHORIZED);
+            return forwardError(next, "missingAccessToken", HttpStatus.UNAUTHORIZED);
         }
 
         try {
             req.authenticatedUser = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
         } catch (error) {
             if (error.name === "JsonWebTokenError") {
-                return forwardError(next, [{ id: "invalidJwtSignature" }], HttpStatus.UNAUTHORIZED, error);
+                return forwardError(next, "invalidJwtSignature", HttpStatus.UNAUTHORIZED);
             } else if (error.name === "TokenExpiredError") {
-                return forwardError(next, [{ id: "tokenExpired" }], HttpStatus.UNAUTHORIZED, error);
+                return forwardError(next, "tokenExpired", HttpStatus.UNAUTHORIZED);
             } else if (error instanceof InvalidJwtTypeException) {
-                return forwardError(next, [{ id: "invalidJwtType" }], HttpStatus.UNAUTHORIZED, error);
-            } else {
-                return forwardInternalError(next, error);
+                return forwardError(next, "invalidJwtType", HttpStatus.UNAUTHORIZED);
             }
+            return forwardInternalError(next, error);
         }
 
         next();

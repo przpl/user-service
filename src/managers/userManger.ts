@@ -8,8 +8,7 @@ import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
-
-const PASS_RESET_CODE_LENGTH = 10;
+import { PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
 
 export class UserManager {
     private _userRepo = getRepository(UserEntity);
@@ -31,7 +30,7 @@ export class UserManager {
 
     public async getUserById(userId: string): Promise<User> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        return { id: user.id, email: user.email, mfaMethod: user.mfaMethod, isLocalAccount: Boolean(user.passwordHash) };
+        return this.toUser(user);
     }
 
     public async register(email: string, password: string): Promise<User> {
@@ -49,7 +48,7 @@ export class UserManager {
             throw error;
         }
 
-        return { id: user.id, email: user.email };
+        return this.toUser(user);
     }
 
     public async login(email: string, password: string): Promise<User> {
@@ -68,27 +67,18 @@ export class UserManager {
             throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
-        return { id: user.id, email: user.email, mfaMethod: user.mfaMethod };
+        return this.toUser(user);
     }
 
     public async loginOrRegisterExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<User> {
-        const loginInDb = await this._externalLoginRepo.findOne({ externalUserId: externalUserId, provider: loginProvider }); // make sure there aren't two different users across platforms with same user id
+        const loginInDb = await this._externalLoginRepo.findOne({ externalUserId: externalUserId, provider: loginProvider }); // sarch also by provider to make sure there aren't two different users across platforms with same user id
         if (loginInDb) {
             const userInDb = await this._userRepo.findOne({ id: loginInDb.userId });
-            return { id: userInDb.id, email: userInDb.email };
+            return this.toUser(userInDb);
         }
 
-        // TODO use transaciton, make sure user and externalLogin are always created together
-        const user = new UserEntity();
-        await user.save();
-
-        const login = new ExternalLoginEntity();
-        login.provider = loginProvider;
-        login.externalUserId = externalUserId;
-        login.userId = user.id;
-        await login.save();
-
-        return { id: user.id, email: null };
+        const user = await this.registerExternalUser(externalUserId, loginProvider);
+        return this.toUser(user);
     }
 
     public async changePassword(id: string, oldPassword: string, newPassword: string) {
@@ -129,7 +119,7 @@ export class UserManager {
             throw new UserNotConfirmedException();
         }
 
-        const code = this._crypto.randomHex(PASS_RESET_CODE_LENGTH);
+        const code = this._crypto.randomHex(PASSWORD_RESET_CODE_LENGTH);
         const passResetInDb = await this._passResetRepo.findOne({ where: { userId: user.id } });
         if (passResetInDb) {
             passResetInDb.code = code;
@@ -182,9 +172,31 @@ export class UserManager {
         return await this._crypto.verifyPassword(password, user.passwordHash);
     }
 
+    private async registerExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<UserEntity> {
+        // TODO use transaciton, make sure user and externalLogin are always created together
+        const user = new UserEntity();
+        await user.save();
+
+        const login = new ExternalLoginEntity();
+        login.provider = loginProvider;
+        login.externalUserId = externalUserId;
+        login.userId = user.id;
+        await login.save();
+        return user;
+    }
+
     private isResetCodeExpired(createdAt: Date): boolean {
         const secondsPerMinute = 60;
         const inSeconds = toUnixTimestamp(createdAt);
         return inSeconds + this._passResetCodeTTLMinutes * secondsPerMinute < unixTimestamp();
+    }
+
+    private toUser(entity: UserEntity): User {
+        return {
+            id: entity.id,
+            email: entity.email,
+            mfaMethod: entity.mfaMethod,
+            isLocalAccount: Boolean(entity.passwordHash),
+        };
     }
 }

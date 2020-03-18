@@ -38,7 +38,7 @@ export default class LocalUserController extends UserController {
         //     newUser[fieldName] = req.body[fieldName];
         // }
 
-        res.json({ user });
+        res.json({ user: this.mapUser(user) });
     }
 
     public async login(req: Request, res: Response, next: NextFunction) {
@@ -81,7 +81,6 @@ export default class LocalUserController extends UserController {
 
     private async sendMfaLoginToken(req: Request, res: Response, user: User) {
         const response = await this._mfaService.issueLoginToken(user.id, req.ip);
-        const userProjection = { id: user.id, email: user.email };
-        return res.json({ user: userProjection, mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
+        return res.json({ user: this.mapUser(user), mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
     }
 }

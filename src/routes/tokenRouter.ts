@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 
-import Validator from "../middleware/validator";
+import Validator from "../middleware/validator/validator";
 import TokenController from "../controllers/tokenController";
 
 export default class TokenRouter {

@@ -24,13 +24,13 @@ export class MfaService {
 
     public async issueLoginToken(userId: string, ip: string): Promise<{ token: string; expiresAt: number }> {
         const token = this._cryptoService.randomHex(64);
-        await this._cache.setMfaToken(userId, token, ip, this._mfaLoginTTLSeconds);
+        await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTLSeconds);
         const expiresAt = unixTimestamp() + this._mfaLoginTTLSeconds;
         return { token: token, expiresAt: expiresAt };
     }
 
     public async verifyLoginToken(userId: string, token: string, ip: string): Promise<boolean> {
-        const twoFaToken = await this._cache.getMfaToken(userId);
+        const twoFaToken = await this._cache.getMfaLoginToken(userId);
         if (!twoFaToken) {
             return false;
         }
@@ -39,7 +39,7 @@ export class MfaService {
     }
 
     public async revokeLoginToken(userId: string) {
-        await this._cache.removeMfaToken(userId);
+        await this._cache.removeMfaLoginToken(userId);
     }
 
     public async issueHotpOtpAuth(userId: string, name = "AppName"): Promise<string> {

@@ -11,7 +11,7 @@ import ServiceRouter from "./routes/serviceRouter";
 import { UserManager } from "./managers/userManger";
 import ServiceController from "./controllers/serviceController";
 import { JwtService } from "./services/jwtService";
-import Validator from "./middleware/validator";
+import Validator from "./middleware/validator/validator";
 import AuthMiddleware from "./middleware/authMiddleware";
 import { CryptoService } from "./services/cryptoService";
 import RecaptchaMiddleware from "./middleware/recaptchaMiddleware";

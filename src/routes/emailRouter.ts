@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 
-import Validator from "../middleware/validator";
+import Validator from "../middleware/validator/validator";
 import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
 import { JsonConfig } from "../utils/config/jsonConfig";
 import EmailController from "../controllers/emailController";

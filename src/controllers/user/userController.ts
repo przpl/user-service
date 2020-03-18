@@ -11,11 +11,13 @@ export default abstract class UserController {
         const decoded = this._jwtService.decodeRefreshToken(refreshToken);
         const accessToken = this._jwtService.issueAccessToken(decoded);
 
-        const userProjection = {
+        res.json({ user: this.mapUser(user), refreshToken: refreshToken, accessToken: accessToken });
+    }
+
+    protected mapUser(user: User) {
+        return {
             id: user.id,
             email: user.email,
         };
-
-        res.json({ user: userProjection, refreshToken: refreshToken, accessToken: accessToken });
     }
 }

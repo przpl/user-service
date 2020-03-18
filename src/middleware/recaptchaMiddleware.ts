@@ -31,24 +31,16 @@ export default class RecaptchaMiddleware {
         try {
             await this._reCaptcha.validate(recaptchaKey);
         } catch (error) {
-            const errors: ErrorResponse[] = [];
-            let responseCode = HttpStatus.BAD_REQUEST;
             if (isArray(error)) {
                 const captchaError = error[0];
                 if (captchaError === "invalid-input-response") {
-                    errors.push({ id: "invalidCaptchaResponse" });
+                    return forwardError(next, "invalidCaptchaResponse", HttpStatus.BAD_REQUEST);
                 } else if (captchaError === "timeout-or-duplicate") {
-                    errors.push({ id: "timeoutOrDuplicateCaptcha" });
-                } else {
-                    errors.push({ id: "captchaValidationFailed" });
-                    responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
+                    return forwardError(next, "timeoutOrDuplicateCaptcha", HttpStatus.BAD_REQUEST);
                 }
-            } else {
-                errors.push({ id: "captchaValidationFailed" });
-                responseCode = HttpStatus.INTERNAL_SERVER_ERROR;
             }
 
-            return forwardError(next, errors, responseCode, error);
+            return forwardError(next, "captchaValidationFailed", HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
 
         next();

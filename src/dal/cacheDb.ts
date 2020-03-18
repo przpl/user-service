@@ -7,7 +7,7 @@ enum KeyFlags {
     onlySetIfExist = "XX",
 }
 
-export interface MfaToken {
+export interface MfaLoginToken {
     token: string;
     ip: string;
 }
@@ -19,8 +19,8 @@ export class CacheDb {
         this._client = redis.createClient({ host: host, port: port, db: dbIndex });
     }
 
-    public setMfaToken(userId: string, token: string, ip: string, expireTimeSeconds: number) {
-        const tokenObj: MfaToken = { token: token, ip: ip };
+    public setMfaLoginToken(userId: string, token: string, ip: string, expireTimeSeconds: number) {
+        const tokenObj: MfaLoginToken = { token: token, ip: ip };
         return new Promise((resolve, reject) => {
             this._client.SET(userId, JSON.stringify(tokenObj), KeyFlags.expireSeconds, expireTimeSeconds, (err, reply) => {
                 if (err) {
@@ -32,20 +32,20 @@ export class CacheDb {
         });
     }
 
-    public getMfaToken(userId: string): Promise<MfaToken> {
+    public getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
         return new Promise((resolve, reject) => {
             this._client.GET(userId, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
                 }
-                const token = JSON.parse(reply) as MfaToken;
+                const token = JSON.parse(reply) as MfaLoginToken;
                 resolve(token);
             });
         });
     }
 
-    public removeMfaToken(userId: string): Promise<number> {
+    public removeMfaLoginToken(userId: string): Promise<number> {
         return new Promise((resolve, reject) => {
             this._client.del(userId, (err, reply) => {
                 if (err) {

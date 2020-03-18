@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 
 import LocalUserController from "../../controllers/user/localUserController";
-import Validator from "../../middleware/validator";
+import Validator from "../../middleware/validator/validator";
 import RecaptchaMiddleware from "../../middleware/recaptchaMiddleware";
 import { JsonConfig } from "../../utils/config/jsonConfig";
 

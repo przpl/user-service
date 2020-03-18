@@ -5,13 +5,6 @@ export class InvalidJwtTypeException extends Error {
     }
 }
 
-export class ExpiredJwtException extends Error {
-    constructor(message?: string) {
-        super(message);
-        Object.setPrototypeOf(this, ExpiredJwtException.prototype);
-    }
-}
-
 export class ExpiredResetCodeException extends Error {
     constructor(message?: string) {
         super(message);

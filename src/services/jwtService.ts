@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { isNumber } from "util";
 
-import { InvalidJwtTypeException, ExpiredJwtException } from "../exceptions/exceptions";
+import { InvalidJwtTypeException } from "../exceptions/exceptions";
 import { unixTimestamp } from "../utils/timeUtils";
 
 enum JwtType {
@@ -73,11 +73,6 @@ export class JwtService {
         const decoded = jwt.verify(token, this._jwtPrivateKey) as AccessToken & PayloadType;
         if (decoded.typ !== JwtType.access) {
             throw new InvalidJwtTypeException("Token is not an access token");
-        }
-        // TODO it unecessary
-        const now = unixTimestamp();
-        if (decoded.exp < now) {
-            throw new ExpiredJwtException();
         }
         return decoded;
     }
