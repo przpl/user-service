@@ -1,9 +1,9 @@
 export interface RequestBody {
     userId?: string;
-    signature?: string;
-    code?: string;
-    tokenId?: string;
-    accessToken?: string;
+    emailSig?: string;
+    resetCode?: string;
+    googleTokenId?: string;
+    facebookAccessToken?: string;
     mfaLoginToken?: string;
     oneTimePassword?: string;
     recaptchaKey?: string;

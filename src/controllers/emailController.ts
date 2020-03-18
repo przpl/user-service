@@ -7,8 +7,8 @@ export default class EmailController {
     constructor(private _userManager: UserManager) {}
 
     public async confirmEmail(req: Request, res: Response, next: NextFunction) {
-        const { email, signature } = req.body;
-        const sigCorrect = this._userManager.verifyEmailSignature(email, signature);
+        const { email, emailSig } = req.body;
+        const sigCorrect = this._userManager.verifyEmailSignature(email, emailSig);
         if (!sigCorrect) {
             return res.json({ result: false });
         }

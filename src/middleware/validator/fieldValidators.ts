@@ -1,6 +1,6 @@
 import { ValidationChain, body } from "express-validator";
 
-import { USER_ID_LENGTH, HMAC_256_SIG_LENGTH, PASSWORD_RESET_CODE_LENGTH, TWO_FA_TOKEN_LENGHT, ONE_TIME_PASS_LENGHT } from "../../utils/globalConsts";
+import { USER_ID_LENGTH, PASSWORD_RESET_CODE_LENGTH, TWO_FA_TOKEN_LENGHT, ONE_TIME_PASS_LENGHT, EMAIL_SIG_LENGTH } from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {
     isEmail: "Not an e-mail",
@@ -25,7 +25,7 @@ export const fieldValidators = {
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: HMAC_256_SIG_LENGTH, max: HMAC_256_SIG_LENGTH })
+        .isLength({ min: EMAIL_SIG_LENGTH, max: EMAIL_SIG_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),

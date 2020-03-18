@@ -17,15 +17,15 @@ export default class AuthMiddleware {
     }
 
     public authGoogle(req: Request, res: Response, next: NextFunction) {
-        const tokenId = req.body.tokenId;
-        delete req.body.tokenId;
+        const tokenId = req.body.googleTokenId;
+        delete req.body.googleTokenId;
         req.body.id_token = tokenId;
         this._googleAuthDelegate(req, res, (err: any) => this.handleExternalLogin(next, err));
     }
 
     public authFacebook(req: Request, res: Response, next: NextFunction) {
-        const accessToken = req.body.accessToken;
-        delete req.body.accessToken;
+        const accessToken = req.body.facebookAccessToken;
+        delete req.body.facebookAccessToken;
         req.body.access_token = accessToken;
         this._facebookAuthDelegate(req, res, (err: any) => this.handleExternalLogin(next, err));
     }

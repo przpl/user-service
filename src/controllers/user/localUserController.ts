@@ -29,7 +29,8 @@ export default class LocalUserController extends UserController {
         }
 
         // TODO notify other services about new user, send data to queue
-        // const emailSig = this._userManager.getEmailSignature(user.email);
+        const emailSig = this._userManager.getEmailSignature(user.email).toUpperCase();
+        console.log(emailSig);
         // const newUser: any = {
         //     id: user.id,
         //     email: user.email,

@@ -44,9 +44,9 @@ export default class PasswordController {
     }
 
     public async resetPassword(req: Request, res: Response, next: NextFunction) {
-        const { code, password } = req.body;
+        const { resetCode, password } = req.body;
         try {
-            await this._userManager.resetPassword(code, password);
+            await this._userManager.resetPassword(resetCode, password);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
                 return forwardError(next, "invalidCode", HttpStatus.FORBIDDEN);

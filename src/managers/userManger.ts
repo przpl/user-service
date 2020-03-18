@@ -8,7 +8,7 @@ import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
-import { PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
+import { PASSWORD_RESET_CODE_LENGTH, EMAIL_SIG_LENGTH } from "../utils/globalConsts";
 
 export class UserManager {
     private _userRepo = getRepository(UserEntity);
@@ -160,11 +160,12 @@ export class UserManager {
     }
 
     public getEmailSignature(email: string): string {
-        return this._crypto.hmacSignatureHex(email, this._emailSigKey);
+        return this._crypto.hmacSignatureHex(email, this._emailSigKey).slice(0, EMAIL_SIG_LENGTH);
     }
 
     public verifyEmailSignature(email: string, signature: string): boolean {
-        return this._crypto.verifyHmacSignature(email, signature, this._emailSigKey);
+        const expected = this.getEmailSignature(email);
+        return expected.toUpperCase() === signature.toUpperCase();
     }
 
     public async verifyPassword(userId: string, password: string): Promise<boolean> {
