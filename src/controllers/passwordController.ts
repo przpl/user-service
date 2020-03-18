@@ -3,7 +3,7 @@ import HttpStatus from "http-status-codes";
 
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { UserManager } from "../managers/userManger";
-import { UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../exceptions/userExceptions";
+import { UserNotConfirmedException, UserNotExistsException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 
 export default class PasswordController {
@@ -31,6 +31,8 @@ export default class PasswordController {
             code = await this._userManager.generatePasswordResetCode(email);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
+                return res.json({ result: true });
+            } else if (error instanceof UserNotLocalException) {
                 return res.json({ result: true });
             } else if (error instanceof UserNotConfirmedException) {
                 return res.json({ result: true });

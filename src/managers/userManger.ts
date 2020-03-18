@@ -1,7 +1,7 @@
 import { getRepository } from "typeorm";
 
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
-import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
+import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
 import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
@@ -58,6 +58,10 @@ export class UserManager {
             throw new UserNotExistsException();
         }
 
+        if (!user.isLocalAccount()) {
+            throw new InvalidPasswordException("User has no password");
+        }
+
         const isPasswordMatch = await this._crypto.verifyPassword(password, user.passwordHash);
         if (!isPasswordMatch) {
             throw new InvalidPasswordException();
@@ -83,6 +87,9 @@ export class UserManager {
 
     public async changePassword(id: string, oldPassword: string, newPassword: string) {
         const user = await this._userRepo.findOne({ where: { id: id } });
+        if (!user.isLocalAccount()) {
+            throw new InvalidPasswordException("User has no password");
+        }
         const isPasswordMatch = await this._crypto.verifyPassword(oldPassword, user.passwordHash);
         if (!isPasswordMatch) {
             throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
@@ -114,7 +121,9 @@ export class UserManager {
         if (!user) {
             throw new UserNotExistsException();
         }
-
+        if (!user.isLocalAccount()) {
+            throw new UserNotLocalException();
+        }
         if (!user.emailConfirmed) {
             throw new UserNotConfirmedException();
         }
@@ -197,7 +206,7 @@ export class UserManager {
             id: entity.id,
             email: entity.email,
             mfaMethod: entity.mfaMethod,
-            isLocalAccount: Boolean(entity.passwordHash),
+            isLocalAccount: entity.isLocalAccount(),
         };
     }
 }

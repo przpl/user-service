@@ -32,4 +32,8 @@ export class UserEntity extends BaseEntity {
 
     @UpdateDateColumn({ type: "timestamp" })
     updatedAt: Date;
+
+    public isLocalAccount(): boolean {
+        return Boolean(this.passwordHash);
+    }
 }
