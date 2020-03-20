@@ -52,11 +52,6 @@
             "hasLowercase": true,
             "hasDigits": true,
             "hasSymbols": true
-        },
-        "refreshToken": {
-            "isLength": {
-                "max": 1024
-            }
         }
     },
     "additionalFields": {

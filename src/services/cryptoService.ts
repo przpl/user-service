@@ -23,7 +23,7 @@ export class CryptoService {
         return bcrypt.compare(password, expectedHash);
     }
 
-    public randomHex(charactersCount: number): string {
+    public randomHexString(charactersCount: number): string {
         if (charactersCount < 1) {
             throw new Error("Cannot generate random hex shorter than 1 character.");
         }
@@ -31,6 +31,13 @@ export class CryptoService {
         return crypto
             .randomBytes(Math.ceil(charactersCount / CHARS_PER_BYTE))
             .toString("hex")
+            .toUpperCase();
+    }
+
+    public randomBytesInBase64(bytesCount: number): string {
+        return crypto
+            .randomBytes(bytesCount)
+            .toString("base64")
             .toUpperCase();
     }
 

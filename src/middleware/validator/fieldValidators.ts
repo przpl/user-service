@@ -3,6 +3,7 @@ import { ValidationChain, body } from "express-validator";
 import { USER_ID_LENGTH, PASSWORD_RESET_CODE_LENGTH, TWO_FA_TOKEN_LENGHT, ONE_TIME_PASS_LENGHT, EMAIL_SIG_LENGTH } from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {
+    isBase64: "Not a Base64 string",
     isEmail: "Not an e-mail",
     isHexadecimal: "Invalid format",
     isJwt: "Not a JWT",
@@ -30,7 +31,14 @@ export const fieldValidators = {
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
     password: {} as ValidationChain,
-    refreshToken: {} as ValidationChain,
+    refreshToken: body("refreshToken")
+        .isString()
+        .withMessage(FIELD_ERROR_MSG.isString)
+        .trim()
+        .isLength({ min: 88, max: 88 })
+        .withMessage(FIELD_ERROR_MSG.isLength)
+        .isBase64()
+        .withMessage(FIELD_ERROR_MSG.isBase64),
     register: {} as ValidationChain,
     weakPassword: {} as ValidationChain,
     oldPassword: {} as ValidationChain,

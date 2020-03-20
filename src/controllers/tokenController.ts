@@ -1,29 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
-import { forwardError, forwardInternalError } from "../utils/expressUtils";
-import { InvalidJwtTypeException } from "../exceptions/exceptions";
-import { JwtService, RefreshToken } from "../services/jwtService";
+import { JwtService } from "../services/jwtService";
+import { SessionManager } from "../managers/sessionManager";
+import { forwardError } from "../utils/expressUtils";
 
 export default class TokenController {
-    constructor(private _jwtService: JwtService) {}
+    constructor(private _jwtService: JwtService, private _sessionManager: SessionManager) {}
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const { refreshToken } = req.body;
 
-        let decoded: RefreshToken;
-        try {
-            decoded = this._jwtService.decodeRefreshToken(refreshToken);
-        } catch (error) {
-            if (error?.message.toLowerCase().includes("invalid signature")) {
-                return forwardError(next, "invalidJwtSignature", HttpStatus.BAD_REQUEST);
-            } else if (error instanceof InvalidJwtTypeException) {
-                return forwardError(next, "invalidJwtType", HttpStatus.BAD_REQUEST);
-            }
-            return forwardInternalError(next, error);
+        const userId = await this._sessionManager.getUserIdFromRefreshToken(refreshToken);
+        if (!userId) {
+            return forwardError(next, "sessionNotExist", HttpStatus.UNAUTHORIZED);
         }
 
-        const accessToken = this._jwtService.issueAccessToken(decoded);
+        const accessToken = this._jwtService.issueAccessToken(userId);
         res.json({ accessToken: accessToken });
     }
 }

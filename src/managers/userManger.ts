@@ -128,7 +128,7 @@ export class UserManager {
             throw new UserNotConfirmedException();
         }
 
-        const code = this._crypto.randomHex(PASSWORD_RESET_CODE_LENGTH);
+        const code = this._crypto.randomHexString(PASSWORD_RESET_CODE_LENGTH);
         const passResetInDb = await this._passResetRepo.findOne({ where: { userId: user.id } });
         if (passResetInDb) {
             passResetInDb.code = code;

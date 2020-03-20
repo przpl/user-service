@@ -7,10 +7,11 @@ import { JwtService } from "../../services/jwtService";
 import { ExternalUser } from "../../middleware/passport";
 import { ExternalLoginProvider } from "../../dal/entities/externalLogin";
 import UserController from "./userController";
+import { SessionManager } from "../../managers/sessionManager";
 
 export default class ExternalUserController extends UserController {
-    constructor(private _userManager: UserManager, jwtService: JwtService) {
-        super(jwtService);
+    constructor(private _userManager: UserManager, sessionManager: SessionManager, jwtService: JwtService) {
+        super(jwtService, sessionManager);
     }
 
     public async loginWithExternalProvider(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {

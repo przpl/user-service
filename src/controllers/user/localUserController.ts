@@ -9,10 +9,11 @@ import { JwtService } from "../../services/jwtService";
 import { MfaMethod } from "../../dal/entities/userEntity";
 import { MfaService } from "../../services/mfaService";
 import UserController from "./userController";
+import { SessionManager } from "../../managers/sessionManager";
 
 export default class LocalUserController extends UserController {
-    constructor(private _userManager: UserManager, jwtService: JwtService, private _mfaService: MfaService) {
-        super(jwtService);
+    constructor(private _userManager: UserManager, sessionManager: SessionManager, jwtService: JwtService, private _mfaService: MfaService) {
+        super(jwtService, sessionManager);
     }
 
     public async register(req: Request, res: Response, next: NextFunction) {
@@ -29,8 +30,7 @@ export default class LocalUserController extends UserController {
         }
 
         // TODO notify other services about new user, send data to queue
-        const emailSig = this._userManager.getEmailSignature(user.email).toUpperCase();
-        console.log(emailSig);
+        // const emailSig = this._userManager.getEmailSignature(user.email).toUpperCase();
         // const newUser: any = {
         //     id: user.id,
         //     email: user.email,

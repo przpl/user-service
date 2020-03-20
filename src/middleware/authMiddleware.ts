@@ -4,7 +4,6 @@ import passport from "passport";
 
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
-import { InvalidJwtTypeException } from "../exceptions/exceptions";
 
 export default class AuthMiddleware {
     private _googleAuthDelegate = passport.authenticate("google-id-token", { session: false });
@@ -48,8 +47,6 @@ export default class AuthMiddleware {
                 return forwardError(next, "invalidJwtSignature", HttpStatus.UNAUTHORIZED);
             } else if (error.name === "TokenExpiredError") {
                 return forwardError(next, "tokenExpired", HttpStatus.UNAUTHORIZED);
-            } else if (error instanceof InvalidJwtTypeException) {
-                return forwardError(next, "invalidJwtType", HttpStatus.UNAUTHORIZED);
             }
             return forwardInternalError(next, error);
         }

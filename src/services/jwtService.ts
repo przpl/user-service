@@ -1,21 +1,11 @@
 import jwt from "jsonwebtoken";
 import { isNumber } from "util";
 
-import { InvalidJwtTypeException } from "../exceptions/exceptions";
 import { unixTimestamp } from "../utils/timeUtils";
 
-enum JwtType {
-    refresh = 0,
-    access = 1,
-}
-
-export interface RefreshToken {
+export interface AccessToken {
     sub: string;
     iat: number;
-    typ: JwtType;
-}
-
-export interface AccessToken extends RefreshToken {
     exp: number;
 }
 
@@ -36,44 +26,18 @@ export class JwtService {
         this._tokenTTLSeconds = tokenTTLMinutes * 60;
     }
 
-    public issueRefreshToken(userId: string): string {
-        const dataToSign: RefreshToken = {
-            sub: userId,
-            iat: unixTimestamp(),
-            typ: JwtType.refresh,
-        };
-        return jwt.sign(dataToSign, this._jwtPrivateKey);
-    }
-
-    public issueAccessToken<PayloadType>(refreshToken: RefreshToken, payload?: PayloadType): string {
-        if (refreshToken.typ !== JwtType.refresh) {
-            throw new InvalidJwtTypeException("Token is not a refresh token");
-        }
-
+    public issueAccessToken<PayloadType>(userId: string, payload?: PayloadType): string {
         const now = unixTimestamp();
         const dataToSign = {
-            sub: refreshToken.sub,
+            sub: userId,
             iat: now,
             exp: now + this._tokenTTLSeconds,
-            typ: JwtType.access,
             ...payload,
         };
         return jwt.sign(dataToSign, this._jwtPrivateKey);
     }
 
-    public decodeRefreshToken(token: string): RefreshToken {
-        const decoded = jwt.verify(token, this._jwtPrivateKey) as RefreshToken;
-        if (decoded.typ !== JwtType.refresh) {
-            throw new InvalidJwtTypeException("Token is not a refresh token");
-        }
-        return decoded;
-    }
-
     public decodeAccessToken<PayloadType>(token: string): AccessToken & PayloadType {
-        const decoded = jwt.verify(token, this._jwtPrivateKey) as AccessToken & PayloadType;
-        if (decoded.typ !== JwtType.access) {
-            throw new InvalidJwtTypeException("Token is not an access token");
-        }
-        return decoded;
+        return jwt.verify(token, this._jwtPrivateKey) as AccessToken & PayloadType;
     }
 }

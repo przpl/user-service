@@ -75,15 +75,6 @@ export default class Validator {
             .isLength({ min: 1, max: config.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
-        fieldValidators.refreshToken = body("refreshToken")
-            .isString()
-            .withMessage(FIELD_ERROR_MSG.isString)
-            .trim()
-            .isLength({ min: 1, max: config.refreshToken.isLength.max })
-            .withMessage(FIELD_ERROR_MSG.isLength)
-            .isJWT()
-            .withMessage(FIELD_ERROR_MSG.isJwt);
-
         for (const fieldName of Object.keys(jsonConfig.additionalFields.registerEndpoint)) {
             const field = jsonConfig.additionalFields.registerEndpoint[fieldName];
             const validation = body(fieldName);

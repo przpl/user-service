@@ -28,6 +28,7 @@ import ExternalUserController from "./controllers/user/externalUserController";
 import ExternalUserRouter from "./routes/user/externalUserRouter";
 import MfaController from "./controllers/mfaController";
 import MfaRouter from "./routes/mfaRouter";
+import { SessionManager } from "./managers/sessionManager";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -101,13 +102,14 @@ async function start() {
     );
 
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeTTLMinutes);
+    const sessionManager = new SessionManager(cryptoService);
 
     const serviceCtrl = new ServiceController(config);
-    const localUserCtrl = new LocalUserController(userManager, jwtService, mfaService);
-    const externalUserCtrl = new ExternalUserController(userManager, jwtService);
+    const localUserCtrl = new LocalUserController(userManager, sessionManager, jwtService, mfaService);
+    const externalUserCtrl = new ExternalUserController(userManager, sessionManager, jwtService);
     const passwordCtrl = new PasswordController(userManager);
     const emailCtrl = new EmailController(userManager);
-    const tokenCtrl = new TokenController(jwtService);
+    const tokenCtrl = new TokenController(jwtService, sessionManager);
     const mfaCtrl = new MfaController(userManager, mfaService, config.jsonConfig);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceCtrl));

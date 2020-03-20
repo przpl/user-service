@@ -43,7 +43,6 @@ export interface JsonConfig {
     commonFields: {
         email: FieldConfig;
         password: PasswordFieldConfig;
-        refreshToken: FieldConfig;
     };
     additionalFields: {
         registerEndpoint: {

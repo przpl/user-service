@@ -2,14 +2,14 @@ import { Response } from "express";
 
 import { User } from "../../interfaces/user";
 import { JwtService } from "../../services/jwtService";
+import { SessionManager } from "../../managers/sessionManager";
 
 export default abstract class UserController {
-    constructor(private _jwtService: JwtService) {}
+    constructor(private _jwtService: JwtService, private _sessionManager: SessionManager) {}
 
-    protected sendTokens(res: Response, user: User) {
-        const refreshToken = this._jwtService.issueRefreshToken(user.id);
-        const decoded = this._jwtService.decodeRefreshToken(refreshToken);
-        const accessToken = this._jwtService.issueAccessToken(decoded);
+    protected async sendTokens(res: Response, user: User) {
+        const refreshToken = await this._sessionManager.issueRefreshToken(user.id);
+        const accessToken = this._jwtService.issueAccessToken(user.id);
 
         res.json({ user: this.mapUser(user), refreshToken: refreshToken, accessToken: accessToken });
     }

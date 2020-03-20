@@ -23,7 +23,7 @@ export class MfaService {
     }
 
     public async issueLoginToken(userId: string, ip: string): Promise<{ token: string; expiresAt: number }> {
-        const token = this._cryptoService.randomHex(64);
+        const token = this._cryptoService.randomHexString(64);
         await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTLSeconds);
         const expiresAt = unixTimestamp() + this._mfaLoginTTLSeconds;
         return { token: token, expiresAt: expiresAt };
