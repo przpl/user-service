@@ -22,7 +22,8 @@ export class CacheDb {
     public setMfaLoginToken(userId: string, token: string, ip: string, expireTimeSeconds: number) {
         const tokenObj: MfaLoginToken = { token: token, ip: ip };
         return new Promise((resolve, reject) => {
-            this._client.SET(userId, JSON.stringify(tokenObj), KeyFlags.expireSeconds, expireTimeSeconds, (err, reply) => {
+            const keyName = this.getMfaLoginTokenKey(userId);
+            this._client.SET(keyName, JSON.stringify(tokenObj), KeyFlags.expireSeconds, expireTimeSeconds, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
@@ -34,7 +35,8 @@ export class CacheDb {
 
     public getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
         return new Promise((resolve, reject) => {
-            this._client.GET(userId, (err, reply) => {
+            const keyName = this.getMfaLoginTokenKey(userId);
+            this._client.GET(keyName, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
@@ -47,7 +49,8 @@ export class CacheDb {
 
     public removeMfaLoginToken(userId: string): Promise<number> {
         return new Promise((resolve, reject) => {
-            this._client.del(userId, (err, reply) => {
+            const keyName = this.getMfaLoginTokenKey(userId);
+            this._client.del(keyName, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
@@ -55,5 +58,9 @@ export class CacheDb {
                 resolve(reply);
             });
         });
+    }
+
+    private getMfaLoginTokenKey(userId: string): string {
+        return `mlt:${userId}`;
     }
 }
