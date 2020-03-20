@@ -23,13 +23,13 @@ export class CryptoService {
         return bcrypt.compare(password, expectedHash);
     }
 
-    public randomHex(length: number): string {
-        if (length < 1) {
+    public randomHex(charactersCount: number): string {
+        if (charactersCount < 1) {
             throw new Error("Cannot generate random hex shorter than 1 character.");
         }
 
         return crypto
-            .randomBytes(Math.ceil(length / CHARS_PER_BYTE))
+            .randomBytes(Math.ceil(charactersCount / CHARS_PER_BYTE))
             .toString("hex")
             .toUpperCase();
     }
