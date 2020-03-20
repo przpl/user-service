@@ -20,8 +20,8 @@ export class UserManager {
             throw new Error("Email signature key is required.");
         }
         this._emailSigKey = this._emailSigKey.trim();
-        if (this._emailSigKey.length < 32) {
-            throw new Error("Minimum required email signature length is 32 characters!");
+        if (this._emailSigKey.length < 24) {
+            throw new Error("Minimum required email signature length is 24 characters!");
         }
         if (this._passResetCodeTTLMinutes < 5) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");

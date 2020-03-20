@@ -97,18 +97,18 @@ export default class Config {
             });
         }
 
-        if (!this.jwtPrivateKey || this.jwtPrivateKey.length < 32) {
+        if (!this.jwtPrivateKey || this.jwtPrivateKey.length < 44) {
             result.push({
                 variableName: "JWT_PRIVATE_KEY",
-                message: "Minimum required length is 32 characters",
+                message: "Minimum required length is 44 characters",
                 severity: "error",
             });
         }
 
-        if (!this.emailSigKey || this.emailSigKey.length < 32) {
+        if (!this.emailSigKey || this.emailSigKey.length < 24) {
             result.push({
                 variableName: "EMAIL_SIG_KEY",
-                message: "Minimum required length is 32 characters",
+                message: "Minimum required length is 24 characters",
                 severity: "error",
             });
         }

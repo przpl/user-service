@@ -27,8 +27,8 @@ export class JwtService {
             throw new Error("JWT private key is required.");
         }
         this._jwtPrivateKey = this._jwtPrivateKey.trim();
-        if (this._jwtPrivateKey.length < 64) {
-            throw new Error("Minimum required JWT key length is 64 characters!");
+        if (this._jwtPrivateKey.length < 44) {
+            throw new Error("Minimum required JWT key length is 44 characters!");
         }
         if (!isNumber(tokenTTLMinutes) || tokenTTLMinutes <= 1) {
             throw new Error("Token TTL has to be number greater than 1 minute.");
