@@ -11,7 +11,7 @@
         },
         "session": {
             "maxPerUser": 5,
-            "inactivityLimitHours": 720
+            "staleRefreshTokenAfterHours": 720
         },
         "bcryptRounds": 12,
         "reCaptcha": {

@@ -40,7 +40,7 @@ export class SessionManager {
             return null;
         }
 
-        if (isExpired(session.lastUseAt, this._jsonConfig.security.session.inactivityLimitHours * 60 * 60)) {
+        if (isExpired(session.lastUseAt, this._jsonConfig.security.session.staleRefreshTokenAfterHours * 60 * 60)) {
             await this._sessionRepo.remove(session);
             await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
             throw new StaleRefreshTokenException();
