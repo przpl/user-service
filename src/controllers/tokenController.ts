@@ -13,7 +13,7 @@ export default class TokenController {
 
         const userId = await this._sessionManager.getUserIdFromRefreshToken(refreshToken);
         if (!userId) {
-            return forwardError(next, "sessionNotExist", HttpStatus.UNAUTHORIZED);
+            return forwardError(next, "sessionDoesNotExist", HttpStatus.UNAUTHORIZED);
         }
 
         const accessToken = this._jwtService.issueAccessToken(userId);

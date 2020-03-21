@@ -8,7 +8,7 @@ export class SessionEntity extends BaseEntity {
     @Column() // TODO foreign key
     userId: string;
 
-    @Column({ type: "date" })
+    @Column({ type: "timestamp" })
     lastUseAt: Date;
 
     @CreateDateColumn({ type: "timestamp" })
