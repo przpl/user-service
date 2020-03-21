@@ -17,11 +17,12 @@ export class SessionManager {
     public async issueRefreshToken(userId: string): Promise<string> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
         if (user.activeSessions >= this._jsonConfig.security.session.maxPerUser) {
-            await this.removeOldestSession(userId);
-        } else {
-            user.activeSessions++;
-            await user.save();
+            const sessionsAfterRemoval = await this.removeOldestSession(userId, this._jsonConfig.security.session.maxPerUser);
+            user.activeSessions = sessionsAfterRemoval;
         }
+
+        user.activeSessions++;
+        await user.save();
 
         const token = this._cryptoService.randomBytesInBase64(64);
         const session = new SessionEntity();
@@ -50,17 +51,17 @@ export class SessionManager {
         return session.userId;
     }
 
-    private async removeOldestSession(userId: string) {
+    private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {
         const sessions = await this._sessionRepo.find({ where: { userId: userId } });
-        if (sessions.length === 0) {
+        if (sessions.length < maxSessionsPerUser) {
             return;
         }
-        let oldest = sessions[0];
-        for (let i = 1; i < sessions.length; i++) {
-            if (oldest.lastUseAt > sessions[i].lastUseAt) {
-                oldest = sessions[i];
-            }
-        }
-        await this._sessionRepo.remove(oldest);
+        const fromOldestToNewest = sessions.sort((a, b) => a.lastUseAt.getTime() - b.lastUseAt.getTime());
+        let redundantSessionsCount = sessions.length - maxSessionsPerUser;
+        redundantSessionsCount++; // we will create one sesion so we need to remove one more to make a place
+        const sessionsToRemove = fromOldestToNewest.slice(0, redundantSessionsCount);
+        await this._sessionRepo.remove(sessionsToRemove);
+
+        return sessions.length - redundantSessionsCount;
     }
 }
