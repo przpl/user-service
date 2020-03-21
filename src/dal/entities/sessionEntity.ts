@@ -5,7 +5,7 @@ export class SessionEntity extends BaseEntity {
     @PrimaryColumn()
     token: string;
 
-    @Column() // TODO foreign key
+    @Column() // TODO primary and foreign key?
     userId: string;
 
     @Column({ type: "timestamp" })

@@ -12,6 +12,9 @@ export interface JsonConfig {
             appName: string;
             loginTokenTTLSeconds: number;
         };
+        session: {
+            maxPerUser: number;
+        };
         bcryptRounds: number;
         reCaptcha: {
             enabled: boolean;

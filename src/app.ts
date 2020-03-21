@@ -102,7 +102,7 @@ async function start() {
     );
 
     const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeTTLMinutes);
-    const sessionManager = new SessionManager(cryptoService);
+    const sessionManager = new SessionManager(cryptoService, config.jsonConfig);
 
     const serviceCtrl = new ServiceController(config);
     const localUserCtrl = new LocalUserController(userManager, sessionManager, jwtService, mfaService);

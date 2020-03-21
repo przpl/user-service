@@ -9,6 +9,9 @@
             "appName": "App Name for Google Authenticator",
             "loginTokenTTLSeconds": 300
         },
+        "session": {
+            "maxPerUser": 5
+        },
         "bcryptRounds": 12,
         "reCaptcha": {
             "enabled": true,

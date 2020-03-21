@@ -11,7 +11,7 @@ export default class TokenController {
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const { refreshToken } = req.body;
 
-        const userId = await this._sessionManager.getUserIdFromRefreshToken(refreshToken);
+        const userId = await this._sessionManager.getUserIdAndUpdateLastUseAt(refreshToken);
         if (!userId) {
             return forwardError(next, "sessionDoesNotExist", HttpStatus.UNAUTHORIZED);
         }

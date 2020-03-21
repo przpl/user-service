@@ -27,6 +27,9 @@ export class UserEntity extends BaseEntity {
     @Column({ nullable: true })
     mfaSecret: string;
 
+    @Column({ type: "smallint", default: 0 })
+    activeSessions: number;
+
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 
