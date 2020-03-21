@@ -4,7 +4,7 @@ import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
-import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
+import { unixTimestamp, toUnixTimestamp, isExpired } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
@@ -105,7 +105,7 @@ export class UserManager {
             throw new UserNotExistsException();
         }
 
-        if (this.isResetCodeExpired(passReset.createdAt)) {
+        if (isExpired(passReset.createdAt, this._passResetCodeTTLMinutes * 60)) {
             throw new ExpiredResetCodeException();
         }
 
@@ -193,12 +193,6 @@ export class UserManager {
         login.userId = user.id;
         await login.save();
         return user;
-    }
-
-    private isResetCodeExpired(createdAt: Date): boolean {
-        const secondsPerMinute = 60;
-        const inSeconds = toUnixTimestamp(createdAt);
-        return inSeconds + this._passResetCodeTTLMinutes * secondsPerMinute < unixTimestamp();
     }
 
     private toUser(entity: UserEntity): User {
