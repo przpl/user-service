@@ -10,7 +10,8 @@
             "loginTokenTTLSeconds": 300
         },
         "session": {
-            "maxPerUser": 5
+            "maxPerUser": 5,
+            "inactivityLimitHours": 720
         },
         "bcryptRounds": 12,
         "reCaptcha": {

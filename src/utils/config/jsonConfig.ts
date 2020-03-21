@@ -14,6 +14,7 @@ export interface JsonConfig {
         };
         session: {
             maxPerUser: number;
+            inactivityLimitHours: number;
         };
         bcryptRounds: number;
         reCaptcha: {

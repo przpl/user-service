@@ -4,6 +4,9 @@ import { SessionEntity } from "../dal/entities/sessionEntity";
 import { CryptoService } from "../services/cryptoService";
 import { UserEntity } from "../dal/entities/userEntity";
 import { JsonConfig } from "../utils/config/jsonConfig";
+import { isExpired } from "../utils/timeUtils";
+import { StaleRefreshTokenException } from "../exceptions/exceptions";
+import nameof from "../utils/nameof";
 
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
@@ -30,10 +33,16 @@ export class SessionManager {
         return token;
     }
 
-    public async getUserIdAndUpdateLastUseAt(refreshToken: string): Promise<string> {
+    public async refreshSessionAndGetUserId(refreshToken: string): Promise<string> {
         const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
         if (!session) {
             return null;
+        }
+
+        if (isExpired(session.lastUseAt, this._jsonConfig.security.session.inactivityLimitHours * 60 * 60)) {
+            await this._sessionRepo.remove(session);
+            await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
+            throw new StaleRefreshTokenException();
         }
 
         session.lastUseAt = new Date();
