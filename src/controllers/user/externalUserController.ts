@@ -8,9 +8,10 @@ import { ExternalUser } from "../../middleware/passport";
 import { ExternalLoginProvider } from "../../dal/entities/externalLogin";
 import UserController from "./userController";
 import { SessionManager } from "../../managers/sessionManager";
+import { QueueService } from "../../services/queueService";
 
 export default class ExternalUserController extends UserController {
-    constructor(private _userManager: UserManager, sessionManager: SessionManager, jwtService: JwtService) {
+    constructor(private _userManager: UserManager, sessionManager: SessionManager, private queueService: QueueService, jwtService: JwtService) {
         super(jwtService, sessionManager);
     }
 

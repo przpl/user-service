@@ -18,8 +18,8 @@ export class SessionManager {
 
     public async issueRefreshToken(userId: string): Promise<string> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        if (user.activeSessions >= this._jsonConfig.security.session.maxPerUser) {
-            const sessionsAfterRemoval = await this.removeOldestSession(userId, this._jsonConfig.security.session.maxPerUser);
+        if (user.activeSessions >= this._jsonConfig.session.maxPerUser) {
+            const sessionsAfterRemoval = await this.removeOldestSession(userId, this._jsonConfig.session.maxPerUser);
             user.activeSessions = sessionsAfterRemoval;
         }
 
@@ -42,7 +42,7 @@ export class SessionManager {
             return null;
         }
 
-        if (isExpired(session.lastUseAt, TimeSpan.fromHours(this._jsonConfig.security.session.staleRefreshTokenAfterHours))) {
+        if (isExpired(session.lastUseAt, TimeSpan.fromHours(this._jsonConfig.session.staleRefreshTokenAfterHours))) {
             await this._sessionRepo.remove(session);
             await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
             throw new StaleRefreshTokenException();

@@ -10,9 +10,18 @@ import { MfaMethod } from "../../dal/entities/userEntity";
 import { MfaService } from "../../services/mfaService";
 import UserController from "./userController";
 import { SessionManager } from "../../managers/sessionManager";
+import { QueueService } from "../../services/queueService";
+import { EmailManager } from "../../managers/emailManager";
 
 export default class LocalUserController extends UserController {
-    constructor(private _userManager: UserManager, sessionManager: SessionManager, jwtService: JwtService, private _mfaService: MfaService) {
+    constructor(
+        private _userManager: UserManager,
+        sessionManager: SessionManager,
+        private _emailManager: EmailManager,
+        private queueService: QueueService,
+        jwtService: JwtService,
+        private _mfaService: MfaService
+    ) {
         super(jwtService, sessionManager);
     }
 
@@ -29,8 +38,7 @@ export default class LocalUserController extends UserController {
             return forwardInternalError(next, error);
         }
 
-        // TODO notify other services about new user, send data to queue
-        // const emailSig = this._userManager.getEmailSignature(user.email).toUpperCase();
+        await this._emailManager.generateCode(user.id, user.email); // const emailCode
         // const newUser: any = {
         //     id: user.id,
         //     email: user.email,

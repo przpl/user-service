@@ -12,10 +12,6 @@ export interface JsonConfig {
             appName: string;
             loginTokenTTLSeconds: number;
         };
-        session: {
-            maxPerUser: number;
-            staleRefreshTokenAfterHours: number;
-        };
         bcryptRounds: number;
         reCaptcha: {
             enabled: boolean;
@@ -28,6 +24,15 @@ export interface JsonConfig {
                 confirmEmail: boolean;
                 resendEmail: boolean;
             };
+        };
+    };
+    session: {
+        maxPerUser: number;
+        staleRefreshTokenAfterHours: number;
+    };
+    localLogin: {
+        email: {
+            resendLimit: number;
         };
     };
     externalLogin: {

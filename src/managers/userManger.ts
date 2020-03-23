@@ -1,14 +1,20 @@
 import { getRepository } from "typeorm";
 
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
-import { UserExistsException, UserNotExistsException, UserNotConfirmedException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
+import {
+    UserExistsException,
+    UserNotExistsException,
+    UserNotConfirmedException,
+    InvalidPasswordException,
+    UserNotLocalException,
+} from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
-import { unixTimestamp, toUnixTimestamp, isExpired } from "../utils/timeUtils";
+import { isExpired } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
-import { PASSWORD_RESET_CODE_LENGTH, EMAIL_SIG_LENGTH } from "../utils/globalConsts";
+import { PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
 import { TimeSpan } from "../utils/timeSpan";
 
 export class UserManager {
@@ -16,14 +22,7 @@ export class UserManager {
     private _passResetRepo = getRepository(PasswordResetEntity);
     private _externalLoginRepo = getRepository(ExternalLoginEntity);
 
-    constructor(private _crypto: CryptoService, private _emailSigKey: string, private _passResetCodeTTL: TimeSpan) {
-        if (!this._emailSigKey) {
-            throw new Error("Email signature key is required.");
-        }
-        this._emailSigKey = this._emailSigKey.trim();
-        if (this._emailSigKey.length < 24) {
-            throw new Error("Minimum required email signature length is 24 characters!");
-        }
+    constructor(private _crypto: CryptoService, private _passResetCodeTTL: TimeSpan) {
         if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
         }
@@ -144,19 +143,6 @@ export class UserManager {
         return code;
     }
 
-    public async confirmEmail(email: string): Promise<boolean> {
-        const user = await this._userRepo.findOne({ where: { email: email } });
-        if (!user) {
-            throw new UserNotExistsException("Cannot update email confirmed status. User not exists");
-        }
-        if (user.emailConfirmed) {
-            return false;
-        }
-        user.emailConfirmed = true;
-        await user.save();
-        return true;
-    }
-
     public async enableHtopFa(userId: string) {
         const user = await this._userRepo.findOne({ where: { id: userId } });
         user.mfaMethod = MfaMethod.code;
@@ -167,15 +153,6 @@ export class UserManager {
         const user = await this._userRepo.findOne({ where: { id: userId } });
         user.mfaMethod = MfaMethod.none;
         await user.save();
-    }
-
-    public getEmailSignature(email: string): string {
-        return this._crypto.hmacSignatureHex(email, this._emailSigKey).slice(0, EMAIL_SIG_LENGTH);
-    }
-
-    public verifyEmailSignature(email: string, signature: string): boolean {
-        const expected = this.getEmailSignature(email);
-        return expected.toUpperCase() === signature.toUpperCase();
     }
 
     public async verifyPassword(userId: string, password: string): Promise<boolean> {

@@ -9,10 +9,6 @@
             "appName": "App Name for Google Authenticator",
             "loginTokenTTLSeconds": 300
         },
-        "session": {
-            "maxPerUser": 5,
-            "staleRefreshTokenAfterHours": 720
-        },
         "bcryptRounds": 12,
         "reCaptcha": {
             "enabled": true,
@@ -25,6 +21,15 @@
                 "confirmEmail": true,
                 "resendEmail": true
             }
+        }
+    },
+    "session": {
+        "maxPerUser": 5,
+        "staleRefreshTokenAfterHours": 720
+    },
+    "localLogin": {
+        "email": {
+            "resendLimit": 10
         }
     },
     "externalLogin": {

@@ -1,29 +1,35 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
-import { UserManager } from "../managers/userManger";
+import { EmailManager } from "../managers/emailManager";
+import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { EmailResendCodeLimitException } from "../exceptions/exceptions";
+import { QueueService } from "../services/queueService";
 
 export default class EmailController {
-    constructor(private _userManager: UserManager) {}
+    constructor(private _emailManager: EmailManager, private _queueService: QueueService) {}
 
     public async confirmEmail(req: Request, res: Response, next: NextFunction) {
-        const { email, emailSig } = req.body;
-        const sigCorrect = this._userManager.verifyEmailSignature(email, emailSig);
-        if (!sigCorrect) {
-            return res.json({ result: false });
-        }
-        let result: boolean;
-        try {
-            result = await this._userManager.confirmEmail(email);
-        } catch (error) {
-            return res.json({ result: false });
-        }
-
-        res.json({ result: result });
+        const { email, emailCode } = req.body;
+        const success = await this._emailManager.confirmCode(email, emailCode);
+        res.json({ result: success });
     }
 
     public async resendEmail(req: Request, res: Response, next: NextFunction) {
-        // TODO implement resend email method
-        res.status(HttpStatus.NOT_IMPLEMENTED).send();
+        const { email } = req.body;
+
+        let code: string;
+        try {
+            code = await this._emailManager.getCodeAndIncrementCounter(email);
+        } catch (error) {
+            if (error instanceof EmailResendCodeLimitException) {
+                return forwardError(next, "limitExceeded", HttpStatus.BAD_REQUEST);
+            }
+            return forwardInternalError(next, error);
+        }
+
+        this._queueService.pushEmailCode(email, code);
+
+        res.json({ result: true });
     }
 }

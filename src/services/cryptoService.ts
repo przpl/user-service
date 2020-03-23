@@ -38,6 +38,18 @@ export class CryptoService {
         return crypto.randomBytes(bytesCount).toString("base64");
     }
 
+    public randomNumbersString(digits: number): string {
+        const bytesCount = 6;
+        const bytes = crypto.randomBytes(bytesCount);
+        let str = "";
+        const divider = 255 / 9;
+        for (let i = 0; i < bytesCount; i++) {
+            const next = Math.round(bytes.readUInt8(i) / divider);
+            str += next;
+        }
+        return str;
+    }
+
     public hmacSignatureHex(data: string, key: string): string {
         if (!data) {
             throw new Error("Cannot generate HMAC signature for empty data.");

@@ -31,6 +31,8 @@ import MfaController from "./controllers/mfaController";
 import MfaRouter from "./routes/mfaRouter";
 import { SessionManager } from "./managers/sessionManager";
 import { TimeSpan } from "./utils/timeSpan";
+import { QueueService } from "./services/queueService";
+import { EmailManager } from "./managers/emailManager";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -75,6 +77,7 @@ async function connectToDb() {
 
 async function start() {
     const config = loadConfig();
+    const jsonConfig = config.jsonConfig;
     const dbConnection = await connectToDb();
 
     const app = express();
@@ -88,40 +91,42 @@ async function start() {
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
     app.set("trust proxy", true);
-    configurePassport(app, config.jsonConfig);
+    configurePassport(app, jsonConfig);
 
-    const cacheDb = new CacheDb(config.jsonConfig.redis.host, config.jsonConfig.redis.port);
+    const cacheDb = new CacheDb(jsonConfig.redis.host, jsonConfig.redis.port);
     const jwtService = new JwtService(config.jwtPrivateKey, TimeSpan.fromMinutes(config.tokenTTLMinutes));
-    const cryptoService = new CryptoService(config.jsonConfig.security.bcryptRounds);
-    const mfaService = new MfaService(cacheDb, cryptoService, TimeSpan.fromSeconds(config.jsonConfig.security.mfa.loginTokenTTLSeconds));
+    const cryptoService = new CryptoService(jsonConfig.security.bcryptRounds);
+    const mfaService = new MfaService(cacheDb, cryptoService, TimeSpan.fromSeconds(jsonConfig.security.mfa.loginTokenTTLSeconds));
+    const queueService = new QueueService();
 
-    const validator = new Validator(config.jsonConfig);
+    const validator = new Validator(jsonConfig);
     const authMiddleware = new AuthMiddleware(jwtService);
     const captchaMiddleware = new RecaptchaMiddleware(
-        config.jsonConfig.security.reCaptcha.enabled,
+        jsonConfig.security.reCaptcha.enabled,
         config.recaptchaSiteKey,
         config.recaptchaSecretKey,
-        config.jsonConfig.security.reCaptcha.ssl
+        jsonConfig.security.reCaptcha.ssl
     );
 
-    const userManager = new UserManager(cryptoService, config.emailSigKey, TimeSpan.fromMinutes(config.jsonConfig.passwordReset.codeTTLMinutes));
-    const sessionManager = new SessionManager(cryptoService, config.jsonConfig);
+    const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes));
+    const sessionManager = new SessionManager(cryptoService, jsonConfig);
+    const emailManager = new EmailManager(cryptoService, jsonConfig.localLogin.email.resendLimit);
 
     const serviceCtrl = new ServiceController(config);
-    const localUserCtrl = new LocalUserController(userManager, sessionManager, jwtService, mfaService);
-    const externalUserCtrl = new ExternalUserController(userManager, sessionManager, jwtService);
+    const localUserCtrl = new LocalUserController(userManager, sessionManager, emailManager, queueService, jwtService, mfaService);
+    const externalUserCtrl = new ExternalUserController(userManager, sessionManager, queueService, jwtService);
     const passwordCtrl = new PasswordController(userManager);
-    const emailCtrl = new EmailController(userManager);
+    const emailCtrl = new EmailController(emailManager, queueService);
     const tokenCtrl = new TokenController(jwtService, sessionManager);
-    const mfaCtrl = new MfaController(userManager, mfaService, config.jsonConfig);
+    const mfaCtrl = new MfaController(userManager, mfaService, jsonConfig);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceCtrl));
-    app.use("/api/user", LocalUserRouter.getExpressRouter(localUserCtrl, validator, captchaMiddleware, config.jsonConfig));
-    app.use("/api/user/external", ExternalUserRouter.getExpressRouter(externalUserCtrl, authMiddleware, validator, config.jsonConfig));
-    app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, config.jsonConfig));
-    app.use("/api/user/email", EmailRouter.getExpressRouter(emailCtrl, validator, captchaMiddleware, config.jsonConfig));
+    app.use("/api/user", LocalUserRouter.getExpressRouter(localUserCtrl, validator, captchaMiddleware, jsonConfig));
+    app.use("/api/user/external", ExternalUserRouter.getExpressRouter(externalUserCtrl, authMiddleware, validator, jsonConfig));
+    app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, jsonConfig));
+    app.use("/api/user/email", EmailRouter.getExpressRouter(emailCtrl, validator, captchaMiddleware, jsonConfig));
     app.use("/api/user/token", TokenRouter.getExpressRouter(tokenCtrl, validator));
-    app.use("/api/user/mfa", MfaRouter.getExpressRouter(mfaCtrl, authMiddleware, validator, config.jsonConfig));
+    app.use("/api/user/mfa", MfaRouter.getExpressRouter(mfaCtrl, authMiddleware, validator, jsonConfig));
 
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));

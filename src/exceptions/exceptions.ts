@@ -11,3 +11,10 @@ export class StaleRefreshTokenException extends Error {
         Object.setPrototypeOf(this, StaleRefreshTokenException.prototype);
     }
 }
+
+export class EmailResendCodeLimitException extends Error {
+    constructor(message?: string) {
+        super(message);
+        Object.setPrototypeOf(this, EmailResendCodeLimitException.prototype);
+    }
+}
