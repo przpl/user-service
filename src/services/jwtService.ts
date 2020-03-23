@@ -28,7 +28,7 @@ export class JwtService {
         const now = unixTimestamp();
         const dataToSign = {
             sub: userId,
-            jti: this.idSubstring(refreshToken),
+            ref: this.idSubstring(refreshToken),
             iat: now,
             exp: now + this._tokenTTL.seconds,
             ...payload,
