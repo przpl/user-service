@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
-import { isNumber } from "util";
 
 import { unixTimestamp } from "../utils/timeUtils";
+import { TimeSpan } from "../utils/timeSpan";
 
 export interface AccessToken {
     sub: string;
@@ -10,20 +10,17 @@ export interface AccessToken {
 }
 
 export class JwtService {
-    private _tokenTTLSeconds: number;
-
-    constructor(private _jwtPrivateKey: string, tokenTTLMinutes: number) {
-        if (!this._jwtPrivateKey) {
+    constructor(private _jwtPrivateKey: string, private _tokenTTL: TimeSpan) {
+        if (!_jwtPrivateKey) {
             throw new Error("JWT private key is required.");
         }
         this._jwtPrivateKey = this._jwtPrivateKey.trim();
-        if (this._jwtPrivateKey.length < 44) {
+        if (_jwtPrivateKey.length < 44) {
             throw new Error("Minimum required JWT key length is 44 characters!");
         }
-        if (!isNumber(tokenTTLMinutes) || tokenTTLMinutes <= 1) {
+        if (_tokenTTL.seconds <= TimeSpan.fromMinutes(1).seconds) {
             throw new Error("Token TTL has to be number greater than 1 minute.");
         }
-        this._tokenTTLSeconds = tokenTTLMinutes * 60;
     }
 
     public issueAccessToken<PayloadType>(userId: string, payload?: PayloadType): string {
@@ -31,7 +28,7 @@ export class JwtService {
         const dataToSign = {
             sub: userId,
             iat: now,
-            exp: now + this._tokenTTLSeconds,
+            exp: now + this._tokenTTL.seconds,
             ...payload,
         };
         return jwt.sign(dataToSign, this._jwtPrivateKey);

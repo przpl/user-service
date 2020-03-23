@@ -1,5 +1,7 @@
 import redis from "redis";
 
+import { TimeSpan } from "../utils/timeSpan";
+
 enum KeyFlags {
     expireSeconds = "EX",
     expireMiliseconds = "PX",
@@ -19,11 +21,11 @@ export class CacheDb {
         this._client = redis.createClient({ host: host, port: port, db: dbIndex });
     }
 
-    public setMfaLoginToken(userId: string, token: string, ip: string, expireTimeSeconds: number) {
+    public setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan) {
         const tokenObj: MfaLoginToken = { token: token, ip: ip };
         return new Promise((resolve, reject) => {
             const keyName = this.getMfaLoginTokenKey(userId);
-            this._client.SET(keyName, JSON.stringify(tokenObj), KeyFlags.expireSeconds, expireTimeSeconds, (err, reply) => {
+            this._client.SET(keyName, JSON.stringify(tokenObj), KeyFlags.expireSeconds, expireTime.seconds, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;

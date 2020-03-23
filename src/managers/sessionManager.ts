@@ -7,6 +7,7 @@ import { JsonConfig } from "../utils/config/jsonConfig";
 import { isExpired } from "../utils/timeUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
+import { TimeSpan } from "../utils/timeSpan";
 
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
@@ -40,7 +41,7 @@ export class SessionManager {
             return null;
         }
 
-        if (isExpired(session.lastUseAt, this._jsonConfig.security.session.staleRefreshTokenAfterHours * 60 * 60)) {
+        if (isExpired(session.lastUseAt, TimeSpan.fromHours(this._jsonConfig.security.session.staleRefreshTokenAfterHours))) {
             await this._sessionRepo.remove(session);
             await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
             throw new StaleRefreshTokenException();

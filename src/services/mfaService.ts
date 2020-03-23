@@ -5,27 +5,28 @@ import { CryptoService } from "./cryptoService";
 import { CacheDb } from "../dal/cacheDb";
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import { unixTimestamp } from "../utils/timeUtils";
+import { TimeSpan } from "../utils/timeSpan";
 
 // TODO rename to MfaManager
 export class MfaService {
     private _userRepo = getRepository(UserEntity);
 
-    constructor(private _cache: CacheDb, private _cryptoService: CryptoService, private _mfaLoginTTLSeconds: number) {
+    constructor(private _cache: CacheDb, private _cryptoService: CryptoService, private _mfaLoginTTL: TimeSpan) {
         if (!_cache) {
             throw new Error("Cache is required.");
         }
         if (!_cryptoService) {
             throw new Error("Crypto service is required.");
         }
-        if (_mfaLoginTTLSeconds <= 0) {
+        if (_mfaLoginTTL.seconds <= 0) {
             throw new Error("MFA Login Token TTL has to be greater than 0 seconds.");
         }
     }
 
     public async issueLoginToken(userId: string, ip: string): Promise<{ token: string; expiresAt: number }> {
         const token = this._cryptoService.randomHexString(64);
-        await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTLSeconds);
-        const expiresAt = unixTimestamp() + this._mfaLoginTTLSeconds;
+        await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTL);
+        const expiresAt = unixTimestamp() + this._mfaLoginTTL.seconds;
         return { token: token, expiresAt: expiresAt };
     }
 

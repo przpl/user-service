@@ -9,13 +9,14 @@ import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
 import { PASSWORD_RESET_CODE_LENGTH, EMAIL_SIG_LENGTH } from "../utils/globalConsts";
+import { TimeSpan } from "../utils/timeSpan";
 
 export class UserManager {
     private _userRepo = getRepository(UserEntity);
     private _passResetRepo = getRepository(PasswordResetEntity);
     private _externalLoginRepo = getRepository(ExternalLoginEntity);
 
-    constructor(private _crypto: CryptoService, private _emailSigKey: string, private _passResetCodeTTLMinutes: number) {
+    constructor(private _crypto: CryptoService, private _emailSigKey: string, private _passResetCodeTTL: TimeSpan) {
         if (!this._emailSigKey) {
             throw new Error("Email signature key is required.");
         }
@@ -23,7 +24,7 @@ export class UserManager {
         if (this._emailSigKey.length < 24) {
             throw new Error("Minimum required email signature length is 24 characters!");
         }
-        if (this._passResetCodeTTLMinutes < 5) {
+        if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
         }
     }
@@ -105,7 +106,7 @@ export class UserManager {
             throw new UserNotExistsException();
         }
 
-        if (isExpired(passReset.createdAt, this._passResetCodeTTLMinutes * 60)) {
+        if (isExpired(passReset.createdAt, this._passResetCodeTTL)) {
             throw new ExpiredResetCodeException();
         }
 

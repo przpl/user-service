@@ -30,6 +30,7 @@ import ExternalUserRouter from "./routes/user/externalUserRouter";
 import MfaController from "./controllers/mfaController";
 import MfaRouter from "./routes/mfaRouter";
 import { SessionManager } from "./managers/sessionManager";
+import { TimeSpan } from "./utils/timeSpan";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -90,9 +91,9 @@ async function start() {
     configurePassport(app, config.jsonConfig);
 
     const cacheDb = new CacheDb(config.jsonConfig.redis.host, config.jsonConfig.redis.port);
-    const jwtService = new JwtService(config.jwtPrivateKey, config.tokenTTLMinutes);
+    const jwtService = new JwtService(config.jwtPrivateKey, TimeSpan.fromMinutes(config.tokenTTLMinutes));
     const cryptoService = new CryptoService(config.jsonConfig.security.bcryptRounds);
-    const mfaService = new MfaService(cacheDb, cryptoService, config.jsonConfig.security.mfa.loginTokenTTLSeconds);
+    const mfaService = new MfaService(cacheDb, cryptoService, TimeSpan.fromSeconds(config.jsonConfig.security.mfa.loginTokenTTLSeconds));
 
     const validator = new Validator(config.jsonConfig);
     const authMiddleware = new AuthMiddleware(jwtService);
@@ -103,7 +104,7 @@ async function start() {
         config.jsonConfig.security.reCaptcha.ssl
     );
 
-    const userManager = new UserManager(cryptoService, config.emailSigKey, config.jsonConfig.passwordReset.codeTTLMinutes);
+    const userManager = new UserManager(cryptoService, config.emailSigKey, TimeSpan.fromMinutes(config.jsonConfig.passwordReset.codeTTLMinutes));
     const sessionManager = new SessionManager(cryptoService, config.jsonConfig);
 
     const serviceCtrl = new ServiceController(config);
