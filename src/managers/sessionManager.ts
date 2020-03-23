@@ -8,6 +8,7 @@ import { isExpired } from "../utils/timeUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
+import { REFRESH_TOKEN_BYTES } from "../utils/globalConsts";
 
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
@@ -25,7 +26,7 @@ export class SessionManager {
         user.activeSessions++;
         await user.save();
 
-        const token = this._cryptoService.randomBytesInBase64(64);
+        const token = this._cryptoService.randomBytesInBase64(REFRESH_TOKEN_BYTES);
         const session = new SessionEntity();
         session.token = token;
         session.userId = userId;

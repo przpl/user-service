@@ -26,7 +26,7 @@ export default class TokenController {
             return forwardError(next, "sessionDoesNotExist", HttpStatus.UNAUTHORIZED);
         }
 
-        const accessToken = this._jwtService.issueAccessToken(userId);
+        const accessToken = this._jwtService.issueAccessToken(refreshToken, userId);
         res.json({ accessToken: accessToken });
     }
 }

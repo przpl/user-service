@@ -9,7 +9,7 @@ export default abstract class UserController {
 
     protected async sendTokens(res: Response, user: User) {
         const refreshToken = await this._sessionManager.issueRefreshToken(user.id);
-        const accessToken = this._jwtService.issueAccessToken(user.id);
+        const accessToken = this._jwtService.issueAccessToken(refreshToken, user.id);
 
         res.json({ user: this.mapUser(user), refreshToken: refreshToken, accessToken: accessToken });
     }

@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 import { unixTimestamp } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
+import { JWT_ID_LENGTH } from "../utils/globalConsts";
 
 export interface AccessToken {
     sub: string;
@@ -23,10 +24,11 @@ export class JwtService {
         }
     }
 
-    public issueAccessToken<PayloadType>(userId: string, payload?: PayloadType): string {
+    public issueAccessToken<PayloadType>(refreshToken: string, userId: string, payload?: PayloadType): string {
         const now = unixTimestamp();
         const dataToSign = {
             sub: userId,
+            jti: this.idSubstring(refreshToken),
             iat: now,
             exp: now + this._tokenTTL.seconds,
             ...payload,
@@ -36,5 +38,9 @@ export class JwtService {
 
     public decodeAccessToken<PayloadType>(token: string): AccessToken & PayloadType {
         return jwt.verify(token, this._jwtPrivateKey) as AccessToken & PayloadType;
+    }
+
+    private idSubstring(refreshToken: string) {
+        return refreshToken.slice(0, JWT_ID_LENGTH);
     }
 }
