@@ -35,10 +35,7 @@ export class CryptoService {
     }
 
     public randomBytesInBase64(bytesCount: number): string {
-        return crypto
-            .randomBytes(bytesCount)
-            .toString("base64")
-            .toUpperCase();
+        return crypto.randomBytes(bytesCount).toString("base64");
     }
 
     public hmacSignatureHex(data: string, key: string): string {
