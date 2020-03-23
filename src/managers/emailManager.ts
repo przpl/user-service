@@ -4,13 +4,15 @@ import { EmailConfirmEntity } from "../dal/entities/emailConfirmEntity";
 import { CryptoService } from "../services/cryptoService";
 import { EMAIL_CODE_LENGTH } from "../utils/globalConsts";
 import { UserEntity } from "../dal/entities/userEntity";
-import { EmailResendCodeLimitException } from "../exceptions/exceptions";
+import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
+import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
+import { TimeSpan } from "../utils/timeSpan";
 
 export class EmailManager {
     private _emailConfirmRepo = getRepository(EmailConfirmEntity);
     private _userRepo = getRepository(UserEntity);
 
-    constructor(private _cryptoService: CryptoService, private _resendCountLimit: number) {}
+    constructor(private _cryptoService: CryptoService, private _resendCountLimit: number, private _resendTimeLimit: TimeSpan) {}
 
     public async generateCode(userId: string, email: string) {
         const confirm = new EmailConfirmEntity();
@@ -32,6 +34,10 @@ export class EmailManager {
             throw new EmailResendCodeLimitException();
         }
 
+        if (this.isSendRequestTooOften(confirm.lastSendRequestAt)) {
+            throw new EmailResendCodeTimeLimitException();
+        }
+
         confirm.lastSendRequestAt = new Date();
         confirm.sentCount++;
         await confirm.save();
@@ -49,5 +55,9 @@ export class EmailManager {
         await user.save();
         await this._emailConfirmRepo.remove(confirm);
         return true;
+    }
+
+    private isSendRequestTooOften(lastRequestAt: Date): boolean {
+        return unixTimestamp() - toUnixTimestamp(lastRequestAt) < this._resendTimeLimit.seconds;
     }
 }

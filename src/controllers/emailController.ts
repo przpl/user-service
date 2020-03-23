@@ -3,7 +3,7 @@ import HttpStatus from "http-status-codes";
 
 import { EmailManager } from "../managers/emailManager";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
-import { EmailResendCodeLimitException } from "../exceptions/exceptions";
+import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
 import { QueueService } from "../services/queueService";
 
 export default class EmailController {
@@ -24,6 +24,8 @@ export default class EmailController {
         } catch (error) {
             if (error instanceof EmailResendCodeLimitException) {
                 return forwardError(next, "limitExceeded", HttpStatus.BAD_REQUEST);
+            } else if (error instanceof EmailResendCodeTimeLimitException) {
+                return res.json({ result: true, tooOffen: true });
             }
             return forwardInternalError(next, error);
         }

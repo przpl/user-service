@@ -29,7 +29,8 @@
     },
     "localLogin": {
         "email": {
-            "resendLimit": 10
+            "resendLimit": 10,
+            "resendTimeLimitSeconds": 30
         }
     },
     "externalLogin": {

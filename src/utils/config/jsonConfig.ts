@@ -33,6 +33,7 @@ export interface JsonConfig {
     localLogin: {
         email: {
             resendLimit: number;
+            resendTimeLimitSeconds: number;
         };
     };
     externalLogin: {

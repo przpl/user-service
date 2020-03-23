@@ -110,7 +110,11 @@ async function start() {
 
     const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes));
     const sessionManager = new SessionManager(cryptoService, jsonConfig);
-    const emailManager = new EmailManager(cryptoService, jsonConfig.localLogin.email.resendLimit);
+    const emailManager = new EmailManager(
+        cryptoService,
+        jsonConfig.localLogin.email.resendLimit,
+        TimeSpan.fromSeconds(jsonConfig.localLogin.email.resendTimeLimitSeconds)
+    );
 
     const serviceCtrl = new ServiceController(config);
     const localUserCtrl = new LocalUserController(userManager, sessionManager, emailManager, queueService, jwtService, mfaService);

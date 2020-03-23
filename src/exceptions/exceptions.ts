@@ -18,3 +18,10 @@ export class EmailResendCodeLimitException extends Error {
         Object.setPrototypeOf(this, EmailResendCodeLimitException.prototype);
     }
 }
+
+export class EmailResendCodeTimeLimitException extends Error {
+    constructor(message?: string) {
+        super(message);
+        Object.setPrototypeOf(this, EmailResendCodeTimeLimitException.prototype);
+    }
+}
