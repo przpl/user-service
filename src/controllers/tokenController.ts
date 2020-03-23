@@ -10,7 +10,7 @@ export default class TokenController {
     constructor(private _jwtService: JwtService, private _sessionManager: SessionManager) {}
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
-        const { refreshToken } = req.body;
+        const { refreshToken } = req.cookies;
 
         let userId: string;
         try {

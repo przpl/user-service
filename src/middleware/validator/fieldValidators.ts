@@ -1,4 +1,4 @@
-import { ValidationChain, body } from "express-validator";
+import { ValidationChain, body, cookie } from "express-validator";
 
 import { USER_ID_LENGTH, PASSWORD_RESET_CODE_LENGTH, TWO_FA_TOKEN_LENGHT, ONE_TIME_PASS_LENGHT, EMAIL_SIG_LENGTH } from "../../utils/globalConsts";
 
@@ -31,7 +31,7 @@ export const fieldValidators = {
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
     password: {} as ValidationChain,
-    refreshToken: body("refreshToken")
+    refreshToken: cookie("refreshToken")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
