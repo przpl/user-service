@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
-import cookieParser from "cookie-parser"
+import cookieParser from "cookie-parser";
 import { createConnection, Connection } from "typeorm";
 
 import Config from "./utils/config/config";
