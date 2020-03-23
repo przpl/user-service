@@ -1,5 +1,5 @@
 export function unixTimestamp(): number {
-    return Math.trunc(+new Date() / 1000);
+    return Math.round(+new Date() / 1000);
 }
 
 export function toUnixTimestamp(date: Date): number {
