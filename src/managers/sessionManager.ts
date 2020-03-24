@@ -74,7 +74,7 @@ export class SessionManager {
             return false;
         }
         await this._sessionRepo.remove(session);
-        const expireOffsetS = 60; // additional offset to be 100% sure access token is expired
+        const expireOffsetS = 20; // additional offset to be 100% sure access token is expired
         const ref = this._jwtService.getTokenRef(refreshToken);
         const accessExpiresAtS = toUnixTimestampS(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
         const timeRmainingToExpireS = accessExpiresAtS - unixTimestampS();
