@@ -62,10 +62,10 @@ export class CacheDb {
         });
     }
 
-    public revokeAccessToken(userId: string, ref: string, until: TimeSpan) {
+    public revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan) {
         return new Promise((resolve, reject) => {
             const keyName = this.getRevokeAccessTokenKey(userId, ref);
-            this._client.SET(keyName, "", KeyFlags.expireSeconds, until.seconds, (err, reply) => {
+            this._client.SET(keyName, "", KeyFlags.expireSeconds, expireTime.seconds, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
