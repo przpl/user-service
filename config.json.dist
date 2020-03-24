@@ -28,6 +28,7 @@
         "staleRefreshTokenAfterHours": 720
     },
     "localLogin": {
+        "allowLoginWithoutConfirmedEmail": false,
         "email": {
             "resendLimit": 10,
             "resendTimeLimitSeconds": 30

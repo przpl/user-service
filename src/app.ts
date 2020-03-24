@@ -108,7 +108,7 @@ async function start() {
         jsonConfig.security.reCaptcha.ssl
     );
 
-    const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes));
+    const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes), jsonConfig);
     const sessionManager = new SessionManager(cryptoService, jsonConfig);
     const emailManager = new EmailManager(
         cryptoService,

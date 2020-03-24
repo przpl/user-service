@@ -31,6 +31,7 @@ export interface JsonConfig {
         staleRefreshTokenAfterHours: number;
     };
     localLogin: {
+        allowLoginWithoutConfirmedEmail: boolean;
         email: {
             resendLimit: number;
             resendTimeLimitSeconds: number;

@@ -16,13 +16,14 @@ import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
 import { PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
 import { TimeSpan } from "../utils/timeSpan";
+import { JsonConfig } from "../utils/config/jsonConfig";
 
 export class UserManager {
     private _userRepo = getRepository(UserEntity);
     private _passResetRepo = getRepository(PasswordResetEntity);
     private _externalLoginRepo = getRepository(ExternalLoginEntity);
 
-    constructor(private _crypto: CryptoService, private _passResetCodeTTL: TimeSpan) {
+    constructor(private _crypto: CryptoService, private _passResetCodeTTL: TimeSpan, private _jsonConfig: JsonConfig) {
         if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
         }
@@ -67,7 +68,7 @@ export class UserManager {
             throw new InvalidPasswordException();
         }
 
-        if (!user.emailConfirmed) {
+        if (!this._jsonConfig.localLogin.allowLoginWithoutConfirmedEmail && !user.emailConfirmed) {
             throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
