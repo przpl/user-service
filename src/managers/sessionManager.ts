@@ -79,7 +79,7 @@ export class SessionManager {
         const accessExpiresAtS = toUnixTimestampS(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
         const timeRmainingToExpireS = accessExpiresAtS - unixTimestampS();
         if (timeRmainingToExpireS > expireOffsetS * -1) {
-            await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(timeRmainingToExpireS));
+            await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(timeRmainingToExpireS + expireOffsetS));
         }
         return true;
     }
