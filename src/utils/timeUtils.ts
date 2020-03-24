@@ -1,14 +1,14 @@
 import { TimeSpan } from "./timeSpan";
 
-export function unixTimestamp(): number {
+export function unixTimestampS(): number {
     return Math.round(+new Date() / 1000);
 }
 
-export function toUnixTimestamp(date: Date): number {
+export function toUnixTimestampS(date: Date): number {
     return Math.round(+date / 1000);
 }
 
 export function isExpired(date: Date, expiresAfter: TimeSpan): boolean {
-    const inSeconds = toUnixTimestamp(date);
-    return inSeconds + expiresAfter.seconds < unixTimestamp();
+    const inSeconds = toUnixTimestampS(date);
+    return inSeconds + expiresAfter.seconds < unixTimestampS();
 }

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-import { unixTimestamp } from "../utils/timeUtils";
+import { unixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 import { JWT_ID_LENGTH } from "../utils/globalConsts";
 
@@ -25,7 +25,7 @@ export class JwtService {
     }
 
     public issueAccessToken<PayloadType>(refreshToken: string, userId: string, payload?: PayloadType): string {
-        const now = unixTimestamp();
+        const now = unixTimestampS();
         const dataToSign = {
             sub: userId,
             ref: this.getTokenRef(refreshToken),

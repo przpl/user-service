@@ -4,7 +4,7 @@ import { SessionEntity } from "../dal/entities/sessionEntity";
 import { CryptoService } from "../services/cryptoService";
 import { UserEntity } from "../dal/entities/userEntity";
 import { JsonConfig } from "../utils/config/jsonConfig";
-import { isExpired, toUnixTimestamp, unixTimestamp } from "../utils/timeUtils";
+import { isExpired, toUnixTimestampS, unixTimestampS } from "../utils/timeUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
@@ -76,8 +76,8 @@ export class SessionManager {
         await this._sessionRepo.remove(session);
         const expireOffsetS = 60; // additional offset to be 100% sure access token is expired
         const ref = this._jwtService.getTokenRef(refreshToken);
-        const accessExpiresAtS = toUnixTimestamp(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
-        const timeRmainingToExpireS = accessExpiresAtS - unixTimestamp();
+        const accessExpiresAtS = toUnixTimestampS(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
+        const timeRmainingToExpireS = accessExpiresAtS - unixTimestampS();
         if (timeRmainingToExpireS > expireOffsetS * -1) {
             await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(accessExpiresAtS + expireOffsetS));
         }

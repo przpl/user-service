@@ -4,7 +4,7 @@ import { getRepository } from "typeorm";
 import { CryptoService } from "./cryptoService";
 import { CacheDb } from "../dal/cacheDb";
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
-import { unixTimestamp } from "../utils/timeUtils";
+import { unixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 
 // TODO rename to MfaManager
@@ -26,7 +26,7 @@ export class MfaService {
     public async issueLoginToken(userId: string, ip: string): Promise<{ token: string; expiresAt: number }> {
         const token = this._cryptoService.randomHexString(64);
         await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTL);
-        const expiresAt = unixTimestamp() + this._mfaLoginTTL.seconds;
+        const expiresAt = unixTimestampS() + this._mfaLoginTTL.seconds;
         return { token: token, expiresAt: expiresAt };
     }
 

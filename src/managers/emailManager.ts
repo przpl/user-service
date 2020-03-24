@@ -5,7 +5,7 @@ import { CryptoService } from "../services/cryptoService";
 import { EMAIL_CODE_LENGTH } from "../utils/globalConsts";
 import { UserEntity } from "../dal/entities/userEntity";
 import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
-import { unixTimestamp, toUnixTimestamp } from "../utils/timeUtils";
+import { unixTimestampS, toUnixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 
 export class EmailManager {
@@ -58,6 +58,6 @@ export class EmailManager {
     }
 
     private isSendRequestTooOften(lastRequestAt: Date): boolean {
-        return unixTimestamp() - toUnixTimestamp(lastRequestAt) < this._resendTimeLimit.seconds;
+        return unixTimestampS() - toUnixTimestampS(lastRequestAt) < this._resendTimeLimit.seconds;
     }
 }

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 
 import Config from "../utils/config/config";
-import { toUnixTimestamp } from "../utils/timeUtils";
+import { toUnixTimestampS } from "../utils/timeUtils";
 
 export default class ServiceController {
     constructor(private _config: Config) {}
@@ -20,7 +20,7 @@ export default class ServiceController {
                 value: this._config.environment,
             },
             currentTime: {
-                unixTimestamp: toUnixTimestamp(currentTime),
+                unixTimestamp: toUnixTimestampS(currentTime),
                 utcString: currentTime.toUTCString(),
             },
             memoryUsage: this.formatMemoryUsage(process.memoryUsage()),
