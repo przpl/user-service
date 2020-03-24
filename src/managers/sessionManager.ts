@@ -70,8 +70,9 @@ export class SessionManager {
 
     public async revokeAllSessions(userId: string): Promise<boolean> {
         const sessions = await this._sessionRepo.find({ where: { userId: userId } });
-        await this._sessionRepo.remove(sessions);
         await this.revokeAccessTokens(sessions);
+        await this._sessionRepo.remove(sessions);
+        await this._userRepo.update({ id: userId }, { activeSessions: 0 });
         return true;
     }
 
@@ -80,8 +81,9 @@ export class SessionManager {
         if (!session) {
             return false;
         }
-        await this._sessionRepo.remove(session);
         await this.revokeAccessTokens([session]);
+        await this._sessionRepo.remove(session);
+        await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
         return true;
     }
 
@@ -100,7 +102,7 @@ export class SessionManager {
     private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {
         const sessions = await this._sessionRepo.find({ where: { userId: userId } });
         if (sessions.length < maxSessionsPerUser) {
-            return;
+            return sessions.length;
         }
         const fromOldestToNewest = sessions.sort((a, b) => a.lastUseAt.getTime() - b.lastUseAt.getTime());
         let redundantSessionsCount = sessions.length - maxSessionsPerUser;
