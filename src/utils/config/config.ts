@@ -85,10 +85,10 @@ export default class Config {
             });
         }
 
-        if (!this.masterKey || this.masterKey.length < 32) {
+        if (!this.masterKey || this.masterKey.length < 20) {
             result.push({
                 variableName: "MASTER_KEY",
-                message: "Minimum required length is 32 characters",
+                message: "Minimum required length is 20 characters",
                 severity: "error",
             });
         }

@@ -12,4 +12,5 @@ export interface RequestBody {
     oldPassword?: string;
     id_token?: string; // eslint-disable-line camelcase
     access_token?: string; // eslint-disable-line camelcase
+    userRole?: string;
 }

@@ -34,6 +34,9 @@ import { TimeSpan } from "./utils/timeSpan";
 import { QueueService } from "./services/queueService";
 import { EmailManager } from "./managers/emailManager";
 import { RoleManager } from "./managers/roleManager";
+import InternalRouter from "./routes/internalRouter";
+import InternalAuthMiddleware from "./middleware/internalAuthMiddleware";
+import InternalController from "./controllers/internalController";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -108,6 +111,7 @@ async function start() {
         config.recaptchaSecretKey,
         jsonConfig.security.reCaptcha.ssl
     );
+    const internalAuthMiddleware = new InternalAuthMiddleware(config.masterKey);
 
     const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes), jsonConfig);
     const sessionManager = new SessionManager(cryptoService, jwtService, cacheDb, jsonConfig, TimeSpan.fromMinutes(config.tokenTTLMinutes));
@@ -119,6 +123,7 @@ async function start() {
     const roleManager = new RoleManager();
 
     const serviceCtrl = new ServiceController(config);
+    const internalCtrl = new InternalController(roleManager);
     const localUserCtrl = new LocalUserController(userManager, sessionManager, roleManager, emailManager, queueService, jwtService, mfaService);
     const externalUserCtrl = new ExternalUserController(userManager, sessionManager, roleManager, queueService, jwtService);
     const passwordCtrl = new PasswordController(userManager);
@@ -127,6 +132,7 @@ async function start() {
     const mfaCtrl = new MfaController(userManager, mfaService, jsonConfig);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceCtrl));
+    app.use("/api/internal", InternalRouter.getExpressRouter(internalCtrl, internalAuthMiddleware));
     app.use("/api/user", LocalUserRouter.getExpressRouter(localUserCtrl, validator, captchaMiddleware, jsonConfig));
     app.use("/api/user/external", ExternalUserRouter.getExpressRouter(externalUserCtrl, authMiddleware, validator, jsonConfig));
     app.use("/api/user/password", PasswordRouter.getExpressRouter(passwordCtrl, authMiddleware, validator, captchaMiddleware, jsonConfig));
