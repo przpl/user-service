@@ -68,7 +68,7 @@ export default class LocalUserController extends UserController {
             return this.sendMfaLoginToken(req, res, user);
         }
 
-        this.sendTokens(res, user);
+        this.sendTokens(req, res, user);
     }
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
@@ -85,7 +85,7 @@ export default class LocalUserController extends UserController {
         this._mfaService.revokeLoginToken(userId);
 
         const user = await this._userManager.getUserById(userId);
-        this.sendTokens(res, user);
+        this.sendTokens(req, res, user);
     }
 
     private async sendMfaLoginToken(req: Request, res: Response, user: User) {

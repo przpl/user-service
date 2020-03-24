@@ -27,6 +27,6 @@ export default class ExternalUserController extends UserController {
 
         // TODO notify other services about new user, send data to queue
 
-        this.sendTokens(res, user);
+        this.sendTokens(req, res, user);
     }
 }

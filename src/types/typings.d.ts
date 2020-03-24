@@ -5,5 +5,6 @@ declare module "express" {
     export interface Request {
         authenticatedUser?: AccessToken;
         body: RequestBody;
+        userAgent?: IUAParser.IResult;
     }
 }

@@ -9,6 +9,7 @@ import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
 import { REFRESH_TOKEN_BYTES } from "../utils/globalConsts";
+import { UserAgent } from "../interfaces/userAgent";
 
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
@@ -16,7 +17,7 @@ export class SessionManager {
 
     constructor(private _cryptoService: CryptoService, private _jsonConfig: JsonConfig) {}
 
-    public async issueRefreshToken(userId: string): Promise<string> {
+    public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
         if (user.activeSessions >= this._jsonConfig.session.maxPerUser) {
             const sessionsAfterRemoval = await this.removeOldestSession(userId, this._jsonConfig.session.maxPerUser);
@@ -30,13 +31,18 @@ export class SessionManager {
         const session = new SessionEntity();
         session.token = token;
         session.userId = userId;
+        session.createIp = ip;
+        session.lastRefreshIp = ip;
+        session.browser = userAgent.browser;
+        session.os = userAgent.os;
+        session.osVersion = userAgent.osVersion;
         session.lastUseAt = new Date();
         await session.save();
 
         return token;
     }
 
-    public async refreshSessionAndGetUserId(refreshToken: string): Promise<string> {
+    public async refreshSessionAndGetUserId(refreshToken: string, ip: string): Promise<string> {
         const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
         if (!session) {
             return null;
@@ -48,6 +54,7 @@ export class SessionManager {
             throw new StaleRefreshTokenException();
         }
 
+        session.lastRefreshIp = ip;
         session.lastUseAt = new Date();
         await session.save();
         return session.userId;

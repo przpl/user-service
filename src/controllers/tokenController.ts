@@ -14,7 +14,7 @@ export default class TokenController {
 
         let userId: string;
         try {
-            userId = await this._sessionManager.refreshSessionAndGetUserId(refreshToken);
+            userId = await this._sessionManager.refreshSessionAndGetUserId(refreshToken, req.ip);
         } catch (error) {
             if (error instanceof StaleRefreshTokenException) {
                 return forwardError(next, "staleRefreshToken", HttpStatus.FORBIDDEN);

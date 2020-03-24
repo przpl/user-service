@@ -8,6 +8,21 @@ export class SessionEntity extends BaseEntity {
     @Column() // TODO primary and foreign key? and "uuid" type
     userId: string;
 
+    @Column()
+    createIp: string;
+
+    @Column()
+    lastRefreshIp: string;
+
+    @Column({ nullable: true })
+    browser: string;
+
+    @Column({ nullable: true })
+    os: string;
+
+    @Column({ nullable: true })
+    osVersion: string;
+
     @Column({ type: "timestamp" })
     lastUseAt: Date;
 

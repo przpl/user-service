@@ -4,11 +4,13 @@ import LocalUserController from "../../controllers/user/localUserController";
 import Validator from "../../middleware/validator/validator";
 import RecaptchaMiddleware from "../../middleware/recaptchaMiddleware";
 import { JsonConfig } from "../../utils/config/jsonConfig";
+import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
 
 export default class LocalUserRouter {
     static getExpressRouter(controller: LocalUserController, validator: Validator, captcha: RecaptchaMiddleware, jsonConfig: JsonConfig): Router {
         const router = express.Router();
         const recaptchaEnabled = jsonConfig.security.reCaptcha.protectedEndpoints;
+        const uaMiddleware = new UserAgentMiddleware();
 
         router.post(
             "/register",
@@ -21,6 +23,7 @@ export default class LocalUserRouter {
             "/login",
             validator.login,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.login),
+            (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
             (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next)
         );
 
