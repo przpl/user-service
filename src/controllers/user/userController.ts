@@ -6,7 +6,7 @@ import { SessionManager } from "../../managers/sessionManager";
 import { UserAgent } from "../../interfaces/userAgent";
 
 export default abstract class UserController {
-    constructor(private _jwtService: JwtService, private _sessionManager: SessionManager) {}
+    constructor(protected _jwtService: JwtService, protected _sessionManager: SessionManager) {}
 
     protected async sendTokens(req: Request, res: Response, user: User) {
         const ua: UserAgent = {

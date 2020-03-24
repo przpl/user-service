@@ -62,7 +62,24 @@ export class CacheDb {
         });
     }
 
+    public revokeAccessToken(userId: string, ref: string, until: TimeSpan) {
+        return new Promise((resolve, reject) => {
+            const keyName = this.getRevokeAccessTokenKey(userId, ref);
+            this._client.SET(keyName, "", KeyFlags.expireSeconds, until.seconds, (err, reply) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(reply === "OK");
+            });
+        });
+    }
+
     private getMfaLoginTokenKey(userId: string): string {
         return `mlt:${userId}`;
+    }
+
+    private getRevokeAccessTokenKey(userId: string, ref: string): string {
+        return `rve:${userId}:${ref}`;
     }
 }

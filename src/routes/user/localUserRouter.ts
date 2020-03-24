@@ -27,6 +27,8 @@ export default class LocalUserRouter {
             (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next)
         );
 
+        router.post("/logout", validator.logout, (req: Request, res: Response, next: NextFunction) => controller.logout(req, res, next));
+
         if (jsonConfig.security.mfa.enabled) {
             router.post("/login/mfa", validator.loginWithMfa, (req: Request, res: Response, next: NextFunction) =>
                 controller.loginWithMfa(req, res, next)

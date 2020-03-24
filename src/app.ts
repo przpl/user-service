@@ -109,7 +109,7 @@ async function start() {
     );
 
     const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes), jsonConfig);
-    const sessionManager = new SessionManager(cryptoService, jsonConfig);
+    const sessionManager = new SessionManager(cryptoService, jwtService, cacheDb, jsonConfig, TimeSpan.fromMinutes(config.tokenTTLMinutes));
     const emailManager = new EmailManager(
         cryptoService,
         jsonConfig.localLogin.email.resendLimit,

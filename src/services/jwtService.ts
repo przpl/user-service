@@ -28,7 +28,7 @@ export class JwtService {
         const now = unixTimestamp();
         const dataToSign = {
             sub: userId,
-            ref: this.idSubstring(refreshToken),
+            ref: this.getTokenRef(refreshToken),
             iat: now,
             exp: now + this._tokenTTL.seconds,
             ...payload,
@@ -40,7 +40,7 @@ export class JwtService {
         return jwt.verify(token, this._jwtPrivateKey) as AccessToken & PayloadType;
     }
 
-    private idSubstring(refreshToken: string) {
+    public getTokenRef(refreshToken: string) {
         return refreshToken.slice(0, JWT_ID_LENGTH);
     }
 }

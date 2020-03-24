@@ -15,6 +15,7 @@ export default class Validator {
     public register: ValidatorArray = [];
     public changePassword: ValidatorArray = [];
     public refreshToken: ValidatorArray = [];
+    public logout: ValidatorArray = [];
     public confirmEmail: ValidatorArray = [];
     public resendEmail: ValidatorArray = [];
     public forgotPassword: ValidatorArray = [];
@@ -95,6 +96,7 @@ export default class Validator {
         this.register = [fieldValidators.email, fieldValidators.password, fieldValidators.register, this.validate];
         this.changePassword = [fieldValidators.oldPassword, fieldValidators.password, this.validate];
         this.refreshToken = [fieldValidators.refreshToken, this.validate];
+        this.logout = [fieldValidators.refreshToken, this.validate];
         this.confirmEmail = [fieldValidators.email, fieldValidators.emailCode, this.validate];
         this.resendEmail = [fieldValidators.email, this.validate];
         this.forgotPassword = [fieldValidators.email, this.validate];

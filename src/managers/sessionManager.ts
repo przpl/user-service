@@ -4,18 +4,20 @@ import { SessionEntity } from "../dal/entities/sessionEntity";
 import { CryptoService } from "../services/cryptoService";
 import { UserEntity } from "../dal/entities/userEntity";
 import { JsonConfig } from "../utils/config/jsonConfig";
-import { isExpired } from "../utils/timeUtils";
+import { isExpired, toUnixTimestamp, unixTimestamp } from "../utils/timeUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
 import { REFRESH_TOKEN_BYTES } from "../utils/globalConsts";
 import { UserAgent } from "../interfaces/userAgent";
+import { CacheDb } from "../dal/cacheDb";
+import { JwtService } from "../services/jwtService";
 
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
     private _sessionRepo = getRepository(SessionEntity);
 
-    constructor(private _cryptoService: CryptoService, private _jsonConfig: JsonConfig) {}
+    constructor(private _cryptoService: CryptoService, private _jwtService: JwtService, private _cacheDb: CacheDb, private _jsonConfig: JsonConfig, private _tokenTTL: TimeSpan) {}
 
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
@@ -58,6 +60,22 @@ export class SessionManager {
         session.lastUseAt = new Date();
         await session.save();
         return session.userId;
+    }
+
+    public async revokeSession(refreshToken: string): Promise<boolean> {
+        const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
+        if (!session) {
+            return false;
+        }
+        await this._sessionRepo.remove(session);
+        const expireOffsetS = 60; // additional offset to be 100% sure access token is expired
+        const ref = this._jwtService.getTokenRef(refreshToken);
+        const accessExpiresAtS = toUnixTimestamp(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
+        const timeRmainingToExpireS = accessExpiresAtS - unixTimestamp();
+        if (timeRmainingToExpireS > expireOffsetS * -1) {
+            await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(accessExpiresAtS + expireOffsetS));
+        }
+        return true;
     }
 
     private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {

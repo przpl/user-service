@@ -88,6 +88,12 @@ export default class LocalUserController extends UserController {
         this.sendTokens(req, res, user);
     }
 
+    public async logout(req: Request, res: Response, next: NextFunction) {
+        const { refreshToken } = req.cookies;
+        await this._sessionManager.revokeSession(refreshToken);
+        res.send({ result: true });
+    }
+
     private async sendMfaLoginToken(req: Request, res: Response, user: User) {
         const response = await this._mfaService.issueLoginToken(user.id, req.ip);
         return res.json({ user: this.mapUser(user), mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
