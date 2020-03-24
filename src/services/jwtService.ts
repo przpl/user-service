@@ -6,6 +6,8 @@ import { JWT_ID_LENGTH } from "../utils/globalConsts";
 
 export interface AccessToken {
     sub: string;
+    ref: string;
+    rol: string[];
     iat: number;
     exp: number;
 }

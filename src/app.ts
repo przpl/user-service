@@ -101,7 +101,7 @@ async function start() {
     const queueService = new QueueService();
 
     const validator = new Validator(jsonConfig);
-    const authMiddleware = new AuthMiddleware(jwtService);
+    const authMiddleware = new AuthMiddleware(cacheDb, jwtService);
     const captchaMiddleware = new RecaptchaMiddleware(
         jsonConfig.security.reCaptcha.enabled,
         config.recaptchaSiteKey,

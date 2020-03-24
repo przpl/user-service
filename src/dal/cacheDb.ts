@@ -75,6 +75,11 @@ export class CacheDb {
         });
     }
 
+    public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void) {
+        const keyName = this.getRevokeAccessTokenKey(userId, ref);
+        this._client.EXISTS(keyName, cb);
+    }
+
     private getMfaLoginTokenKey(userId: string): string {
         return `mlt:${userId}`;
     }

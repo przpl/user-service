@@ -4,12 +4,13 @@ import passport from "passport";
 
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { CacheDb } from "../dal/cacheDb";
 
 export default class AuthMiddleware {
     private _googleAuthDelegate = passport.authenticate("google-id-token", { session: false });
     private _facebookAuthDelegate = passport.authenticate("facebook-token", { session: false });
 
-    constructor(private _jwtService: JwtService) {
+    constructor(private _cacheDb: CacheDb, private _jwtService: JwtService) {
         if (!_jwtService) {
             throw new Error("JWT Service is required.");
         }
@@ -51,7 +52,16 @@ export default class AuthMiddleware {
             return forwardInternalError(next, error);
         }
 
-        next();
+        const { sub, ref } = req.authenticatedUser;
+        this._cacheDb.isAccessTokenRevoked(sub, ref, (error, reply) => {
+            if (error) {
+                return forwardInternalError(next, error);
+            }
+            if (reply > 0) {
+                return forwardError(next, "tokenRevoked", HttpStatus.UNAUTHORIZED);
+            }
+            next();
+        });
     }
 
     private handleExternalLogin(next: NextFunction, error: any) {
