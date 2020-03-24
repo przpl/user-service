@@ -68,20 +68,33 @@ export class SessionManager {
         return session.userId;
     }
 
+    public async revokeAllSessions(userId: string): Promise<boolean> {
+        const sessions = await this._sessionRepo.find({ where: { userId: userId } });
+        await this._sessionRepo.remove(sessions);
+        await this.revokeAccessTokens(sessions);
+        return true;
+    }
+
     public async revokeSession(refreshToken: string): Promise<boolean> {
         const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
         if (!session) {
             return false;
         }
         await this._sessionRepo.remove(session);
-        const expireOffsetS = 20; // additional offset to be 100% sure access token is expired
-        const ref = this._jwtService.getTokenRef(refreshToken);
-        const accessExpiresAtS = toUnixTimestampS(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
-        const timeRmainingToExpireS = accessExpiresAtS - unixTimestampS();
-        if (timeRmainingToExpireS > expireOffsetS * -1) {
-            await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(timeRmainingToExpireS + expireOffsetS));
-        }
+        await this.revokeAccessTokens([session]);
         return true;
+    }
+
+    private async revokeAccessTokens(sessions: SessionEntity[]) {
+        for (const session of sessions) {
+            const expireOffsetS = 20; // additional offset to be 100% sure access token is expired
+            const ref = this._jwtService.getTokenRef(session.token);
+            const accessExpiresAtS = toUnixTimestampS(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
+            const timeRmainingToExpireS = accessExpiresAtS - unixTimestampS();
+            if (timeRmainingToExpireS > expireOffsetS * -1) {
+                await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(timeRmainingToExpireS + expireOffsetS));
+            }
+        }
     }
 
     private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {

@@ -1,9 +1,12 @@
 import { getRepository } from "typeorm";
 
 import { RoleEntity } from "../dal/entities/roleEntity";
+import { SessionManager } from "./sessionManager";
 
 export class RoleManager {
     private _roleRepo = getRepository(RoleEntity);
+
+    constructor(private _sessionManager: SessionManager) {}
 
     public async addRole(userId: string, role: string) {
         const entity = new RoleEntity();
@@ -18,6 +21,7 @@ export class RoleManager {
             return;
         }
         await this._roleRepo.remove(entity);
+        await this._sessionManager.revokeSession(userId);
     }
 
     public async getRoles(userId: string): Promise<string[]> {
