@@ -17,7 +17,13 @@ export class SessionManager {
     private _userRepo = getRepository(UserEntity);
     private _sessionRepo = getRepository(SessionEntity);
 
-    constructor(private _cryptoService: CryptoService, private _jwtService: JwtService, private _cacheDb: CacheDb, private _jsonConfig: JsonConfig, private _tokenTTL: TimeSpan) {}
+    constructor(
+        private _cryptoService: CryptoService,
+        private _jwtService: JwtService,
+        private _cacheDb: CacheDb,
+        private _jsonConfig: JsonConfig,
+        private _tokenTTL: TimeSpan
+    ) {}
 
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
