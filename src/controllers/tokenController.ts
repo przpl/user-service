@@ -5,9 +5,10 @@ import { JwtService } from "../services/jwtService";
 import { SessionManager } from "../managers/sessionManager";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
+import { RoleManager } from "../managers/roleManager";
 
 export default class TokenController {
-    constructor(private _jwtService: JwtService, private _sessionManager: SessionManager) {}
+    constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _jwtService: JwtService) {}
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const { refreshToken } = req.cookies;
@@ -26,7 +27,9 @@ export default class TokenController {
             return forwardError(next, "sessionDoesNotExist", HttpStatus.UNAUTHORIZED);
         }
 
-        const accessToken = this._jwtService.issueAccessToken(refreshToken, userId);
+        const roles = await this._roleManager.getRoles(userId);
+        const accessToken = this._jwtService.issueAccessToken(refreshToken, userId, roles);
+
         res.json({ accessToken: accessToken });
     }
 }

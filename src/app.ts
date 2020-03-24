@@ -33,6 +33,7 @@ import { SessionManager } from "./managers/sessionManager";
 import { TimeSpan } from "./utils/timeSpan";
 import { QueueService } from "./services/queueService";
 import { EmailManager } from "./managers/emailManager";
+import { RoleManager } from "./managers/roleManager";
 
 function loadConfig() {
     const envPath = `${__dirname}/.env`;
@@ -115,13 +116,14 @@ async function start() {
         jsonConfig.localLogin.email.resendLimit,
         TimeSpan.fromSeconds(jsonConfig.localLogin.email.resendTimeLimitSeconds)
     );
+    const roleManager = new RoleManager();
 
     const serviceCtrl = new ServiceController(config);
-    const localUserCtrl = new LocalUserController(userManager, sessionManager, emailManager, queueService, jwtService, mfaService);
-    const externalUserCtrl = new ExternalUserController(userManager, sessionManager, queueService, jwtService);
+    const localUserCtrl = new LocalUserController(userManager, sessionManager, roleManager, emailManager, queueService, jwtService, mfaService);
+    const externalUserCtrl = new ExternalUserController(userManager, sessionManager, roleManager, queueService, jwtService);
     const passwordCtrl = new PasswordController(userManager);
     const emailCtrl = new EmailController(emailManager, queueService);
-    const tokenCtrl = new TokenController(jwtService, sessionManager);
+    const tokenCtrl = new TokenController(roleManager, sessionManager, jwtService);
     const mfaCtrl = new MfaController(userManager, mfaService, jsonConfig);
 
     app.use("/api/service", ServiceRouter.getExpressRouter(serviceCtrl));

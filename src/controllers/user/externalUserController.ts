@@ -9,10 +9,17 @@ import { ExternalLoginProvider } from "../../dal/entities/externalLogin";
 import UserController from "./userController";
 import { SessionManager } from "../../managers/sessionManager";
 import { QueueService } from "../../services/queueService";
+import { RoleManager } from "../../managers/roleManager";
 
 export default class ExternalUserController extends UserController {
-    constructor(private _userManager: UserManager, sessionManager: SessionManager, private queueService: QueueService, jwtService: JwtService) {
-        super(jwtService, sessionManager);
+    constructor(
+        private _userManager: UserManager,
+        sessionManager: SessionManager,
+        roleManager: RoleManager,
+        private queueService: QueueService,
+        jwtService: JwtService
+    ) {
+        super(sessionManager, roleManager, jwtService);
     }
 
     public async loginWithExternalProvider(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {

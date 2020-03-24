@@ -12,17 +12,19 @@ import UserController from "./userController";
 import { SessionManager } from "../../managers/sessionManager";
 import { QueueService } from "../../services/queueService";
 import { EmailManager } from "../../managers/emailManager";
+import { RoleManager } from "../../managers/roleManager";
 
 export default class LocalUserController extends UserController {
     constructor(
         private _userManager: UserManager,
         sessionManager: SessionManager,
+        roleManager: RoleManager,
         private _emailManager: EmailManager,
         private queueService: QueueService,
         jwtService: JwtService,
         private _mfaService: MfaService
     ) {
-        super(jwtService, sessionManager);
+        super(sessionManager, roleManager, jwtService);
     }
 
     public async register(req: Request, res: Response, next: NextFunction) {

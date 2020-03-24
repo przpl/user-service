@@ -24,11 +24,12 @@ export class JwtService {
         }
     }
 
-    public issueAccessToken<PayloadType>(refreshToken: string, userId: string, payload?: PayloadType): string {
+    public issueAccessToken<PayloadType>(refreshToken: string, userId: string, roles: string[], payload?: PayloadType): string {
         const now = unixTimestampS();
         const dataToSign = {
             sub: userId,
             ref: this.getTokenRef(refreshToken),
+            rol: roles.length > 0 ? roles : undefined,
             iat: now,
             exp: now + this._tokenTTL.seconds,
             ...payload,
