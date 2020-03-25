@@ -2,11 +2,16 @@ import redis from "redis";
 
 import { TimeSpan } from "../utils/timeSpan";
 
-enum KeyFlags {
+enum KeyFlag {
     expireSeconds = "EX",
     expireMiliseconds = "PX",
     onlySetIfNotExist = "NX",
     onlySetIfExist = "XX",
+}
+
+enum KeyName {
+    mfaLoginToken = "mlt",
+    revokeAccessToken = "rve",
 }
 
 export interface MfaLoginToken {
@@ -25,7 +30,7 @@ export class CacheDb {
         const tokenObj: MfaLoginToken = { token: token, ip: ip };
         return new Promise((resolve, reject) => {
             const keyName = this.getMfaLoginTokenKey(userId);
-            this._client.SET(keyName, JSON.stringify(tokenObj), KeyFlags.expireSeconds, expireTime.seconds, (err, reply) => {
+            this._client.SET(keyName, JSON.stringify(tokenObj), KeyFlag.expireSeconds, expireTime.seconds, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
@@ -65,7 +70,7 @@ export class CacheDb {
     public revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan) {
         return new Promise((resolve, reject) => {
             const keyName = this.getRevokeAccessTokenKey(userId, ref);
-            this._client.SET(keyName, "", KeyFlags.expireSeconds, expireTime.seconds, (err, reply) => {
+            this._client.SET(keyName, "", KeyFlag.expireSeconds, expireTime.seconds, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
@@ -81,10 +86,10 @@ export class CacheDb {
     }
 
     private getMfaLoginTokenKey(userId: string): string {
-        return `mlt:${userId}`;
+        return `${KeyName.mfaLoginToken}:${userId}`;
     }
 
     private getRevokeAccessTokenKey(userId: string, ref: string): string {
-        return `rve:${userId}:${ref}`;
+        return `${KeyName.revokeAccessToken}:${userId}:${ref}`;
     }
 }
