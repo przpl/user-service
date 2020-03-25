@@ -13,6 +13,8 @@ export default class InternalRouter {
 
         router.delete("/roles", (req: Request, res: Response, next: NextFunction) => controller.removeRoleFromUser(req, res, next));
 
+        router.delete("/sessions/:userId", (req: Request, res: Response, next: NextFunction) => controller.revokeAllUserSessions(req, res, next));
+
         return router;
     }
 }

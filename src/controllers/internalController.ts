@@ -20,4 +20,10 @@ export default class InternalController {
         }
         res.json({ result: true });
     }
+
+    public async revokeAllUserSessions(req: Request, res: Response, next: NextFunction) {
+        const { userId } = req.params;
+        await this._sessionManager.revokeAllSessions(userId);
+        res.json({ result: true });
+    }
 }

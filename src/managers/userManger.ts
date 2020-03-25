@@ -15,7 +15,7 @@ import { isExpired } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
-import { PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
+import { PASSWORD_RESET_CODE_LENGTH, USER_ID_LENGTH } from "../utils/globalConsts";
 import { TimeSpan } from "../utils/timeSpan";
 import { JsonConfig } from "../utils/config/jsonConfig";
 
@@ -163,7 +163,9 @@ export class UserManager {
     }
 
     private generateUserId(): string {
-        return cryptoRandomString({ length: 8, type: "base64" });
+        return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" })
+            .replace("+", "0")
+            .replace("/", "1");
     }
 
     private async registerExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<UserEntity> {
