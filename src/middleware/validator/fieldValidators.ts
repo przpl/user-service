@@ -1,6 +1,12 @@
 import { ValidationChain, body, cookie } from "express-validator";
 
-import { USER_ID_LENGTH, PASSWORD_RESET_CODE_LENGTH, TWO_FA_TOKEN_LENGHT, ONE_TIME_PASS_LENGHT, EMAIL_CODE_LENGTH } from "../../utils/globalConsts";
+import {
+    USER_ID_LENGTH,
+    PASSWORD_RESET_CODE_LENGTH,
+    MFA_LOGIN_TOKEN_LENGHT,
+    ONE_TIME_PASS_LENGHT,
+    EMAIL_CODE_LENGTH,
+} from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {
     isBase64: "Not a Base64 string",
@@ -68,7 +74,7 @@ export const fieldValidators = {
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: TWO_FA_TOKEN_LENGHT, max: TWO_FA_TOKEN_LENGHT })
+        .isLength({ min: MFA_LOGIN_TOKEN_LENGHT, max: MFA_LOGIN_TOKEN_LENGHT })
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),

@@ -1,4 +1,5 @@
 import { getRepository } from "typeorm";
+import cryptoRandomString from "crypto-random-string";
 
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import {
@@ -35,7 +36,7 @@ export class UserManager {
     }
 
     public async register(email: string, password: string): Promise<User> {
-        const user = new UserEntity();
+        const user = new UserEntity(this.generateUserId());
         user.email = email;
         user.passwordHash = await this._crypto.hashPassword(password);
 
@@ -129,7 +130,7 @@ export class UserManager {
             throw new UserNotConfirmedException();
         }
 
-        const code = this._crypto.randomHexString(PASSWORD_RESET_CODE_LENGTH);
+        const code = cryptoRandomString({ length: PASSWORD_RESET_CODE_LENGTH, type: "hex" }).toUpperCase();
         const passResetInDb = await this._passResetRepo.findOne({ where: { userId: user.id } });
         if (passResetInDb) {
             passResetInDb.code = code;
@@ -161,9 +162,13 @@ export class UserManager {
         return await this._crypto.verifyPassword(password, user.passwordHash);
     }
 
+    private generateUserId(): string {
+        return cryptoRandomString({ length: 8, type: "base64" });
+    }
+
     private async registerExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<UserEntity> {
         // TODO use transaciton, make sure user and externalLogin are always created together
-        const user = new UserEntity();
+        const user = new UserEntity(this.generateUserId());
         await user.save();
 
         const login = new ExternalLoginEntity();

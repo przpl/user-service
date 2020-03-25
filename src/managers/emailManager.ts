@@ -1,7 +1,7 @@
 import { getRepository } from "typeorm";
+import cryptoRandomString from "crypto-random-string";
 
 import { EmailConfirmEntity } from "../dal/entities/emailConfirmEntity";
-import { CryptoService } from "../services/cryptoService";
 import { EMAIL_CODE_LENGTH } from "../utils/globalConsts";
 import { UserEntity } from "../dal/entities/userEntity";
 import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
@@ -12,13 +12,13 @@ export class EmailManager {
     private _emailConfirmRepo = getRepository(EmailConfirmEntity);
     private _userRepo = getRepository(UserEntity);
 
-    constructor(private _cryptoService: CryptoService, private _resendCountLimit: number, private _resendTimeLimit: TimeSpan) {}
+    constructor(private _resendCountLimit: number, private _resendTimeLimit: TimeSpan) {}
 
     public async generateCode(userId: string, email: string) {
         const confirm = new EmailConfirmEntity();
         confirm.userId = userId;
         confirm.email = email;
-        confirm.code = this._cryptoService.randomNumbersString(EMAIL_CODE_LENGTH);
+        confirm.code = cryptoRandomString({ length: EMAIL_CODE_LENGTH, type: "numeric" });
         confirm.sentCount = 1;
         confirm.lastSendRequestAt = new Date();
         await confirm.save();

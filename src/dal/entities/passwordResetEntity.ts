@@ -2,7 +2,7 @@ import { Entity, BaseEntity, CreateDateColumn, PrimaryColumn, Column } from "typ
 
 @Entity({ name: "password-reset" })
 export class PasswordResetEntity extends BaseEntity {
-    @PrimaryColumn() // TODO "uuid" type
+    @PrimaryColumn()
     userId: string;
 
     @Column()

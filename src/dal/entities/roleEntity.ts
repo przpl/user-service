@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, PrimaryColumn } from "typeorm";
+import { Entity, BaseEntity, PrimaryColumn, CreateDateColumn } from "typeorm";
 
 @Entity({ name: "role" })
 export class RoleEntity extends BaseEntity {
@@ -7,4 +7,7 @@ export class RoleEntity extends BaseEntity {
 
     @PrimaryColumn()
     role: string;
+
+    @CreateDateColumn({ type: "timestamp" })
+    createdAt: Date;
 }

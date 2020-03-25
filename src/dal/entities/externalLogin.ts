@@ -13,7 +13,7 @@ export class ExternalLoginEntity extends BaseEntity {
     @Column({ type: "smallint" })
     provider: number;
 
-    @Column("uuid")
+    @Column()
     userId: string; // TODO foreign key
 
     @CreateDateColumn({ type: "timestamp" })

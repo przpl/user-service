@@ -100,7 +100,7 @@ async function start() {
     const cacheDb = new CacheDb(jsonConfig.redis.host, jsonConfig.redis.port);
     const jwtService = new JwtService(config.jwtPrivateKey, TimeSpan.fromMinutes(config.tokenTTLMinutes));
     const cryptoService = new CryptoService(jsonConfig.security.bcryptRounds);
-    const mfaService = new MfaService(cacheDb, cryptoService, TimeSpan.fromSeconds(jsonConfig.security.mfa.loginTokenTTLSeconds));
+    const mfaService = new MfaService(cacheDb, TimeSpan.fromSeconds(jsonConfig.security.mfa.loginTokenTTLSeconds));
     const queueService = new QueueService();
 
     const validator = new Validator(jsonConfig);
@@ -116,7 +116,6 @@ async function start() {
     const userManager = new UserManager(cryptoService, TimeSpan.fromMinutes(jsonConfig.passwordReset.codeTTLMinutes), jsonConfig);
     const sessionManager = new SessionManager(cryptoService, jwtService, cacheDb, jsonConfig, TimeSpan.fromMinutes(config.tokenTTLMinutes));
     const emailManager = new EmailManager(
-        cryptoService,
         jsonConfig.localLogin.email.resendLimit,
         TimeSpan.fromSeconds(jsonConfig.localLogin.email.resendTimeLimitSeconds)
     );

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, PrimaryColumn } from "typeorm";
 
 export enum MfaMethod {
     none = 0,
@@ -9,7 +9,12 @@ export enum MfaMethod {
 
 @Entity({ name: "user" })
 export class UserEntity extends BaseEntity {
-    @PrimaryGeneratedColumn("uuid")
+    constructor(id: string) {
+        super();
+        this.id = id;
+    }
+
+    @PrimaryColumn()
     id: string;
 
     @Column({ unique: true, nullable: true })

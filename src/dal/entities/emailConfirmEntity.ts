@@ -5,7 +5,7 @@ export class EmailConfirmEntity extends BaseEntity {
     @PrimaryColumn()
     email: string;
 
-    @Column("uuid") // TODO foreign key
+    @Column() // TODO foreign key
     userId: string;
 
     @Column()

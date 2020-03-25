@@ -1,4 +1,5 @@
 import { getRepository } from "typeorm";
+import cryptoRandomString from "crypto-random-string";
 
 import { SessionEntity } from "../dal/entities/sessionEntity";
 import { CryptoService } from "../services/cryptoService";
@@ -8,7 +9,7 @@ import { isExpired, toUnixTimestampS, unixTimestampS } from "../utils/timeUtils"
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
-import { REFRESH_TOKEN_BYTES } from "../utils/globalConsts";
+import { REFRESH_TOKEN_LENGTH } from "../utils/globalConsts";
 import { UserAgent } from "../interfaces/userAgent";
 import { CacheDb } from "../dal/cacheDb";
 import { JwtService } from "../services/jwtService";
@@ -35,7 +36,7 @@ export class SessionManager {
         user.activeSessions++;
         await user.save();
 
-        const token = this._cryptoService.randomBytesInBase64(REFRESH_TOKEN_BYTES);
+        const token = cryptoRandomString({ length: REFRESH_TOKEN_LENGTH, type: "base64" });
         const session = new SessionEntity();
         session.token = token;
         session.userId = userId;
