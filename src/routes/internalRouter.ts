@@ -15,6 +15,10 @@ export default class InternalRouter {
 
         router.delete("/sessions/:userId", (req: Request, res: Response, next: NextFunction) => controller.revokeAllUserSessions(req, res, next));
 
+        router.post("/locks/:userId", (req: Request, res: Response, next: NextFunction) => controller.lockOutUser(req, res, next));
+
+        router.delete("/locks/:userId", (req: Request, res: Response, next: NextFunction) => controller.unlockUser(req, res, next));
+
         return router;
     }
 }

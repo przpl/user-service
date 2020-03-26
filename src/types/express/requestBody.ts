@@ -13,4 +13,6 @@ export interface RequestBody {
     id_token?: string; // eslint-disable-line camelcase
     access_token?: string; // eslint-disable-line camelcase
     userRole?: string;
+    lockUntil?: string;
+    lockReason?: string;
 }

@@ -122,7 +122,7 @@ async function start() {
     const roleManager = new RoleManager();
 
     const serviceCtrl = new ServiceController(config);
-    const internalCtrl = new InternalController(roleManager, sessionManager);
+    const internalCtrl = new InternalController(roleManager, sessionManager, userManager);
     const localUserCtrl = new LocalUserController(userManager, sessionManager, roleManager, emailManager, queueService, jwtService, mfaService);
     const externalUserCtrl = new ExternalUserController(userManager, sessionManager, roleManager, queueService, jwtService);
     const passwordCtrl = new PasswordController(userManager);

@@ -170,6 +170,25 @@ export class UserManager {
         return await this._crypto.verifyPassword(password, user.passwordHash);
     }
 
+    public async lockUser(userId: string, until: Date, reason: string) {
+        const user = await this._userRepo.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new UserNotExistsException();
+        }
+        user.lockedUntil = until;
+        user.lockReason = reason;
+        await user.save();
+    }
+
+    public async unlockUser(userId: string) {
+        const user = await this._userRepo.findOne({ where: { id: userId } });
+        if (!user) {
+            throw new UserNotExistsException();
+        }
+        user.lockedUntil = null;
+        await user.save();
+    }
+
     private assureUserNotLockedOut(user: UserEntity) {
         if (user.lockedUntil && toUnixTimestampS(user.lockedUntil) >= unixTimestampS()) {
             throw new UserLockedOutException(user.lockReason);
