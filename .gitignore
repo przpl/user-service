@@ -2,6 +2,7 @@
 .vscode
 .env
 *.log
+*.bat
 node_modules
 dist
 ormconfig.json
