@@ -76,14 +76,14 @@ export class UserManager {
         return this.toUser(user);
     }
 
-    public async loginOrRegisterExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<User> {
-        const loginInDb = await this._externalLoginRepo.findOne({ externalUserId: externalUserId, provider: loginProvider }); // sarch also by provider to make sure there aren't two different users across platforms with same user id
+    public async loginOrRegisterExternalUser(userId: string, email: string, loginProvider: ExternalLoginProvider): Promise<User> {
+        const loginInDb = await this._externalLoginRepo.findOne({ externalUserId: userId, provider: loginProvider }); // sarch also by provider to make sure there aren't two different users across platforms with same user id
         if (loginInDb) {
             const userInDb = await this._userRepo.findOne({ id: loginInDb.userId });
             return this.toUser(userInDb);
         }
 
-        const user = await this.registerExternalUser(externalUserId, loginProvider);
+        const user = await this.registerExternalUser(userId, email, loginProvider);
         return this.toUser(user);
     }
 
@@ -168,7 +168,7 @@ export class UserManager {
             .replace("/", "1");
     }
 
-    private async registerExternalUser(externalUserId: string, loginProvider: ExternalLoginProvider): Promise<UserEntity> {
+    private async registerExternalUser(externalUserId: string, email: string, loginProvider: ExternalLoginProvider): Promise<UserEntity> {
         // TODO use transaciton, make sure user and externalLogin are always created together
         const user = new UserEntity(this.generateUserId());
         await user.save();
@@ -177,6 +177,7 @@ export class UserManager {
         login.provider = loginProvider;
         login.externalUserId = externalUserId;
         login.userId = user.id;
+        login.email = email;
         await login.save();
         return user;
     }

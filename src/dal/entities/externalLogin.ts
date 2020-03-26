@@ -13,6 +13,9 @@ export class ExternalLoginEntity extends BaseEntity {
     @Column({ type: "smallint" })
     provider: number;
 
+    @Column({ nullable: true })
+    email: string;
+
     @Column()
     userId: string; // TODO foreign key
 

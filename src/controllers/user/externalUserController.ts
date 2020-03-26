@@ -27,7 +27,7 @@ export default class ExternalUserController extends UserController {
 
         let user: User;
         try {
-            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, provider);
+            user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, externalUser.email, provider);
         } catch (error) {
             return forwardInternalError(next, error);
         }
