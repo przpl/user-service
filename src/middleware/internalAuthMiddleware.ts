@@ -1,4 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import HttpStatus from "http-status-codes";
+
+import { forwardError } from "../utils/expressUtils";
 
 export default class InternalAuthMiddleware {
     constructor(private _masterKey: string) {
@@ -10,7 +13,7 @@ export default class InternalAuthMiddleware {
     public isInternalRequest(req: Request, res: Response, next: NextFunction) {
         const key = req.get("master-key");
         if (this._masterKey !== key) {
-            return res.status(404).send();
+            return forwardError(next, [], HttpStatus.NOT_FOUND);
         }
         next();
     }
