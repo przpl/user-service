@@ -3,8 +3,15 @@ import HttpStatus from "http-status-codes";
 
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { UserManager } from "../managers/userManger";
-import { UserNotConfirmedException, UserNotExistsException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
+import {
+    UserNotConfirmedException,
+    UserNotExistsException,
+    InvalidPasswordException,
+    UserNotLocalException,
+    UserLockedOutException,
+} from "../exceptions/userExceptions";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
+import { ErrorResponse } from "../interfaces/errorResponse";
 
 export default class PasswordController {
     constructor(private _userManager: UserManager) {}
@@ -36,6 +43,8 @@ export default class PasswordController {
                 return res.json({ result: true });
             } else if (error instanceof UserNotConfirmedException) {
                 return res.json({ result: true });
+            } else if (error instanceof UserLockedOutException) {
+                return res.json({ result: true });
             }
             return forwardInternalError(next, error);
         }
@@ -54,6 +63,12 @@ export default class PasswordController {
                 return forwardError(next, "invalidCode", HttpStatus.FORBIDDEN);
             } else if (error instanceof ExpiredResetCodeException) {
                 return forwardError(next, "codeExpired", HttpStatus.BAD_REQUEST);
+            } else if (error instanceof UserLockedOutException) {
+                const errors: ErrorResponse = {
+                    id: "userLockedOut",
+                    data: { reason: (error as UserLockedOutException).reason },
+                };
+                return forwardError(next, errors, HttpStatus.FORBIDDEN);
             }
             return forwardInternalError(next, error);
         }

@@ -116,6 +116,9 @@ export class UserManager {
         }
 
         const user = await this._userRepo.findOne({ where: { id: passReset.userId } });
+
+        this.assureUserNotLockedOut(user);
+
         user.passwordHash = await this._crypto.hashPassword(password);
         await user.save();
 
@@ -130,6 +133,7 @@ export class UserManager {
         if (!user.isLocalAccount()) {
             throw new UserNotLocalException();
         }
+        this.assureUserNotLockedOut(user);
         if (!user.emailConfirmed) {
             throw new UserNotConfirmedException();
         }
