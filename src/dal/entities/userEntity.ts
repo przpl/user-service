@@ -35,6 +35,12 @@ export class UserEntity extends BaseEntity {
     @Column({ type: "smallint", default: 0 })
     activeSessions: number;
 
+    @Column({ nullable: true })
+    lockReason: string;
+
+    @Column({ nullable: true, type: "timestamp" })
+    lockedUntil: Date;
+
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 
