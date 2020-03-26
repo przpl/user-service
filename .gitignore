@@ -1,7 +1,7 @@
 .idea
 .vscode
 .env
-.log
+*.log
 node_modules
 dist
 ormconfig.json
