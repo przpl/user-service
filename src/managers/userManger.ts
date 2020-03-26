@@ -8,10 +8,11 @@ import {
     UserNotConfirmedException,
     InvalidPasswordException,
     UserNotLocalException,
+    UserLockedOutException,
 } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
 import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
-import { isExpired } from "../utils/timeUtils";
+import { isExpired, unixTimestampS, toUnixTimestampS } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
@@ -60,6 +61,8 @@ export class UserManager {
             throw new UserNotExistsException();
         }
 
+        this.assureUserNotLockedOut(user);
+
         if (!user.isLocalAccount()) {
             throw new InvalidPasswordException("User has no password");
         }
@@ -80,6 +83,7 @@ export class UserManager {
         const loginInDb = await this._externalLoginRepo.findOne({ externalUserId: userId, provider: loginProvider }); // sarch also by provider to make sure there aren't two different users across platforms with same user id
         if (loginInDb) {
             const userInDb = await this._userRepo.findOne({ id: loginInDb.userId });
+            this.assureUserNotLockedOut(userInDb);
             return this.toUser(userInDb);
         }
 
@@ -160,6 +164,12 @@ export class UserManager {
     public async verifyPassword(userId: string, password: string): Promise<boolean> {
         const user = await this._userRepo.findOne({ id: userId });
         return await this._crypto.verifyPassword(password, user.passwordHash);
+    }
+
+    private assureUserNotLockedOut(user: UserEntity) {
+        if (user.lockedUntil && toUnixTimestampS(user.lockedUntil) >= unixTimestampS()) {
+            throw new UserLockedOutException(user.lockReason);
+        }
     }
 
     private generateUserId(): string {

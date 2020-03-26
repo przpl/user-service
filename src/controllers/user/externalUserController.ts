@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import HttpStatus from "http-status-codes";
 
-import { forwardInternalError } from "../../utils/expressUtils";
+import { forwardInternalError, forwardError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
 import { User } from "../../interfaces/user";
 import { JwtService } from "../../services/jwtService";
@@ -10,6 +11,8 @@ import UserController from "./userController";
 import { SessionManager } from "../../managers/sessionManager";
 import { QueueService } from "../../services/queueService";
 import { RoleManager } from "../../managers/roleManager";
+import { UserLockedOutException } from "../../exceptions/userExceptions";
+import { ErrorResponse } from "../../interfaces/errorResponse";
 
 export default class ExternalUserController extends UserController {
     constructor(
@@ -29,6 +32,13 @@ export default class ExternalUserController extends UserController {
         try {
             user = await this._userManager.loginOrRegisterExternalUser(externalUser.id, externalUser.email, provider);
         } catch (error) {
+            if (error instanceof UserLockedOutException) {
+                const errors: ErrorResponse = {
+                    id: "userLockedOut",
+                    data: { reason: (error as UserLockedOutException).reason },
+                };
+                return forwardError(next, errors, HttpStatus.FORBIDDEN);
+            }
             return forwardInternalError(next, error);
         }
 

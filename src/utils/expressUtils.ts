@@ -8,12 +8,19 @@ export function forwardInternalError(next: NextFunction, originalError: object) 
     forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, originalError);
 }
 
-export function forwardError(next: NextFunction, errors: ErrorResponse[] | string, responseStatusCode: number, originalError?: object) {
+export function forwardError(
+    next: NextFunction,
+    errors: ErrorResponse | ErrorResponse[] | string,
+    responseStatusCode: number,
+    originalError?: object
+) {
     let errorsArray: ErrorResponse[] = [];
     if (isString(errors)) {
         errorsArray = [{ id: errors }];
-    } else {
+    } else if (Array.isArray(errors)) {
         errorsArray = errors;
+    } else {
+        errorsArray = [errors];
     }
 
     const error = {

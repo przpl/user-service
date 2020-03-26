@@ -3,7 +3,13 @@ import HttpStatus from "http-status-codes";
 
 import { forwardError, forwardInternalError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
-import { UserExistsException, UserNotConfirmedException, UserNotExistsException, InvalidPasswordException } from "../../exceptions/userExceptions";
+import {
+    UserExistsException,
+    UserNotConfirmedException,
+    UserNotExistsException,
+    InvalidPasswordException,
+    UserLockedOutException,
+} from "../../exceptions/userExceptions";
 import { User } from "../../interfaces/user";
 import { JwtService } from "../../services/jwtService";
 import { MfaMethod } from "../../dal/entities/userEntity";
@@ -13,6 +19,7 @@ import { SessionManager } from "../../managers/sessionManager";
 import { QueueService } from "../../services/queueService";
 import { EmailManager } from "../../managers/emailManager";
 import { RoleManager } from "../../managers/roleManager";
+import { ErrorResponse } from "../../interfaces/errorResponse";
 
 export default class LocalUserController extends UserController {
     constructor(
@@ -62,6 +69,12 @@ export default class LocalUserController extends UserController {
                 return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);
             } else if (error instanceof UserNotConfirmedException) {
                 return forwardError(next, "emailNotConfirmed", HttpStatus.FORBIDDEN);
+            } else if (error instanceof UserLockedOutException) {
+                const errors: ErrorResponse = {
+                    id: "userLockedOut",
+                    data: { reason: (error as UserLockedOutException).reason },
+                };
+                return forwardError(next, errors, HttpStatus.FORBIDDEN);
             }
             return forwardError(next, [], HttpStatus.FORBIDDEN, error);
         }
