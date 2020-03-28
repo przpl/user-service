@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { JwtService } from "../services/jwtService";
 import { SessionManager } from "../managers/sessionManager";
@@ -7,6 +8,7 @@ import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { RoleManager } from "../managers/roleManager";
 
+@singleton()
 export default class TokenController {
     constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _jwtService: JwtService) {}
 

@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
+import { singleton } from "tsyringe";
 
 import { unixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 import { JWT_ID_LENGTH } from "../utils/globalConsts";
+import Config from "../utils/config/config";
 
 export interface AccessToken {
     sub: string;
@@ -12,16 +14,22 @@ export interface AccessToken {
     exp: number;
 }
 
+@singleton()
 export class JwtService {
-    constructor(private _jwtPrivateKey: string, private _tokenTTL: TimeSpan) {
-        if (!_jwtPrivateKey) {
+    private _jwtPrivateKey: string;
+    private _tokenTTL: TimeSpan;
+
+    constructor(config: Config) {
+        this._jwtPrivateKey = config.jwtPrivateKey;
+        if (!this._jwtPrivateKey) {
             throw new Error("JWT private key is required.");
         }
         this._jwtPrivateKey = this._jwtPrivateKey.trim();
-        if (_jwtPrivateKey.length < 44) {
+        if (this._jwtPrivateKey.length < 44) {
             throw new Error("Minimum required JWT key length is 44 characters!");
         }
-        if (_tokenTTL.seconds <= TimeSpan.fromMinutes(1).seconds) {
+        this._tokenTTL = TimeSpan.fromMinutes(config.tokenTTLMinutes)
+        if (this._tokenTTL.seconds <= TimeSpan.fromMinutes(1).seconds) {
             throw new Error("Token TTL has to be number greater than 1 minute.");
         }
     }

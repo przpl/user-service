@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { forwardError, forwardInternalError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
@@ -21,6 +22,7 @@ import { EmailManager } from "../../managers/emailManager";
 import { RoleManager } from "../../managers/roleManager";
 import { ErrorResponse } from "../../interfaces/errorResponse";
 
+@singleton()
 export default class LocalUserController extends UserController {
     constructor(
         private _userManager: UserManager,

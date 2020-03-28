@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { EmailManager } from "../managers/emailManager";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
 import { QueueService } from "../services/queueService";
 
+@singleton()
 export default class EmailController {
     constructor(private _emailManager: EmailManager, private _queueService: QueueService) {}
 

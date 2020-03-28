@@ -1,5 +1,6 @@
 import { getRepository } from "typeorm";
 import cryptoRandomString from "crypto-random-string";
+import { singleton } from "tsyringe";
 
 import { EmailConfirmEntity } from "../dal/entities/emailConfirmEntity";
 import { EMAIL_CODE_LENGTH } from "../utils/globalConsts";
@@ -7,12 +8,19 @@ import { UserEntity } from "../dal/entities/userEntity";
 import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
 import { unixTimestampS, toUnixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
+import Config from "../utils/config/config";
 
+@singleton()
 export class EmailManager {
     private _emailConfirmRepo = getRepository(EmailConfirmEntity);
     private _userRepo = getRepository(UserEntity);
+    private _resendCountLimit: number;
+    private _resendTimeLimit: TimeSpan;
 
-    constructor(private _resendCountLimit: number, private _resendTimeLimit: TimeSpan) {}
+    constructor(config: Config) {
+        this._resendCountLimit = config.jsonConfig.localLogin.email.resendLimit;
+        this._resendTimeLimit = TimeSpan.fromSeconds(config.jsonConfig.localLogin.email.resendTimeLimitSeconds);
+    }
 
     public async generateCode(userId: string, email: string) {
         const confirm = new EmailConfirmEntity();

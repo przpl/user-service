@@ -1,22 +1,27 @@
 import express, { Request, Response, NextFunction, Router } from "express";
+import { container } from "tsyringe";
 
 import LocalUserController from "../../controllers/user/localUserController";
 import Validator from "../../middleware/validator/validator";
 import RecaptchaMiddleware from "../../middleware/recaptchaMiddleware";
-import { JsonConfig } from "../../utils/config/jsonConfig";
 import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
+import Config from "../../utils/config/config";
 
 export default class LocalUserRouter {
-    static getExpressRouter(controller: LocalUserController, validator: Validator, captcha: RecaptchaMiddleware, jsonConfig: JsonConfig): Router {
+    static getExpressRouter(): Router {
         const router = express.Router();
+        const ctrl = container.resolve(LocalUserController);
+        const validator = container.resolve(Validator);
+        const captcha = container.resolve(RecaptchaMiddleware);
+        const jsonConfig = container.resolve(Config).jsonConfig;
         const recaptchaEnabled = jsonConfig.security.reCaptcha.protectedEndpoints;
-        const uaMiddleware = new UserAgentMiddleware();
+        const uaMiddleware = container.resolve(UserAgentMiddleware);
 
         router.post(
             "/register",
             validator.register,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.register),
-            (req: Request, res: Response, next: NextFunction) => controller.register(req, res, next)
+            (req: Request, res: Response, next: NextFunction) => ctrl.register(req, res, next)
         );
 
         router.post(
@@ -24,15 +29,13 @@ export default class LocalUserRouter {
             validator.login,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.login),
             (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-            (req: Request, res: Response, next: NextFunction) => controller.login(req, res, next)
+            (req: Request, res: Response, next: NextFunction) => ctrl.login(req, res, next)
         );
 
-        router.post("/logout", validator.logout, (req: Request, res: Response, next: NextFunction) => controller.logout(req, res, next));
+        router.post("/logout", validator.logout, (req: Request, res: Response, next: NextFunction) => ctrl.logout(req, res, next));
 
         if (jsonConfig.security.mfa.enabled) {
-            router.post("/login/mfa", validator.loginWithMfa, (req: Request, res: Response, next: NextFunction) =>
-                controller.loginWithMfa(req, res, next)
-            );
+            router.post("/login/mfa", validator.loginWithMfa, (req: Request, res: Response, next: NextFunction) => ctrl.loginWithMfa(req, res, next));
         }
 
         return router;

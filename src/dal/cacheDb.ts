@@ -1,6 +1,8 @@
 import redis from "redis";
+import { singleton } from "tsyringe";
 
 import { TimeSpan } from "../utils/timeSpan";
+import Config from "../utils/config/config";
 
 enum KeyFlag {
     expireSeconds = "EX",
@@ -19,11 +21,13 @@ export interface MfaLoginToken {
     ip: string;
 }
 
+@singleton()
 export class CacheDb {
     private _client: redis.RedisClient;
 
-    constructor(host = "127.0.0.1", port = 6379, dbIndex = 0) {
-        this._client = redis.createClient({ host: host, port: port, db: dbIndex });
+    constructor(config: Config) {
+        const redisCfg = config.jsonConfig.redis;
+        this._client = redis.createClient({ host: redisCfg.host || "127.0.0.1", port: redisCfg.port || 6379 });
     }
 
     public setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan) {

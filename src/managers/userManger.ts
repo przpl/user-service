@@ -1,5 +1,6 @@
 import { getRepository } from "typeorm";
 import cryptoRandomString from "crypto-random-string";
+import { singleton } from "tsyringe";
 
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import {
@@ -19,13 +20,19 @@ import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/exte
 import { PASSWORD_RESET_CODE_LENGTH, USER_ID_LENGTH } from "../utils/globalConsts";
 import { TimeSpan } from "../utils/timeSpan";
 import { JsonConfig } from "../utils/config/jsonConfig";
+import Config from "../utils/config/config";
 
+@singleton()
 export class UserManager {
     private _userRepo = getRepository(UserEntity);
     private _passResetRepo = getRepository(PasswordResetEntity);
     private _externalLoginRepo = getRepository(ExternalLoginEntity);
+    private _jsonConfig: JsonConfig;
+    private _passResetCodeTTL: TimeSpan;
 
-    constructor(private _crypto: CryptoService, private _passResetCodeTTL: TimeSpan, private _jsonConfig: JsonConfig) {
+    constructor(private _crypto: CryptoService, config: Config) {
+        this._jsonConfig = config.jsonConfig;
+        this._passResetCodeTTL = TimeSpan.fromMinutes(config.jsonConfig.passwordReset.codeTTLMinutes);
         if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
         }

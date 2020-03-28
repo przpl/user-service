@@ -1,7 +1,9 @@
 import { getRepository } from "typeorm";
+import { singleton } from "tsyringe";
 
 import { RoleEntity } from "../dal/entities/roleEntity";
 
+@singleton()
 export class RoleManager {
     private _roleRepo = getRepository(RoleEntity);
 

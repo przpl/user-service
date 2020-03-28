@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { forwardInternalError, forwardError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
@@ -14,6 +15,7 @@ import { RoleManager } from "../../managers/roleManager";
 import { UserLockedOutException } from "../../exceptions/userExceptions";
 import { ErrorResponse } from "../../interfaces/errorResponse";
 
+@singleton()
 export default class ExternalUserController extends UserController {
     constructor(
         private _userManager: UserManager,

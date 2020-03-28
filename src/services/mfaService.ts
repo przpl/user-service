@@ -1,22 +1,27 @@
 import speakeasy from "speakeasy";
 import { getRepository } from "typeorm";
 import cryptoRandomString from "crypto-random-string";
+import { singleton } from "tsyringe";
 
 import { CacheDb } from "../dal/cacheDb";
 import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import { unixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 import { MFA_LOGIN_TOKEN_LENGHT } from "../utils/globalConsts";
+import Config from "../utils/config/config";
 
 // TODO rename to MfaManager
+@singleton()
 export class MfaService {
     private _userRepo = getRepository(UserEntity);
+    private _mfaLoginTTL: TimeSpan;
 
-    constructor(private _cache: CacheDb, private _mfaLoginTTL: TimeSpan) {
+    constructor(private _cache: CacheDb, config: Config) {
         if (!_cache) {
             throw new Error("Cache is required.");
         }
-        if (_mfaLoginTTL.seconds <= 0) {
+        this._mfaLoginTTL = TimeSpan.fromSeconds(config.jsonConfig.security.mfa.loginTokenTTLSeconds)
+        if (this._mfaLoginTTL.seconds <= 0) {
             throw new Error("MFA Login Token TTL has to be greater than 0 seconds.");
         }
     }

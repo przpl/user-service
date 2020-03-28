@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { UserManager } from "../managers/userManger";
@@ -13,6 +14,7 @@ import {
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { ErrorResponse } from "../interfaces/errorResponse";
 
+@singleton()
 export default class PasswordController {
     constructor(private _userManager: UserManager) {}
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { RoleManager } from "../managers/roleManager";
 import { SessionManager } from "../managers/sessionManager";
@@ -8,6 +9,7 @@ import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { UserNotExistsException } from "../exceptions/userExceptions";
 
 // TODO - handle errors, send more information than on public endpoints
+@singleton()
 export default class InternalController {
     constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _userManager: UserManager) {}
 

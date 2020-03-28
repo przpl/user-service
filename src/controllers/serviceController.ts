@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import Config from "../utils/config/config";
 import { toUnixTimestampS } from "../utils/timeUtils";
 
+@singleton()
 export default class ServiceController {
     constructor(private _config: Config) {}
 

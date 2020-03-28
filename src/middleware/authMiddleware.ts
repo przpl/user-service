@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 import passport from "passport";
+import { singleton } from "tsyringe";
 
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { CacheDb } from "../dal/cacheDb";
 
+@singleton()
 export default class AuthMiddleware {
     private _googleAuthDelegate = passport.authenticate("google-id-token", { session: false });
     private _facebookAuthDelegate = passport.authenticate("facebook-token", { session: false });

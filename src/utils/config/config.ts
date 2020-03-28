@@ -1,8 +1,11 @@
 import dotenv from "dotenv";
 import fs from "fs";
+import { singleton } from "tsyringe";
+
 import { ConfigValidationResult } from "./configValidationResult";
 import { JsonConfig } from "./jsonConfig";
 
+@singleton()
 export default class Config {
     private _jsonConfig: JsonConfig;
 

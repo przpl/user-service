@@ -2,14 +2,17 @@ import { Request, Response, NextFunction } from "express";
 import { validationResult, body, ValidationChain } from "express-validator";
 import HttpStatus from "http-status-codes";
 import PasswordValidator from "password-validator";
+import { singleton } from "tsyringe";
 
 import { forwardError } from "../../utils/expressUtils";
 import { ErrorResponse } from "../../interfaces/errorResponse";
 import { JsonConfig } from "../../utils/config/jsonConfig";
 import { FIELD_ERROR_MSG, fieldValidators } from "./fieldValidators";
+import Config from "../../utils/config/config";
 
 type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, next: NextFunction) => void))[];
 
+@singleton()
 export default class Validator {
     public login: ValidatorArray = [];
     public register: ValidatorArray = [];
@@ -26,35 +29,35 @@ export default class Validator {
     public enableMfa: ValidatorArray = [];
     public disbleMfa: ValidatorArray = [];
 
-    constructor(jsonConfig: JsonConfig) {
-        const config = jsonConfig.commonFields;
+    constructor(config: Config) {
+        const cfg = config.jsonConfig.commonFields;
         fieldValidators.email = body("email")
             .isString()
             .withMessage(FIELD_ERROR_MSG.isString)
             .trim()
-            .isLength({ min: 5, max: config.email.isLength.max })
+            .isLength({ min: 5, max: cfg.email.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength)
             .isEmail()
             .withMessage(FIELD_ERROR_MSG.isEmail)
             .normalizeEmail();
 
-        let passwordErrorMsg = `Password should have minimum ${config.password.isLength.min} characters`;
+        let passwordErrorMsg = `Password should have minimum ${cfg.password.isLength.min} characters`;
         const passwordSchema = new PasswordValidator();
-        passwordSchema.is().min(config.password.isLength.min);
-        passwordSchema.is().max(config.password.isLength.max);
-        if (config.password.hasDigits) {
+        passwordSchema.is().min(cfg.password.isLength.min);
+        passwordSchema.is().max(cfg.password.isLength.max);
+        if (cfg.password.hasDigits) {
             passwordSchema.has().digits();
             passwordErrorMsg += ", one digit";
         }
-        if (config.password.hasSymbols) {
+        if (cfg.password.hasSymbols) {
             passwordSchema.has().symbols();
             passwordErrorMsg += ", one symbol";
         }
-        if (config.password.hasUppercase) {
+        if (cfg.password.hasUppercase) {
             passwordSchema.has().uppercase();
             passwordErrorMsg += ", one uppercase";
         }
-        if (config.password.hasLowercase) {
+        if (cfg.password.hasLowercase) {
             passwordSchema.has().lowercase();
             passwordErrorMsg += ", one lowercase";
         }
@@ -68,17 +71,17 @@ export default class Validator {
         fieldValidators.weakPassword = body("password")
             .isString()
             .withMessage(FIELD_ERROR_MSG.isString)
-            .isLength({ min: 1, max: config.password.isLength.max })
+            .isLength({ min: 1, max: cfg.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
         fieldValidators.oldPassword = body("old")
             .isString()
             .withMessage(FIELD_ERROR_MSG.isString)
-            .isLength({ min: 1, max: config.password.isLength.max })
+            .isLength({ min: 1, max: cfg.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
-        for (const fieldName of Object.keys(jsonConfig.additionalFields.registerEndpoint)) {
-            const field = jsonConfig.additionalFields.registerEndpoint[fieldName];
+        for (const fieldName of Object.keys(config.jsonConfig.additionalFields.registerEndpoint)) {
+            const field = config.jsonConfig.additionalFields.registerEndpoint[fieldName];
             const validation = body(fieldName);
             if (field.isString) {
                 validation.isString().withMessage(FIELD_ERROR_MSG.isString);
@@ -108,8 +111,8 @@ export default class Validator {
         this.enableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
         this.disbleMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
 
-        if (jsonConfig.security.reCaptcha.enabled) {
-            this.addReCaptchaValidators(jsonConfig);
+        if (config.jsonConfig.security.reCaptcha.enabled) {
+            this.addReCaptchaValidators(config.jsonConfig);
         }
     }
 

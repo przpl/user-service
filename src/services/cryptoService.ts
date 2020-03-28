@@ -1,8 +1,15 @@
 import bcrypt from "bcrypt";
 import { isNullOrUndefined } from "util";
+import { singleton } from "tsyringe";
 
+import Config from "../utils/config/config";
+
+@singleton()
 export class CryptoService {
-    constructor(private _bcryptRounds: number) {
+    private _bcryptRounds: number;
+
+    constructor(config: Config) {
+        this._bcryptRounds = config.jsonConfig.security.bcryptRounds;
         if (this._bcryptRounds < 12) {
             throw new Error("Minimum count of bcrypt rounds is 12. Smaller number is considered unsafe.");
         }

@@ -2,22 +2,24 @@ import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 import Recaptcha2 from "recaptcha2";
 import { isArray } from "util";
+import { singleton } from "tsyringe";
 
 import { forwardError } from "../utils/expressUtils";
-import { ErrorResponse } from "../interfaces/errorResponse";
+import Config from "../utils/config/config";
 
+@singleton()
 export default class RecaptchaMiddleware {
     private _reCaptcha: Recaptcha2;
 
-    constructor(enabled: boolean, siteKey: string, secretKey: string, sslEnabled: boolean) {
-        if (!enabled) {
+    constructor(config: Config) {
+        if (!config.jsonConfig.security.reCaptcha.enabled) {
             return;
         }
 
         this._reCaptcha = new Recaptcha2({
-            siteKey: siteKey,
-            secretKey: secretKey,
-            ssl: sslEnabled,
+            siteKey: config.recaptchaSiteKey,
+            secretKey: config.recaptchaSecretKey,
+            ssl: config.jsonConfig.security.reCaptcha.ssl,
         });
     }
 

@@ -1,14 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
+import { singleton } from "tsyringe";
 
 import { forwardError } from "../utils/expressUtils";
 import { UserManager } from "../managers/userManger";
 import { MfaMethod } from "../dal/entities/userEntity";
 import { MfaService } from "../services/mfaService";
 import { JsonConfig } from "../utils/config/jsonConfig";
+import Config from "../utils/config/config";
 
+@singleton()
 export default class MfaController {
-    constructor(private _userManager: UserManager, private _mfaService: MfaService, private _jsonConfig: JsonConfig) {}
+    private _jsonConfig: JsonConfig;
+
+    constructor(private _userManager: UserManager, private _mfaService: MfaService, config: Config) {
+        this._jsonConfig = config.jsonConfig;
+    }
 
     public async requestMfa(req: Request, res: Response, next: NextFunction) {
         const user = await this._userManager.getUserById(req.authenticatedUser.sub);
