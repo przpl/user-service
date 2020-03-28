@@ -4,7 +4,6 @@ import { singleton } from "tsyringe";
 
 import { SessionEntity } from "../dal/entities/sessionEntity";
 import { UserEntity } from "../dal/entities/userEntity";
-import { JsonConfig } from "../utils/config/jsonConfig";
 import { isExpired, toUnixTimestampS, unixTimestampS } from "../utils/timeUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
@@ -13,24 +12,23 @@ import { REFRESH_TOKEN_LENGTH } from "../utils/globalConsts";
 import { UserAgent } from "../interfaces/userAgent";
 import { CacheDb } from "../dal/cacheDb";
 import { JwtService } from "../services/jwtService";
-import Config from "../utils/config/config";
+import Env from "../utils/config/env";
+import { Config } from "../utils/config/config";
 
 @singleton()
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
     private _sessionRepo = getRepository(SessionEntity);
     private _tokenTTL: TimeSpan;
-    private _jsonConfig: JsonConfig;
 
-    constructor(private _jwtService: JwtService, private _cacheDb: CacheDb, config: Config) {
-        this._jsonConfig = config.jsonConfig;
-        this._tokenTTL = TimeSpan.fromMinutes(config.tokenTTLMinutes)
+    constructor(private _jwtService: JwtService, private _cacheDb: CacheDb, env: Env, private config: Config) {
+        this._tokenTTL = TimeSpan.fromMinutes(env.tokenTTLMinutes);
     }
 
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
         const user = await this._userRepo.findOne({ where: { id: userId } });
-        if (user.activeSessions >= this._jsonConfig.session.maxPerUser) {
-            const sessionsAfterRemoval = await this.removeOldestSession(userId, this._jsonConfig.session.maxPerUser);
+        if (user.activeSessions >= this.config.session.maxPerUser) {
+            const sessionsAfterRemoval = await this.removeOldestSession(userId, this.config.session.maxPerUser);
             user.activeSessions = sessionsAfterRemoval;
         }
 
@@ -58,7 +56,7 @@ export class SessionManager {
             return null;
         }
 
-        if (isExpired(session.lastUseAt, TimeSpan.fromHours(this._jsonConfig.session.staleRefreshTokenAfterHours))) {
+        if (isExpired(session.lastUseAt, TimeSpan.fromHours(this.config.session.staleRefreshTokenAfterHours))) {
             await this._sessionRepo.remove(session);
             await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
             throw new StaleRefreshTokenException();

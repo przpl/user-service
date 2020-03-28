@@ -4,7 +4,7 @@ import passport from "passport";
 import GoogleTokenStrategy from "passport-google-id-token";
 import FacebookTokenStrategy from "passport-facebook-token";
 
-import { JsonConfig } from "../utils/config/jsonConfig";
+import { Config } from "../utils/config/config";
 
 type DoneFunction = (err: any, user: ExternalUser, info?: any) => void;
 
@@ -41,7 +41,7 @@ interface GoogleParsedToken {
     signature: string;
 }
 
-export function configurePassport(app: core.Express, config: JsonConfig) {
+export function configurePassport(app: core.Express, config: Config) {
     if (!isAnyExternalLoginEnabled(config)) {
         return;
     }
@@ -58,7 +58,7 @@ export function configurePassport(app: core.Express, config: JsonConfig) {
     }
 }
 
-function googleStrategy(config: JsonConfig) {
+function googleStrategy(config: Config) {
     return new GoogleTokenStrategy(
         {
             clientID: config.externalLogin.google.clientId,
@@ -71,7 +71,7 @@ function googleStrategy(config: JsonConfig) {
     );
 }
 
-function facebookStrategy(config: JsonConfig) {
+function facebookStrategy(config: Config) {
     return new FacebookTokenStrategy(
         {
             clientID: config.externalLogin.facebook.clientId,
@@ -89,7 +89,7 @@ function facebookStrategy(config: JsonConfig) {
     );
 }
 
-function isAnyExternalLoginEnabled(config: JsonConfig): boolean {
+function isAnyExternalLoginEnabled(config: Config): boolean {
     const cfg = config.externalLogin;
     for (const key in cfg) {
         if ((cfg as any)[key].enabled) {

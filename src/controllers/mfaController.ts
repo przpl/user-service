@@ -6,16 +6,11 @@ import { forwardError } from "../utils/expressUtils";
 import { UserManager } from "../managers/userManger";
 import { MfaMethod } from "../dal/entities/userEntity";
 import { MfaService } from "../services/mfaService";
-import { JsonConfig } from "../utils/config/jsonConfig";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
 
 @singleton()
 export default class MfaController {
-    private _jsonConfig: JsonConfig;
-
-    constructor(private _userManager: UserManager, private _mfaService: MfaService, config: Config) {
-        this._jsonConfig = config.jsonConfig;
-    }
+    constructor(private _userManager: UserManager, private _mfaService: MfaService, private _config: Config) {}
 
     public async requestMfa(req: Request, res: Response, next: NextFunction) {
         const user = await this._userManager.getUserById(req.authenticatedUser.sub);
@@ -27,7 +22,7 @@ export default class MfaController {
             return forwardError(next, "mfaAlreadyActivated", HttpStatus.METHOD_NOT_ALLOWED);
         }
 
-        const otpAuthPath = await this._mfaService.issueHotpOtpAuth(req.authenticatedUser.sub, this._jsonConfig.security.mfa.appName);
+        const otpAuthPath = await this._mfaService.issueHotpOtpAuth(req.authenticatedUser.sub, this._config.security.mfa.appName);
         res.json({ otpAuthPath: otpAuthPath });
     }
 

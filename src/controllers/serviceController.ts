@@ -2,24 +2,24 @@ import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import Config from "../utils/config/config";
+import Env from "../utils/config/env";
 import { toUnixTimestampS } from "../utils/timeUtils";
 
 @singleton()
 export default class ServiceController {
-    constructor(private _config: Config) {}
+    constructor(private _env: Env) {}
 
     public status(req: Request, res: Response, next: NextFunction) {
-        if (this._config.administrationKey && this._config.administrationKey !== req.query.administrationKey) {
+        if (this._env.administrationKey && this._env.administrationKey !== req.query.administrationKey) {
             return res.status(HttpStatus.FORBIDDEN).send();
         }
 
         const currentTime = new Date();
         const data = {
-            serviceId: this._config.serviceId,
+            serviceId: this._env.serviceId,
             environment: {
-                isProduction: !this._config.isDev(),
-                value: this._config.environment,
+                isProduction: !this._env.isDev(),
+                value: this._env.environment,
             },
             currentTime: {
                 unixTimestamp: toUnixTimestampS(currentTime),

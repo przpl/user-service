@@ -4,7 +4,7 @@ import { container } from "tsyringe";
 import Validator from "../middleware/validator/validator";
 import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
 import EmailController from "../controllers/emailController";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
 
 export default class EmailRouter {
     static getExpressRouter(): Router {
@@ -12,7 +12,7 @@ export default class EmailRouter {
         const ctrl = container.resolve(EmailController);
         const validator = container.resolve(Validator);
         const captcha = container.resolve(RecaptchaMiddleware);
-        const recaptchaEnabled = container.resolve(Config).jsonConfig.security.reCaptcha.protectedEndpoints;
+        const recaptchaEnabled = container.resolve(Config).security.reCaptcha.protectedEndpoints;
 
         router.post(
             "/confirm",

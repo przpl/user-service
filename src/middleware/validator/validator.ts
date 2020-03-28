@@ -6,9 +6,8 @@ import { singleton } from "tsyringe";
 
 import { forwardError } from "../../utils/expressUtils";
 import { ErrorResponse } from "../../interfaces/errorResponse";
-import { JsonConfig } from "../../utils/config/jsonConfig";
 import { FIELD_ERROR_MSG, fieldValidators } from "./fieldValidators";
-import Config from "../../utils/config/config";
+import { Config } from "../../utils/config/config";
 
 type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, next: NextFunction) => void))[];
 
@@ -30,7 +29,7 @@ export default class Validator {
     public disbleMfa: ValidatorArray = [];
 
     constructor(config: Config) {
-        const cfg = config.jsonConfig.commonFields;
+        const cfg = config.commonFields;
         fieldValidators.email = body("email")
             .isString()
             .withMessage(FIELD_ERROR_MSG.isString)
@@ -80,8 +79,8 @@ export default class Validator {
             .isLength({ min: 1, max: cfg.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
-        for (const fieldName of Object.keys(config.jsonConfig.additionalFields.registerEndpoint)) {
-            const field = config.jsonConfig.additionalFields.registerEndpoint[fieldName];
+        for (const fieldName of Object.keys(config.additionalFields.registerEndpoint)) {
+            const field = config.additionalFields.registerEndpoint[fieldName];
             const validation = body(fieldName);
             if (field.isString) {
                 validation.isString().withMessage(FIELD_ERROR_MSG.isString);
@@ -111,13 +110,13 @@ export default class Validator {
         this.enableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
         this.disbleMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
 
-        if (config.jsonConfig.security.reCaptcha.enabled) {
-            this.addReCaptchaValidators(config.jsonConfig);
+        if (config.security.reCaptcha.enabled) {
+            this.addReCaptchaValidators(config);
         }
     }
 
-    private addReCaptchaValidators(jsonConfig: JsonConfig) {
-        const recaptchaEnabled = jsonConfig.security.reCaptcha.protectedEndpoints;
+    private addReCaptchaValidators(config: Config) {
+        const recaptchaEnabled = config.security.reCaptcha.protectedEndpoints;
         if (recaptchaEnabled.login) {
             this.login.unshift(fieldValidators.recaptcha);
         }

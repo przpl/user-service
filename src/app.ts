@@ -15,23 +15,23 @@ import ExternalUserRouter from "./routes/user/externalUserRouter";
 import MfaRouter from "./routes/mfaRouter";
 import InternalRouter from "./routes/internalRouter";
 
-import Config from "./utils/config/config";
+import Env from "./utils/config/env";
 import { handleNotFoundError, handleError } from "./utils/expressUtils";
 import { configurePassport } from "./middleware/passport";
+import { ConfigLoader, Config } from "./utils/config/config";
 
-function loadConfig() {
+function loadEnv() {
     const envPath = `${__dirname}/.env`;
-    const configPath = `${__dirname}/config.json`;
-    const config = new Config();
+    const env = new Env();
     try {
-        config.load(envPath, configPath);
+        env.load(envPath);
     } catch (error) {
         console.error(error.message);
         process.exit(1);
     }
 
     let atLeastOneError = false;
-    const configValidationResult = config.validate();
+    const configValidationResult = env.validate();
     if (configValidationResult.length > 0) {
         for (const result of configValidationResult) {
             if (result.severity === "error") {
@@ -44,6 +44,19 @@ function loadConfig() {
         if (atLeastOneError) {
             process.exit(1);
         }
+    }
+
+    return env;
+}
+
+function loadConfig() {
+    const configPath = `${__dirname}/config.json`;
+    let config: Config;
+    try {
+        config = ConfigLoader.load(configPath);
+    } catch (error) {
+        console.error(error.message);
+        process.exit(1);
     }
 
     return config;
@@ -61,22 +74,26 @@ async function connectToDb() {
 }
 
 async function start() {
+    const env = loadEnv();
     const config = loadConfig();
-    container.register<Config>(Config, { useValue: config });
+
     const dbConnection = await connectToDb();
 
+    container.register<Env>(Env, { useValue: env });
+    container.register<Config>(Config, { useValue: config });
+
     const app = express();
-    if (config.isDev()) {
+    if (env.isDev()) {
         app.use(morgan("dev"));
     }
-    if (config.isCorsEnabled()) {
+    if (env.isCorsEnabled()) {
         app.use(cors());
     }
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
     app.set("trust proxy", true);
-    configurePassport(app, config.jsonConfig);
+    configurePassport(app, config);
 
     app.use("/api/service", ServiceRouter.getExpressRouter());
     app.use("/api/internal", InternalRouter.getExpressRouter());
@@ -88,10 +105,10 @@ async function start() {
     app.use("/api/user/mfa", MfaRouter.getExpressRouter());
 
     app.use((req, res, next) => handleNotFoundError(res));
-    app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, config.isDev()));
+    app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, env.isDev()));
 
-    app.listen(config.port, () => {
-        console.log(`App is running at http://localhost:${config.port} in ${app.get("env")} mode`);
+    app.listen(env.port, () => {
+        console.log(`App is running at http://localhost:${env.port} in ${app.get("env")} mode`);
     })
         .on("error", async e => {
             console.log(`Cannot run app: ${e.message}`);

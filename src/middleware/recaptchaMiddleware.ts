@@ -5,21 +5,22 @@ import { isArray } from "util";
 import { singleton } from "tsyringe";
 
 import { forwardError } from "../utils/expressUtils";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
+import Env from "../utils/config/env";
 
 @singleton()
 export default class RecaptchaMiddleware {
     private _reCaptcha: Recaptcha2;
 
-    constructor(config: Config) {
-        if (!config.jsonConfig.security.reCaptcha.enabled) {
+    constructor(env: Env, config: Config) {
+        if (!config.security.reCaptcha.enabled) {
             return;
         }
 
         this._reCaptcha = new Recaptcha2({
-            siteKey: config.recaptchaSiteKey,
-            secretKey: config.recaptchaSecretKey,
-            ssl: config.jsonConfig.security.reCaptcha.ssl,
+            siteKey: env.recaptchaSiteKey,
+            secretKey: env.recaptchaSecretKey,
+            ssl: config.security.reCaptcha.ssl,
         });
     }
 

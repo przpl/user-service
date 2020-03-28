@@ -8,7 +8,7 @@ import { UserEntity, MfaMethod } from "../dal/entities/userEntity";
 import { unixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 import { MFA_LOGIN_TOKEN_LENGHT } from "../utils/globalConsts";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
 
 // TODO rename to MfaManager
 @singleton()
@@ -20,7 +20,7 @@ export class MfaService {
         if (!_cache) {
             throw new Error("Cache is required.");
         }
-        this._mfaLoginTTL = TimeSpan.fromSeconds(config.jsonConfig.security.mfa.loginTokenTTLSeconds)
+        this._mfaLoginTTL = TimeSpan.fromSeconds(config.security.mfa.loginTokenTTLSeconds)
         if (this._mfaLoginTTL.seconds <= 0) {
             throw new Error("MFA Login Token TTL has to be greater than 0 seconds.");
         }

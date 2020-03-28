@@ -4,7 +4,7 @@ import { container } from "tsyringe";
 import Validator from "../middleware/validator/validator";
 import AuthMiddleware from "../middleware/authMiddleware";
 import MfaController from "../controllers/mfaController";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
 
 export default class MfaRouter {
     static getExpressRouter(): Router {
@@ -12,9 +12,9 @@ export default class MfaRouter {
         const ctrl = container.resolve(MfaController);
         const auth = container.resolve(AuthMiddleware);
         const validator = container.resolve(Validator);
-        const jsonConfig = container.resolve(Config).jsonConfig;
+        const config = container.resolve(Config);
 
-        if (!jsonConfig.security.mfa.enabled) {
+        if (!config.security.mfa.enabled) {
             return router;
         }
 

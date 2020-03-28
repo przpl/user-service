@@ -8,7 +8,7 @@ import { UserEntity } from "../dal/entities/userEntity";
 import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException } from "../exceptions/exceptions";
 import { unixTimestampS, toUnixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
 
 @singleton()
 export class EmailManager {
@@ -18,8 +18,8 @@ export class EmailManager {
     private _resendTimeLimit: TimeSpan;
 
     constructor(config: Config) {
-        this._resendCountLimit = config.jsonConfig.localLogin.email.resendLimit;
-        this._resendTimeLimit = TimeSpan.fromSeconds(config.jsonConfig.localLogin.email.resendTimeLimitSeconds);
+        this._resendCountLimit = config.localLogin.email.resendLimit;
+        this._resendTimeLimit = TimeSpan.fromSeconds(config.localLogin.email.resendTimeLimitSeconds);
     }
 
     public async generateCode(userId: string, email: string) {

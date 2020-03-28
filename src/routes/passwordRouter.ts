@@ -5,7 +5,7 @@ import Validator from "../middleware/validator/validator";
 import AuthMiddleware from "../middleware/authMiddleware";
 import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
 import PasswordController from "../controllers/passwordController";
-import Config from "../utils/config/config";
+import { Config } from "../utils/config/config";
 
 export default class PasswordRouter {
     static getExpressRouter(): Router {
@@ -14,7 +14,7 @@ export default class PasswordRouter {
         const auth = container.resolve(AuthMiddleware);
         const validator = container.resolve(Validator);
         const captcha = container.resolve(RecaptchaMiddleware);
-        const recaptchaEnabled = container.resolve(Config).jsonConfig.security.reCaptcha.protectedEndpoints;
+        const recaptchaEnabled = container.resolve(Config).security.reCaptcha.protectedEndpoints;
 
         router.post(
             "/change",

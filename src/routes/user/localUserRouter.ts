@@ -5,7 +5,7 @@ import LocalUserController from "../../controllers/user/localUserController";
 import Validator from "../../middleware/validator/validator";
 import RecaptchaMiddleware from "../../middleware/recaptchaMiddleware";
 import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
-import Config from "../../utils/config/config";
+import { Config } from "../../utils/config/config";
 
 export default class LocalUserRouter {
     static getExpressRouter(): Router {
@@ -13,8 +13,8 @@ export default class LocalUserRouter {
         const ctrl = container.resolve(LocalUserController);
         const validator = container.resolve(Validator);
         const captcha = container.resolve(RecaptchaMiddleware);
-        const jsonConfig = container.resolve(Config).jsonConfig;
-        const recaptchaEnabled = jsonConfig.security.reCaptcha.protectedEndpoints;
+        const config = container.resolve(Config);
+        const recaptchaEnabled = config.security.reCaptcha.protectedEndpoints;
         const uaMiddleware = container.resolve(UserAgentMiddleware);
 
         router.post(
@@ -34,7 +34,7 @@ export default class LocalUserRouter {
 
         router.post("/logout", validator.logout, (req: Request, res: Response, next: NextFunction) => ctrl.logout(req, res, next));
 
-        if (jsonConfig.security.mfa.enabled) {
+        if (config.security.mfa.enabled) {
             router.post("/login/mfa", validator.loginWithMfa, (req: Request, res: Response, next: NextFunction) => ctrl.loginWithMfa(req, res, next));
         }
 

@@ -3,14 +3,14 @@ import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
 import { forwardError } from "../utils/expressUtils";
-import Config from "../utils/config/config";
+import Env from "../utils/config/env";
 
 @singleton()
 export default class InternalAuthMiddleware {
     private _masterKey: string;
 
-    constructor(config: Config) {
-        this._masterKey = config.masterKey;
+    constructor(env: Env) {
+        this._masterKey = env.masterKey;
         if (!this._masterKey || this._masterKey.length === 0) {
             throw new Error("Master key is required.");
         }

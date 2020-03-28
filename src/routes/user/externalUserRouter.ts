@@ -6,7 +6,7 @@ import AuthMiddleware from "../../middleware/authMiddleware";
 import { ExternalLoginProvider } from "../../dal/entities/externalLogin";
 import ExternalUserController from "../../controllers/user/externalUserController";
 import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
-import Config from "../../utils/config/config";
+import { Config } from "../../utils/config/config";
 
 export default class ExternalUserRouter {
     static getExpressRouter(): Router {
@@ -14,10 +14,10 @@ export default class ExternalUserRouter {
         const ctrl = container.resolve(ExternalUserController);
         const auth = container.resolve(AuthMiddleware);
         const validator = container.resolve(Validator);
-        const jsonConfig = container.resolve(Config).jsonConfig;
+        const config = container.resolve(Config);
         const uaMiddleware = container.resolve(UserAgentMiddleware);
 
-        if (jsonConfig.externalLogin.google.enabled) {
+        if (config.externalLogin.google.enabled) {
             router.post(
                 "/google",
                 validator.loginWithGoogle,
@@ -27,7 +27,7 @@ export default class ExternalUserRouter {
             );
         }
 
-        if (jsonConfig.externalLogin.facebook.enabled) {
+        if (config.externalLogin.facebook.enabled) {
             router.post(
                 "/facebook",
                 validator.loginWithFacebook,
