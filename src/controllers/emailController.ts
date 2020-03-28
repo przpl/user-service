@@ -10,8 +10,7 @@ export default class EmailController {
     constructor(private _emailManager: EmailManager, private _queueService: QueueService) {}
 
     public async confirmEmail(req: Request, res: Response, next: NextFunction) {
-        const { email, emailCode } = req.body;
-        const success = await this._emailManager.confirmCode(email, emailCode);
+        const success = await this._emailManager.confirmCode(req.body.email, req.body.code);
         res.json({ result: success });
     }
 

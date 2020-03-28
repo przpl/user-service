@@ -1,7 +1,12 @@
 export interface RequestBody {
+    // Change password
+    new?: string;
+    old?: string;
+
+    // Common
+    token?: string;
     userId?: string;
-    emailCode?: string;
-    resetCode?: string;
+    code?: string;
     googleTokenId?: string;
     facebookAccessToken?: string;
     mfaLoginToken?: string;
@@ -9,7 +14,6 @@ export interface RequestBody {
     recaptchaKey?: string;
     email?: string;
     password?: string;
-    oldPassword?: string;
     id_token?: string; // eslint-disable-line camelcase
     access_token?: string; // eslint-disable-line camelcase
     userRole?: string;

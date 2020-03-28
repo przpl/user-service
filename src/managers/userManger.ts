@@ -104,9 +104,9 @@ export class UserManager {
         await user.save();
     }
 
-    public async resetPassword(resetCode: string, password: string) {
-        resetCode = resetCode.toUpperCase();
-        const passReset = await this._passResetRepo.findOne({ where: { code: resetCode } });
+    public async resetPassword(token: string, password: string) {
+        token = token.toUpperCase();
+        const passReset = await this._passResetRepo.findOne({ where: { code: token } });
         if (!passReset) {
             throw new UserNotExistsException();
         }

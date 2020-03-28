@@ -58,11 +58,12 @@ export default class Validator {
             passwordSchema.has().lowercase();
             passwordErrorMsg += ", one lowercase";
         }
-        fieldValidators.password = body("password")
-            .isString()
-            .withMessage(FIELD_ERROR_MSG.isString)
-            .custom(value => passwordSchema.validate(value))
-            .withMessage(passwordErrorMsg);
+        fieldValidators.password = name =>
+            body(name)
+                .isString()
+                .withMessage(FIELD_ERROR_MSG.isString)
+                .custom(value => passwordSchema.validate(value))
+                .withMessage(passwordErrorMsg);
 
         fieldValidators.weakPassword = body("password")
             .isString()
@@ -70,7 +71,7 @@ export default class Validator {
             .isLength({ min: 1, max: config.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
-        fieldValidators.oldPassword = body("oldPassword")
+        fieldValidators.oldPassword = body("old")
             .isString()
             .withMessage(FIELD_ERROR_MSG.isString)
             .isLength({ min: 1, max: config.password.isLength.max })
@@ -93,19 +94,19 @@ export default class Validator {
         }
 
         this.login = [fieldValidators.email, fieldValidators.weakPassword, this.validate];
-        this.register = [fieldValidators.email, fieldValidators.password, fieldValidators.register, this.validate];
-        this.changePassword = [fieldValidators.oldPassword, fieldValidators.password, this.validate];
+        this.register = [fieldValidators.email, fieldValidators.password("password"), fieldValidators.register, this.validate];
+        this.changePassword = [fieldValidators.oldPassword, fieldValidators.password("new"), this.validate];
         this.refreshToken = [fieldValidators.refreshToken, this.validate];
         this.logout = [fieldValidators.refreshToken, this.validate];
         this.confirmEmail = [fieldValidators.email, fieldValidators.emailCode, this.validate];
         this.resendEmail = [fieldValidators.email, this.validate];
         this.forgotPassword = [fieldValidators.email, this.validate];
-        this.resetPassword = [fieldValidators.resetPassword, fieldValidators.password, this.validate];
+        this.resetPassword = [fieldValidators.resetPassword, fieldValidators.password("password"), this.validate];
         this.loginWithGoogle = [fieldValidators.googleTokenId, this.validate];
         this.loginWithFacebook = [fieldValidators.facebookAccessToken, this.validate];
         this.loginWithMfa = [fieldValidators.mfaLoginToken, fieldValidators.oneTimePassword, fieldValidators.userId, this.validate];
-        this.enableMfa = [fieldValidators.password, fieldValidators.oneTimePassword, this.validate];
-        this.disbleMfa = [fieldValidators.password, fieldValidators.oneTimePassword, this.validate];
+        this.enableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
+        this.disbleMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
 
         if (jsonConfig.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(jsonConfig);

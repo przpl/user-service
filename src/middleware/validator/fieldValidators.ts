@@ -28,7 +28,7 @@ export const fieldValidators = {
         .isUUID()
         .withMessage(FIELD_ERROR_MSG.isUUID),
     email: {} as ValidationChain,
-    emailCode: body("emailCode")
+    emailCode: body("code")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
@@ -36,7 +36,7 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
-    password: {} as ValidationChain,
+    password: null as (name: "password" | "new") => ValidationChain,
     refreshToken: cookie("refreshToken")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
@@ -48,7 +48,7 @@ export const fieldValidators = {
     register: {} as ValidationChain,
     weakPassword: {} as ValidationChain,
     oldPassword: {} as ValidationChain,
-    resetPassword: body("resetCode")
+    resetPassword: body("token")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()

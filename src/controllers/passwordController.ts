@@ -17,10 +17,8 @@ export default class PasswordController {
     constructor(private _userManager: UserManager) {}
 
     public async changePassword(req: Request, res: Response, next: NextFunction) {
-        const { oldPassword, password } = req.body;
-
         try {
-            await this._userManager.changePassword(req.authenticatedUser.sub, oldPassword, password);
+            await this._userManager.changePassword(req.authenticatedUser.sub, req.body.old, req.body.new);
         } catch (error) {
             if (error instanceof InvalidPasswordException) {
                 return forwardError(next, "invalidOldPassword", HttpStatus.UNAUTHORIZED);
@@ -55,12 +53,11 @@ export default class PasswordController {
     }
 
     public async resetPassword(req: Request, res: Response, next: NextFunction) {
-        const { resetCode, password } = req.body;
         try {
-            await this._userManager.resetPassword(resetCode, password);
+            await this._userManager.resetPassword(req.body.token, req.body.password);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
-                return forwardError(next, "invalidCode", HttpStatus.FORBIDDEN);
+                return forwardError(next, "invalidToken", HttpStatus.FORBIDDEN);
             } else if (error instanceof ExpiredResetCodeException) {
                 return forwardError(next, "codeExpired", HttpStatus.BAD_REQUEST);
             } else if (error instanceof UserLockedOutException) {
