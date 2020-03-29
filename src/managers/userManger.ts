@@ -20,6 +20,7 @@ import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/exte
 import { PASSWORD_RESET_CODE_LENGTH, USER_ID_LENGTH } from "../utils/globalConsts";
 import { TimeSpan } from "../utils/timeSpan";
 import { Config } from "../utils/config/config";
+import { Phone } from "../models/phone";
 
 @singleton()
 export class UserManager {
@@ -40,17 +41,28 @@ export class UserManager {
         return this.toUser(user);
     }
 
-    public async register(email: string, username: string, password: string): Promise<User> {
+    public async register(email: string, username: string, phone: Phone, password: string): Promise<User> {
+        if (await this.isPhoneUsed(phone)) {
+            throw new UserExistsException("phone");
+        }
+
         const user = new UserEntity(this.generateUserId());
         user.email = email;
         user.username = username;
+        user.phoneCode = phone?.code;
+        user.phoneNumber = phone?.number;
         user.passwordHash = await this._crypto.hashPassword(password);
 
         try {
             await user.save();
         } catch (error) {
             if (error.code === "23505") {
-                throw new UserExistsException("E-mail duplicate.");
+                if (error.detail.includes("email")) {
+                    console.log("email");
+                    throw new UserExistsException("email");
+                }
+                console.log("username");
+                throw new UserExistsException("username");
             }
 
             throw error;
@@ -59,8 +71,8 @@ export class UserManager {
         return this.toUser(user);
     }
 
-    public async login(subject: string, password: string): Promise<User> {
-        const user = await this._userRepo.findOne({ where: this.buildWhereQueryForLogin(subject) });
+    public async login(email: string, username: string, phone: Phone, password: string): Promise<User> {
+        const user = await this._userRepo.findOne({ where: this.buildWhereQueryForLogin(email, username, phone) });
         if (!user) {
             await this._crypto.hashPassword(password); // ? prevents time attack
             throw new UserNotExistsException();
@@ -194,20 +206,25 @@ export class UserManager {
         await user.save();
     }
 
-    private buildWhereQueryForLogin(subject: string): FindConditions<UserEntity>[] {
-        const where: FindConditions<UserEntity>[] = [];
-        if (this._config.localLogin.email.allowLogin && this.isEmail(subject)) {
-            where.push({ email: subject });
-        } else if (this._config.localLogin.username.allowLogin) {
-            where.push({ username: subject.toLowerCase() });
-        } else {
-            throw new Error("No allowed login option found.");
-        }
-        return where;
+    private async isPhoneUsed(phone: Phone): Promise<boolean> {
+        const user = await this._userRepo.findOne({ where: { phoneCode: phone.code, phoneNumber: phone.number } });
+        return Boolean(user);
     }
 
-    private isEmail(subject: string) {
-        return subject.includes("@") && subject.includes(".")
+    private buildWhereQueryForLogin(email: string, username: string, phone: Phone): FindConditions<UserEntity> {
+        if (email) {
+            return { email: email };
+        }
+
+        if (username) {
+            return { username: username };
+        }
+
+        if (phone) {
+            return { phoneCode: phone.code, phoneNumber: phone.number };
+        }
+
+        throw new Error("No login subject provided.");
     }
 
     private assureUserNotLockedOut(user: UserEntity) {

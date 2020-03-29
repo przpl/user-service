@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { validationResult, body, ValidationChain } from "express-validator";
+import { validationResult, body, ValidationChain, oneOf } from "express-validator";
 import HttpStatus from "http-status-codes";
 import PasswordValidator from "password-validator";
 import { singleton } from "tsyringe";
@@ -13,7 +13,6 @@ type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, nex
 
 @singleton()
 export default class Validator {
-    public subject: ValidatorArray = [];
     public login: ValidatorArray = [];
     public register: ValidatorArray = [];
     public changePassword: ValidatorArray = [];
@@ -43,7 +42,8 @@ export default class Validator {
                 .withMessage(FIELD_ERROR_MSG.isLength)
                 .isEmail()
                 .withMessage(FIELD_ERROR_MSG.isEmail)
-                .normalizeEmail();
+                .normalizeEmail()
+                .trim("@"); // if string is empty normalizeEmail() will change it to "@"
             return rule;
         };
 
@@ -101,6 +101,37 @@ export default class Validator {
             return rule;
         };
 
+        fieldValidators.phone = isRequired => {
+            const codeRule = body("phone.code");
+            if (!isRequired) {
+                codeRule.optional();
+            }
+            codeRule
+                .isString()
+                .withMessage(FIELD_ERROR_MSG.isString)
+                .trim()
+                .ltrim("+")
+                .isLength({ min: 1, max: 8 })
+                .withMessage(FIELD_ERROR_MSG.isLength)
+                .matches("^([0-9]|-)+$")
+                .withMessage(FIELD_ERROR_MSG.isPhoneCode);
+
+            const numberRule = body("phone.number");
+            if (!isRequired) {
+                numberRule.optional();
+            }
+            numberRule
+                .isString()
+                .withMessage(FIELD_ERROR_MSG.isString)
+                .trim()
+                .isLength({ min: 1, max: 50 })
+                .withMessage(FIELD_ERROR_MSG.isLength)
+                .isMobilePhone("any")
+                .withMessage(FIELD_ERROR_MSG.isPhoneNumber);
+
+            return [codeRule, numberRule];
+        };
+
         for (const fieldName of Object.keys(config.additionalFields.registerEndpoint)) {
             const field = config.additionalFields.registerEndpoint[fieldName];
             const validation = body(fieldName);
@@ -117,10 +148,15 @@ export default class Validator {
             fieldValidators.register = validation;
         }
 
-        this.login = [fieldValidators.subject, fieldValidators.weakPassword, this.validate];
+        this.login = [
+            oneOf([fieldValidators.email(true), fieldValidators.username(true), fieldValidators.phone(true)]),
+            fieldValidators.weakPassword,
+            this.validate,
+        ];
         this.register = [
             fieldValidators.email(config.localLogin.email.required),
             fieldValidators.username(config.localLogin.username.required),
+            ...fieldValidators.phone(config.localLogin.phone.required),
             fieldValidators.password("password"),
             fieldValidators.register,
             this.validate,

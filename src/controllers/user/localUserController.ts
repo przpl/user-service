@@ -39,14 +39,19 @@ export default class LocalUserController extends UserController {
     public async register(req: Request, res: Response, next: NextFunction) {
         let user: User;
         try {
-            user = await this._userManager.register(req.body.email, req.body.username, req.body.password);
+            user = await this._userManager.register(req.body.email, req.body.username, req.body.phone, req.body.password);
         } catch (error) {
             if (error instanceof UserExistsException) {
+                const typed = error as UserExistsException;
+                if (typed.conflictType === "username") {
+                    return forwardError(next, "usernameAlreadyUsed", HttpStatus.BAD_REQUEST);
+                }
                 return forwardError(next, "userAlreadyExists", HttpStatus.BAD_REQUEST);
             }
             return forwardInternalError(next, error);
         }
 
+        // TODO send to queue phone confirmation code if needed
         await this._emailManager.generateCode(user.id, user.email); // const emailCode
         // const newUser: any = {
         //     id: user.id,
@@ -60,10 +65,10 @@ export default class LocalUserController extends UserController {
     }
 
     public async login(req: Request, res: Response, next: NextFunction) {
-        const { subject, password } = req.body;
+        const { email, username, phone, password } = req.body;
         let user: User;
         try {
-            user = await this._userManager.login(subject, password);
+            user = await this._userManager.login(email, username, phone, password);
         } catch (error) {
             if (error instanceof UserNotExistsException || error instanceof InvalidPasswordException) {
                 return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);

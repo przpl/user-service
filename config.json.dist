@@ -38,6 +38,10 @@
         "username": {
             "required": true,
             "allowLogin": true
+        },
+        "phone": {
+            "required": true,
+            "allowLogin": true
         }
     },
     "externalLogin": {

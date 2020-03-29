@@ -15,18 +15,14 @@ export const FIELD_ERROR_MSG = {
     isHexadecimal: "Invalid format",
     isJwt: "Not a JWT",
     isLength: "Length exceeded",
+    isNumeric: "Not a number",
+    isPhoneCode: "Not a phone country code",
+    isPhoneNumber: "Not a phone number code",
     isString: "Not a string",
     isUUID: "Invalid format",
 };
 
 export const fieldValidators = {
-    subject: body("subject")
-        .isString()
-        .withMessage(FIELD_ERROR_MSG.isString)
-        .trim()
-        .isLength({ min: 1, max: 250 })
-        .withMessage(FIELD_ERROR_MSG.isLength)
-        .stripLow(),
     userId: body("userId")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
@@ -101,4 +97,5 @@ export const fieldValidators = {
         .trim()
         .isLength({ min: 10, max: 500 })
         .withMessage(FIELD_ERROR_MSG.isLength),
+    phone: null as (isRequired: boolean) => ValidationChain[],
 };

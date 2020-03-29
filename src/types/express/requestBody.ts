@@ -1,10 +1,11 @@
+import { Phone } from "../../models/phone";
+
 export interface RequestBody {
     // Change password
     new?: string;
     old?: string;
 
     // Login
-    subject?: string;
     mfaLoginToken?: string;
     oneTimePassword?: string;
 
@@ -14,13 +15,12 @@ export interface RequestBody {
     id_token?: string; // eslint-disable-line camelcase
     access_token?: string; // eslint-disable-line camelcase
 
-    // Register
-    username?: string;
-
     // ReCaptcha
     recaptchaKey?: string;
 
     // Common
+    username?: string;
+    phone?: Phone;
     token?: string;
     userId?: string;
     code?: string;

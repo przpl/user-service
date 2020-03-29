@@ -44,6 +44,10 @@ export class Config {
             required: boolean;
             allowLogin: boolean;
         };
+        phone: {
+            required: boolean;
+            allowLogin: boolean;
+        };
     };
     externalLogin: {
         google: {
