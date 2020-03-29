@@ -30,8 +30,14 @@
     "localLogin": {
         "allowLoginWithoutConfirmedEmail": false,
         "email": {
+            "required": true,
+            "allowLogin": true,
             "resendLimit": 10,
             "resendTimeLimitSeconds": 30
+        },
+        "username": {
+            "required": true,
+            "allowLogin": true
         }
     },
     "externalLogin": {
@@ -54,6 +60,12 @@
                 "max": 70
             }
         },
+        "username": {
+            "isLength": {
+                "min": 5,
+                "max": 20
+            }
+        },
         "password": {
             "isLength": {
                 "min": 8,
@@ -67,7 +79,7 @@
     },
     "additionalFields": {
         "registerEndpoint": {
-            "phone": {
+            "countryCode": {
                 "isString": true,
                 "trim": true,
                 "isLength": {

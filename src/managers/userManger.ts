@@ -1,4 +1,4 @@
-import { getRepository } from "typeorm";
+import { getRepository, FindConditions } from "typeorm";
 import cryptoRandomString from "crypto-random-string";
 import { singleton } from "tsyringe";
 
@@ -40,9 +40,10 @@ export class UserManager {
         return this.toUser(user);
     }
 
-    public async register(email: string, password: string): Promise<User> {
+    public async register(email: string, username: string, password: string): Promise<User> {
         const user = new UserEntity(this.generateUserId());
         user.email = email;
+        user.username = username;
         user.passwordHash = await this._crypto.hashPassword(password);
 
         try {
@@ -58,8 +59,8 @@ export class UserManager {
         return this.toUser(user);
     }
 
-    public async login(email: string, password: string): Promise<User> {
-        const user = await this._userRepo.findOne({ where: { email: email } });
+    public async login(subject: string, password: string): Promise<User> {
+        const user = await this._userRepo.findOne({ where: this.buildWhereQueryForLogin(subject) });
         if (!user) {
             await this._crypto.hashPassword(password); // ? prevents time attack
             throw new UserNotExistsException();
@@ -76,7 +77,7 @@ export class UserManager {
             throw new InvalidPasswordException();
         }
 
-        if (!this._config.localLogin.allowLoginWithoutConfirmedEmail && !user.emailConfirmed) {
+        if (this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !user.emailConfirmed) {
             throw new UserNotConfirmedException("User account is not confirmed.");
         }
 
@@ -191,6 +192,22 @@ export class UserManager {
         }
         user.lockedUntil = null;
         await user.save();
+    }
+
+    private buildWhereQueryForLogin(subject: string): FindConditions<UserEntity>[] {
+        const where: FindConditions<UserEntity>[] = [];
+        if (this._config.localLogin.email.allowLogin && this.isEmail(subject)) {
+            where.push({ email: subject });
+        } else if (this._config.localLogin.username.allowLogin) {
+            where.push({ username: subject.toLowerCase() });
+        } else {
+            throw new Error("No allowed login option found.");
+        }
+        return where;
+    }
+
+    private isEmail(subject: string) {
+        return subject.includes("@") && subject.includes(".")
     }
 
     private assureUserNotLockedOut(user: UserEntity) {

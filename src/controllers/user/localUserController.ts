@@ -37,11 +37,9 @@ export default class LocalUserController extends UserController {
     }
 
     public async register(req: Request, res: Response, next: NextFunction) {
-        const { email, password } = req.body;
-
         let user: User;
         try {
-            user = await this._userManager.register(email, password);
+            user = await this._userManager.register(req.body.email, req.body.username, req.body.password);
         } catch (error) {
             if (error instanceof UserExistsException) {
                 return forwardError(next, "userAlreadyExists", HttpStatus.BAD_REQUEST);
@@ -62,10 +60,10 @@ export default class LocalUserController extends UserController {
     }
 
     public async login(req: Request, res: Response, next: NextFunction) {
-        const { email, password } = req.body;
+        const { subject, password } = req.body;
         let user: User;
         try {
-            user = await this._userManager.login(email, password);
+            user = await this._userManager.login(subject, password);
         } catch (error) {
             if (error instanceof UserNotExistsException || error instanceof InvalidPasswordException) {
                 return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);

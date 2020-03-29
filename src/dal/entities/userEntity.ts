@@ -20,6 +20,9 @@ export class UserEntity extends BaseEntity {
     @Column({ unique: true, nullable: true })
     email: string;
 
+    @Column({ unique: true, nullable: true })
+    username: string;
+
     @Column({ nullable: true })
     passwordHash: string;
 

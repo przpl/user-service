@@ -12,19 +12,24 @@ export default class EmailRouter {
         const ctrl = container.resolve(EmailController);
         const validator = container.resolve(Validator);
         const captcha = container.resolve(RecaptchaMiddleware);
-        const recaptchaEnabled = container.resolve(Config).security.reCaptcha.protectedEndpoints;
+        const config = container.resolve(Config);
+        const recaptchaCfg = config.security.reCaptcha.protectedEndpoints;
+
+        if (!config.localLogin.email.required) {
+            return router;
+        }
 
         router.post(
             "/confirm",
             validator.confirmEmail,
-            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.confirmEmail),
+            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.confirmEmail),
             (req: Request, res: Response, next: NextFunction) => ctrl.confirmEmail(req, res, next)
         );
 
         router.post(
             "/resend",
             validator.resendEmail,
-            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.resendEmail),
+            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.resendEmail),
             (req: Request, res: Response, next: NextFunction) => ctrl.resendEmail(req, res, next)
         );
 

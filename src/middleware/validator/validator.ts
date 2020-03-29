@@ -13,6 +13,7 @@ type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, nex
 
 @singleton()
 export default class Validator {
+    public subject: ValidatorArray = [];
     public login: ValidatorArray = [];
     public register: ValidatorArray = [];
     public changePassword: ValidatorArray = [];
@@ -30,15 +31,21 @@ export default class Validator {
 
     constructor(config: Config) {
         const cfg = config.commonFields;
-        fieldValidators.email = body("email")
-            .isString()
-            .withMessage(FIELD_ERROR_MSG.isString)
-            .trim()
-            .isLength({ min: 5, max: cfg.email.isLength.max })
-            .withMessage(FIELD_ERROR_MSG.isLength)
-            .isEmail()
-            .withMessage(FIELD_ERROR_MSG.isEmail)
-            .normalizeEmail();
+        fieldValidators.email = isRequired => {
+            const rule = body("email");
+            if (!isRequired) {
+                rule.optional();
+            }
+            rule.isString()
+                .withMessage(FIELD_ERROR_MSG.isString)
+                .trim()
+                .isLength({ min: 5, max: cfg.email.isLength.max })
+                .withMessage(FIELD_ERROR_MSG.isLength)
+                .isEmail()
+                .withMessage(FIELD_ERROR_MSG.isEmail)
+                .normalizeEmail();
+            return rule;
+        };
 
         let passwordErrorMsg = `Password should have minimum ${cfg.password.isLength.min} characters`;
         const passwordSchema = new PasswordValidator();
@@ -79,6 +86,21 @@ export default class Validator {
             .isLength({ min: 1, max: cfg.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
+        fieldValidators.username = isRequired => {
+            const rule = body("username");
+            if (!isRequired) {
+                rule.optional();
+            }
+            rule.isString()
+                .withMessage(FIELD_ERROR_MSG.isString)
+                .trim()
+                .isLength({ min: cfg.username.isLength.min, max: cfg.username.isLength.max })
+                .withMessage(FIELD_ERROR_MSG.isLength)
+                .isAlphanumeric()
+                .withMessage(FIELD_ERROR_MSG.isAlphanumeric);
+            return rule;
+        };
+
         for (const fieldName of Object.keys(config.additionalFields.registerEndpoint)) {
             const field = config.additionalFields.registerEndpoint[fieldName];
             const validation = body(fieldName);
@@ -95,14 +117,20 @@ export default class Validator {
             fieldValidators.register = validation;
         }
 
-        this.login = [fieldValidators.email, fieldValidators.weakPassword, this.validate];
-        this.register = [fieldValidators.email, fieldValidators.password("password"), fieldValidators.register, this.validate];
+        this.login = [fieldValidators.subject, fieldValidators.weakPassword, this.validate];
+        this.register = [
+            fieldValidators.email(config.localLogin.email.required),
+            fieldValidators.username(config.localLogin.username.required),
+            fieldValidators.password("password"),
+            fieldValidators.register,
+            this.validate,
+        ];
         this.changePassword = [fieldValidators.oldPassword, fieldValidators.password("new"), this.validate];
         this.refreshToken = [fieldValidators.refreshToken, this.validate];
         this.logout = [fieldValidators.refreshToken, this.validate];
-        this.confirmEmail = [fieldValidators.email, fieldValidators.emailCode, this.validate];
-        this.resendEmail = [fieldValidators.email, this.validate];
-        this.forgotPassword = [fieldValidators.email, this.validate];
+        this.confirmEmail = [fieldValidators.email(true), fieldValidators.emailCode, this.validate];
+        this.resendEmail = [fieldValidators.email(true), this.validate];
+        this.forgotPassword = [fieldValidators.email(true), this.validate];
         this.resetPassword = [fieldValidators.resetPassword, fieldValidators.password("password"), this.validate];
         this.loginWithGoogle = [fieldValidators.googleTokenId, this.validate];
         this.loginWithFacebook = [fieldValidators.facebookAccessToken, this.validate];

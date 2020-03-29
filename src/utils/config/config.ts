@@ -33,10 +33,16 @@ export class Config {
         staleRefreshTokenAfterHours: number;
     };
     localLogin: {
-        allowLoginWithoutConfirmedEmail: boolean;
+        allowLoginWithoutConfirmedEmail: boolean; // TODO move inside email
         email: {
+            required: boolean;
+            allowLogin: boolean;
             resendLimit: number;
             resendTimeLimitSeconds: number;
+        };
+        username: {
+            required: boolean;
+            allowLogin: boolean;
         };
     };
     externalLogin: {
@@ -55,6 +61,7 @@ export class Config {
     };
     commonFields: {
         email: FieldConfig;
+        username: FieldConfig;
         password: PasswordFieldConfig;
     };
     additionalFields: {

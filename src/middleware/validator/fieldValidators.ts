@@ -9,6 +9,7 @@ import {
 } from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {
+    isAlphanumeric: "Not alphanumeric",
     isBase64: "Not a Base64 string",
     isEmail: "Not an e-mail",
     isHexadecimal: "Invalid format",
@@ -19,6 +20,13 @@ export const FIELD_ERROR_MSG = {
 };
 
 export const fieldValidators = {
+    subject: body("subject")
+        .isString()
+        .withMessage(FIELD_ERROR_MSG.isString)
+        .trim()
+        .isLength({ min: 1, max: 250 })
+        .withMessage(FIELD_ERROR_MSG.isLength)
+        .stripLow(),
     userId: body("userId")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
@@ -27,7 +35,8 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isUUID()
         .withMessage(FIELD_ERROR_MSG.isUUID),
-    email: {} as ValidationChain,
+    username: null as (isRequired: boolean) => ValidationChain,
+    email: null as (isRequired: boolean) => ValidationChain,
     emailCode: body("code")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
