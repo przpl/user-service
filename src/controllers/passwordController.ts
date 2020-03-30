@@ -31,11 +31,11 @@ export default class PasswordController {
         res.json({ result: true });
     }
 
+    // TODO check if user or email is enabled
     public async forgotPassword(req: Request, res: Response, next: NextFunction) {
-        const { email } = req.body;
         let code: string;
         try {
-            code = await this._userManager.generatePasswordResetCode(email);
+            code = await this._userManager.generatePasswordResetCode(req.body.email, req.body.phone);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
                 return res.json({ result: true });
@@ -51,7 +51,7 @@ export default class PasswordController {
 
         res.json({ result: true });
 
-        // TODO - send event, new password reset code was generated - backend can send email
+        // TODO - send event, new password reset code was generated - backend can send email or SMS
     }
 
     public async resetPassword(req: Request, res: Response, next: NextFunction) {

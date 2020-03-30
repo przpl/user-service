@@ -31,8 +31,6 @@ export default class Validator {
     constructor(config: Config) {
         const cfg = config.commonFields;
         fieldValidators.email = isRequired => {
-            return body("email").isEmpty();
-
             const rule = body("email");
             if (!isRequired) {
                 rule.optional();
@@ -151,14 +149,7 @@ export default class Validator {
         }
 
         this.login = [
-            oneOf(
-                [
-                    fieldValidators.email(config.localLogin.email.allowLogin),
-                    fieldValidators.username(config.localLogin.username.allowLogin),
-                    fieldValidators.phone(config.localLogin.phone.allowLogin),
-                ],
-                "Subject is required."
-            ),
+            oneOf([fieldValidators.email(true), fieldValidators.username(true), fieldValidators.phone(true)], "Subject is required."),
             fieldValidators.weakPassword,
             this.validate,
         ];
@@ -175,7 +166,7 @@ export default class Validator {
         this.logout = [fieldValidators.refreshToken, this.validate];
         this.confirmEmail = [fieldValidators.email(true), fieldValidators.emailCode, this.validate];
         this.resendEmail = [fieldValidators.email(true), this.validate];
-        this.forgotPassword = [fieldValidators.email(true), this.validate];
+        this.forgotPassword = [oneOf([fieldValidators.email(true), fieldValidators.phone(true)], "Subject is required."), this.validate];
         this.resetPassword = [fieldValidators.resetPassword, fieldValidators.password("password"), this.validate];
         this.loginWithGoogle = [fieldValidators.googleTokenId, this.validate];
         this.loginWithFacebook = [fieldValidators.facebookAccessToken, this.validate];

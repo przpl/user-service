@@ -142,8 +142,16 @@ export class UserManager {
         await passReset.remove();
     }
 
-    public async generatePasswordResetCode(email: string): Promise<string> {
-        const user = await this._userRepo.findOne({ where: { email: email } });
+    public async generatePasswordResetCode(email: string, phone: Phone): Promise<string> {
+        const where: FindConditions<UserEntity> = {};
+        if (email) {
+            where.email = email;
+        } else {
+            where.phoneCode = phone.code;
+            where.phoneNumber = phone.number;
+        }
+
+        const user = await this._userRepo.findOne({ where: where });
         if (!user) {
             throw new UserNotExistsException();
         }
