@@ -12,7 +12,7 @@ import {
     UserLockedOutException,
 } from "../exceptions/userExceptions";
 import { User } from "../interfaces/user";
-import { PasswordResetEntity } from "../dal/entities/passwordResetEntity";
+import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
 import { isExpired, unixTimestampS, toUnixTimestampS } from "../utils/timeUtils";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { CryptoService } from "../services/cryptoService";
@@ -143,12 +143,14 @@ export class UserManager {
     }
 
     public async generatePasswordResetCode(email: string, phone: Phone): Promise<string> {
+        let resetMethod = PasswordResetMethod.email;
         const where: FindConditions<UserEntity> = {};
         if (email) {
             where.email = email;
         } else {
             where.phoneCode = phone.code;
             where.phoneNumber = phone.number;
+            resetMethod = PasswordResetMethod.phone;
         }
 
         const user = await this._userRepo.findOne({ where: where });
@@ -164,17 +166,17 @@ export class UserManager {
         }
 
         const code = cryptoRandomString({ length: PASSWORD_RESET_CODE_LENGTH, type: "hex" }).toUpperCase();
-        const passResetInDb = await this._passResetRepo.findOne({ where: { userId: user.id } });
-        if (passResetInDb) {
-            passResetInDb.code = code;
-            passResetInDb.createdAt = new Date();
-            await passResetInDb.save();
+        let passReset = await this._passResetRepo.findOne({ where: { userId: user.id } });
+        if (passReset) {
+            passReset.createdAt = new Date();
         } else {
-            const passReset = new PasswordResetEntity();
+            passReset = new PasswordResetEntity();
             passReset.userId = user.id;
-            passReset.code = code;
-            await passReset.save();
         }
+        passReset.method = resetMethod;
+        passReset.code = code;
+        await passReset.save();
+
         return code;
     }
 
