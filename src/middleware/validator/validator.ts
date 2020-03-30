@@ -31,6 +31,8 @@ export default class Validator {
     constructor(config: Config) {
         const cfg = config.commonFields;
         fieldValidators.email = isRequired => {
+            return body("email").isEmpty();
+
             const rule = body("email");
             if (!isRequired) {
                 rule.optional();
@@ -149,7 +151,14 @@ export default class Validator {
         }
 
         this.login = [
-            oneOf([fieldValidators.email(true), fieldValidators.username(true), fieldValidators.phone(true)]),
+            oneOf(
+                [
+                    fieldValidators.email(config.localLogin.email.allowLogin),
+                    fieldValidators.username(config.localLogin.username.allowLogin),
+                    fieldValidators.phone(config.localLogin.phone.allowLogin),
+                ],
+                "Subject is required."
+            ),
             fieldValidators.weakPassword,
             this.validate,
         ];
@@ -201,10 +210,14 @@ export default class Validator {
     private validate(req: Request, res: Response, next: NextFunction) {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            const data = errors.array();
+            for (const d of data) {
+                delete d.nestedErrors;
+            }
             const errorsList: ErrorResponse[] = [
                 {
                     id: "dataValidationFailed",
-                    data: errors.array(),
+                    data: data,
                 },
             ];
             return forwardError(next, errorsList, HttpStatus.UNPROCESSABLE_ENTITY);
