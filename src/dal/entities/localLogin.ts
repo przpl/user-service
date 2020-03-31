@@ -1,16 +1,14 @@
-import { Entity, BaseEntity, Column, PrimaryGeneratedColumn, OneToOne } from "typeorm";
+import { Entity, BaseEntity, Column, OneToOne, PrimaryColumn, JoinColumn } from "typeorm";
 
 import { UserEntity } from "./userEntity";
 
 @Entity({ name: "local-login" })
 export class LocalLoginEntity extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({ nullable: true })
+    @PrimaryColumn()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
     user: UserEntity;
 
     @Column({ unique: true, nullable: true })

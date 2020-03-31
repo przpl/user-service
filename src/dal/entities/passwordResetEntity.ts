@@ -1,4 +1,6 @@
-import { Entity, BaseEntity, CreateDateColumn, PrimaryColumn, Column } from "typeorm";
+import { Entity, BaseEntity, CreateDateColumn, Column, OneToOne, JoinColumn, PrimaryColumn } from "typeorm";
+
+import { UserEntity } from "./userEntity";
 
 export enum PasswordResetMethod {
     email = 0,
@@ -9,6 +11,10 @@ export enum PasswordResetMethod {
 export class PasswordResetEntity extends BaseEntity {
     @PrimaryColumn()
     userId: string;
+
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
+    user: UserEntity;
 
     @Column()
     code: string;

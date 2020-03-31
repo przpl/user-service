@@ -1,9 +1,14 @@
-import { Entity, BaseEntity, PrimaryColumn, CreateDateColumn } from "typeorm";
+import { Entity, BaseEntity, PrimaryColumn, CreateDateColumn, OneToOne, JoinColumn } from "typeorm";
+import { UserEntity } from "./userEntity";
 
 @Entity({ name: "role" })
 export class RoleEntity extends BaseEntity {
     @PrimaryColumn()
-    userId: string; // ManyToOne
+    userId: string;
+
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
+    user: UserEntity;
 
     @PrimaryColumn()
     role: string;

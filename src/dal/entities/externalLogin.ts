@@ -1,4 +1,5 @@
-import { Entity, BaseEntity, PrimaryColumn, Column, OneToOne } from "typeorm";
+import { Entity, BaseEntity, PrimaryColumn, Column, OneToOne, JoinColumn } from "typeorm";
+
 import { UserEntity } from "./userEntity";
 
 export enum ExternalLoginProvider {
@@ -19,10 +20,11 @@ export class ExternalLoginEntity extends BaseEntity {
     @PrimaryColumn()
     externalUserId: string;
 
-    @Column({ nullable: true })
+    @Column()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
     user: UserEntity;
 
     @Column({ type: "smallint" })

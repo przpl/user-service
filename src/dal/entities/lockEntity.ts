@@ -1,16 +1,14 @@
-import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryGeneratedColumn, OneToOne } from "typeorm";
+import { Entity, Column, BaseEntity, CreateDateColumn, OneToOne, PrimaryColumn, JoinColumn } from "typeorm";
 
 import { UserEntity } from "./userEntity";
 
 @Entity({ name: "lock" })
 export class LockEntity extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({ nullable: true })
+    @PrimaryColumn()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
     user: UserEntity;
 
     @Column({ nullable: true })

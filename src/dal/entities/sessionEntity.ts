@@ -1,12 +1,17 @@
-import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryColumn } from "typeorm";
+import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryColumn, OneToOne, JoinColumn } from "typeorm";
+import { UserEntity } from "./userEntity";
 
 @Entity({ name: "session" })
 export class SessionEntity extends BaseEntity {
     @PrimaryColumn()
     token: string;
 
-    @Column() // TODO primary and foreign key?
+    @Column()
     userId: string;
+
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
+    user: UserEntity;
 
     @Column()
     createIp: string;

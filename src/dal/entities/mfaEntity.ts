@@ -1,4 +1,4 @@
-import { Entity, Column, BaseEntity, CreateDateColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, BaseEntity, CreateDateColumn, OneToOne, PrimaryColumn, JoinColumn } from "typeorm";
 
 import { UserEntity } from "./userEntity";
 
@@ -19,13 +19,11 @@ export class MfaEntity extends BaseEntity {
         this.ip = ip;
     }
 
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @Column({ nullable: true })
+    @PrimaryColumn()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @OneToOne(type => UserEntity, { primary: true })
+    @JoinColumn({ name: "userId" })
     user: UserEntity;
 
     @Column({ type: "smallint" })
