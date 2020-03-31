@@ -22,7 +22,7 @@ export class MfaEntity extends BaseEntity {
     @PrimaryColumn()
     userId: string;
 
-    @OneToOne(type => UserEntity, { primary: true })
+    @OneToOne(type => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

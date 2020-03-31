@@ -9,7 +9,7 @@ export class SessionEntity extends BaseEntity {
     @Column()
     userId: string;
 
-    @OneToOne(type => UserEntity, { primary: true })
+    @OneToOne(type => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 
