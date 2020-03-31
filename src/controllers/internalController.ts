@@ -4,14 +4,14 @@ import { singleton } from "tsyringe";
 
 import { RoleManager } from "../managers/roleManager";
 import { SessionManager } from "../managers/sessionManager";
-import { UserManager } from "../managers/userManger";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { UserNotExistsException } from "../exceptions/userExceptions";
+import { LockManager } from "../managers/lockManager";
 
 // TODO - handle errors, send more information than on public endpoints
 @singleton()
 export default class InternalController {
-    constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _userManager: UserManager) {}
+    constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _lockManager: LockManager) {}
 
     public async addRoleToUser(req: Request, res: Response, next: NextFunction) {
         const { userId, userRole } = req.body;
@@ -39,7 +39,7 @@ export default class InternalController {
         const { lockUntil, lockReason } = req.body;
         const lockUntilDate = new Date(lockUntil);
         try {
-            await this._userManager.lockUser(userId, lockUntilDate, lockReason);
+            await this._lockManager.lock(userId, lockUntilDate, lockReason);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
                 return forwardError(next, "userNotExists", HttpStatus.UNAUTHORIZED);
@@ -55,7 +55,7 @@ export default class InternalController {
     public async unlockUser(req: Request, res: Response, next: NextFunction) {
         const { userId } = req.params;
         try {
-            await this._userManager.unlockUser(userId);
+            await this._lockManager.unlock(userId);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
                 return forwardError(next, "userNotExists", HttpStatus.UNAUTHORIZED);

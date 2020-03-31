@@ -2,25 +2,24 @@ import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError, forwardInternalError } from "../../utils/expressUtils";
+import { forwardError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
-import {
-    UserExistsException,
-    UserNotConfirmedException,
-    UserNotExistsException,
-    InvalidPasswordException,
-    UserLockedOutException,
-} from "../../exceptions/userExceptions";
-import { User } from "../../interfaces/user";
+import { UserNotConfirmedException, UserNotExistsException } from "../../exceptions/userExceptions";
 import { JwtService } from "../../services/jwtService";
-import { MfaMethod } from "../../dal/entities/userEntity";
 import { MfaService } from "../../services/mfaService";
 import UserController from "./userController";
 import { SessionManager } from "../../managers/sessionManager";
 import { QueueService } from "../../services/queueService";
-import { EmailManager } from "../../managers/emailManager";
 import { RoleManager } from "../../managers/roleManager";
 import { ErrorResponse } from "../../interfaces/errorResponse";
+import { LocalLoginManager, LoginDuplicateType } from "../../managers/localLoginManager";
+import { LoginModel } from "../../models/loginModel";
+import { PhoneModel } from "../../models/phoneModel";
+import { RequestBody } from "../../types/express/requestBody";
+import { MfaManager } from "../../managers/mfaManager";
+import { LocalLoginEntity } from "../../dal/entities/localLogin";
+import { MfaMethod } from "../../dal/entities/mfaEntity";
+import { LockManager } from "../../managers/lockManager";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -28,31 +27,32 @@ export default class LocalUserController extends UserController {
         private _userManager: UserManager,
         sessionManager: SessionManager,
         roleManager: RoleManager,
-        private _emailManager: EmailManager,
         private queueService: QueueService,
         jwtService: JwtService,
-        private _mfaService: MfaService
+        private _mfaService: MfaService,
+        private _localLoginManager: LocalLoginManager,
+        private _mfaManager: MfaManager,
+        private _lockManager: LockManager
     ) {
         super(sessionManager, roleManager, jwtService);
     }
 
     public async register(req: Request, res: Response, next: NextFunction) {
-        let user: User;
-        try {
-            user = await this._userManager.register(req.body.email, req.body.username, req.body.phone, req.body.password);
-        } catch (error) {
-            if (error instanceof UserExistsException) {
-                const typed = error as UserExistsException;
-                if (typed.conflictType === "username") {
-                    return forwardError(next, "usernameAlreadyUsed", HttpStatus.BAD_REQUEST);
-                }
-                return forwardError(next, "userAlreadyExists", HttpStatus.BAD_REQUEST);
-            }
-            return forwardInternalError(next, error);
+        const login = this.mapDtoToLogin(req.body);
+        const duplicateResult = await this._localLoginManager.isDuplicate(login);
+        if (duplicateResult === LoginDuplicateType.email || duplicateResult === LoginDuplicateType.phone) {
+            return forwardError(next, "userAlreadyExists", HttpStatus.BAD_REQUEST);
+        }
+        if (duplicateResult === LoginDuplicateType.username) {
+            return forwardError(next, "usernameAlreadyUsed", HttpStatus.BAD_REQUEST);
         }
 
+        const userId = await this._userManager.create();
+
+        await this._localLoginManager.create(login, userId, req.body.password);
+
         // TODO send to queue phone confirmation code if needed
-        await this._emailManager.generateCode(user.id, user.email); // const emailCode
+        // await this._emailManager.generateCode(user.id, user.email); // const emailCode
         // const newUser: any = {
         //     id: user.id,
         //     email: user.email,
@@ -61,34 +61,44 @@ export default class LocalUserController extends UserController {
         //     newUser[fieldName] = req.body[fieldName];
         // }
 
-        res.json({ user: this.mapUser(user) });
+        res.json({ result: true });
     }
 
     public async login(req: Request, res: Response, next: NextFunction) {
-        const { email, username, phone, password } = req.body;
-        let user: User;
+        const login = this.mapDtoToLogin(req.body);
+
+        let authenticated: LocalLoginEntity = null;
         try {
-            user = await this._userManager.login(email, username, phone, password);
+            authenticated = await this._localLoginManager.authenticate(login, req.body.password);
         } catch (error) {
-            if (error instanceof UserNotExistsException || error instanceof InvalidPasswordException) {
+            if (error instanceof UserNotExistsException) {
                 return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);
             } else if (error instanceof UserNotConfirmedException) {
                 return forwardError(next, "emailNotConfirmed", HttpStatus.FORBIDDEN);
-            } else if (error instanceof UserLockedOutException) {
-                const errors: ErrorResponse = {
-                    id: "userLockedOut",
-                    data: { reason: (error as UserLockedOutException).reason },
-                };
-                return forwardError(next, errors, HttpStatus.FORBIDDEN);
             }
             return forwardError(next, [], HttpStatus.FORBIDDEN, error);
         }
 
-        if (user.mfaMethod !== MfaMethod.none) {
-            return this.sendMfaLoginToken(req, res, user);
+        if (!authenticated) {
+            return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);
         }
 
-        this.sendTokens(req, res, user);
+        // TODO duplicated with externalUserController
+        const lockReason = await this._lockManager.getReason(authenticated.userId);
+        if (lockReason) {
+            const errors: ErrorResponse = {
+                id: "userLockedOut",
+                data: { reason: lockReason },
+            };
+            return forwardError(next, errors, HttpStatus.FORBIDDEN);
+        }
+
+        const mfaMethod = await this._mfaManager.getActiveMethod(authenticated.userId);
+        if (mfaMethod !== MfaMethod.none) {
+            return this.sendMfaLoginToken(req, res, authenticated.userId);
+        }
+
+        this.sendTokens(req, res, authenticated.userId);
     }
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
@@ -98,14 +108,13 @@ export default class LocalUserController extends UserController {
             return forwardError(next, "invalidMfaToken", HttpStatus.UNAUTHORIZED);
         }
 
-        if (!(await this._mfaService.verifyHtop(userId, oneTimePassword))) {
+        if (!(await this._mfaManager.verifyHtop(userId, oneTimePassword))) {
             return forwardError(next, "invalidOneTimePassword", HttpStatus.UNAUTHORIZED);
         }
 
         this._mfaService.revokeLoginToken(userId);
 
-        const user = await this._userManager.getUserById(userId);
-        this.sendTokens(req, res, user);
+        this.sendTokens(req, res, userId);
     }
 
     public async logout(req: Request, res: Response, next: NextFunction) {
@@ -114,8 +123,18 @@ export default class LocalUserController extends UserController {
         res.send({ result: true });
     }
 
-    private async sendMfaLoginToken(req: Request, res: Response, user: User) {
-        const response = await this._mfaService.issueLoginToken(user.id, req.ip);
-        return res.json({ user: this.mapUser(user), mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
+    private async sendMfaLoginToken(req: Request, res: Response, userId: string) {
+        const response = await this._mfaService.issueLoginToken(userId, req.ip);
+        return res.json({ mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
+    }
+
+    // TODO duplicate with password controller
+    private mapDtoToLogin(body: RequestBody): LoginModel {
+        const phoneDto = body.phone;
+        let phone: PhoneModel = null;
+        if (phoneDto && phoneDto.code && phoneDto.number) {
+            phone = new PhoneModel(body.phone.code, body.phone.number);
+        }
+        return new LoginModel(body.email, body.username, phone);
     }
 }

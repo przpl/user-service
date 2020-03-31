@@ -1,0 +1,232 @@
+import { getRepository, FindConditions } from "typeorm";
+import { singleton } from "tsyringe";
+
+import { LocalLoginEntity } from "../dal/entities/localLogin";
+import { LoginModel, PrimaryLoginType } from "../models/loginModel";
+import { CryptoService } from "../services/cryptoService";
+import { UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
+import { Config } from "../utils/config/config";
+import { unixTimestampS, toUnixTimestampS, isExpired } from "../utils/timeUtils";
+import { TimeSpan } from "../utils/timeSpan";
+import cryptoRandomString from "crypto-random-string";
+import { EMAIL_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
+import { EmailConfirmEntity } from "../dal/entities/emailConfirmEntity";
+import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
+import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
+
+export enum LoginDuplicateType {
+    none,
+    email,
+    username,
+    phone,
+}
+
+@singleton()
+export class LocalLoginManager {
+    private _loginRepo = getRepository(LocalLoginEntity);
+    private _emailConfirmRepo = getRepository(EmailConfirmEntity);
+    private _passResetRepo = getRepository(PasswordResetEntity);
+    private _resendCountLimit: number;
+    private _resendTimeLimit: TimeSpan;
+    private _passResetCodeTTL: TimeSpan;
+
+    constructor(private _crypto: CryptoService, private _config: Config) {
+        this._resendCountLimit = _config.localLogin.email.resendLimit;
+        this._resendTimeLimit = TimeSpan.fromSeconds(_config.localLogin.email.resendTimeLimitSeconds);
+        this._passResetCodeTTL = TimeSpan.fromMinutes(_config.passwordReset.codeTTLMinutes);
+        if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
+            throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
+        }
+    }
+
+    public async isDuplicate(login: LoginModel): Promise<LoginDuplicateType> {
+        const entity = await this._loginRepo.findOne({ where: this.findByConditions(login) });
+        if (!entity) {
+            return LoginDuplicateType.none;
+        }
+        if (entity.email === login.email) {
+            return LoginDuplicateType.email;
+        }
+        if (entity.username === login.username) {
+            return LoginDuplicateType.username;
+        }
+        if (entity.email === login.email) {
+            return LoginDuplicateType.phone;
+        }
+        throw new Error("Unable to find local login duplicate.");
+    }
+
+    public async create(login: LoginModel, userId: string, password: string) {
+        const entity = new LocalLoginEntity();
+        entity.userId = userId;
+        entity.email = login.email;
+        entity.username = login.username;
+        entity.phoneCode = login.phone.code;
+        entity.phoneNumber = login.phone.number;
+        entity.passwordHash = await this._crypto.hashPassword(password);
+        await entity.save();
+    }
+
+    public async authenticate(login: LoginModel, password: string): Promise<LocalLoginEntity> {
+        const entity = await this._loginRepo.findOne({ where: this.findByPrimaryConditions(login) });
+        if (!entity) {
+            await this._crypto.hashPassword(password); // ? prevents time attack
+            throw new UserNotExistsException(); // TODO rename to LoginNotFoundException
+        }
+
+        const isPasswordMatch = await this._crypto.verifyPassword(password, entity.passwordHash);
+        if (!isPasswordMatch) {
+            return null;
+        }
+
+        if (this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !entity.emailConfirmed) {
+            throw new UserNotConfirmedException("User account is not confirmed.");
+        }
+
+        return entity;
+    }
+
+    public async getByLogin(login: LoginModel): Promise<LocalLoginEntity> {
+        return await this._loginRepo.findOne(this.findByPrimaryConditions(login));
+    }
+
+    public async generateCode(userId: string, email: string) {
+        const entity = new EmailConfirmEntity();
+        entity.userId = userId;
+        entity.email = email;
+        entity.code = cryptoRandomString({ length: EMAIL_CODE_LENGTH, type: "numeric" });
+        entity.sentCount = 1;
+        entity.lastSendRequestAt = new Date();
+        await entity.save();
+    }
+
+    public async getCodeAndIncrementCounter(email: string): Promise<string> {
+        const entity = await this._emailConfirmRepo.findOne({ email: email });
+        if (!entity) {
+            return null;
+        }
+
+        if (entity.sentCount >= this._resendCountLimit + 1) {
+            throw new EmailResendCodeLimitException();
+        }
+
+        if (this.isSendRequestTooOften(entity.lastSendRequestAt)) {
+            throw new EmailResendCodeTimeLimitException();
+        }
+
+        entity.lastSendRequestAt = new Date();
+        entity.sentCount++;
+        await entity.save();
+
+        return entity.code;
+    }
+
+    public async confirmCode(email: string, code: string): Promise<boolean> {
+        const confirm = await this._emailConfirmRepo.findOne({ email: email, code: code });
+        if (!confirm) {
+            return false;
+        }
+        const user = await this._loginRepo.findOne({ userId: confirm.userId });
+        user.emailConfirmed = true;
+        await user.save();
+        await this._emailConfirmRepo.remove(confirm);
+        return true;
+    }
+
+    public async changePassword(userId: string, oldPassword: string, newPassword: string) {
+        const entity = await this._loginRepo.findOne({ where: { userId: userId } });
+        const isPasswordMatch = await this._crypto.verifyPassword(oldPassword, entity.passwordHash);
+        if (!isPasswordMatch) {
+            throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
+        }
+        entity.passwordHash = await this._crypto.hashPassword(newPassword);
+        await entity.save();
+    }
+
+    public async resetPassword(token: string, password: string) {
+        token = token.toUpperCase();
+        const passReset = await this._passResetRepo.findOne({ where: { code: token } });
+        if (!passReset) {
+            throw new UserNotExistsException();
+        }
+
+        if (isExpired(passReset.createdAt, this._passResetCodeTTL)) {
+            throw new ExpiredResetCodeException();
+        }
+
+        const entity = await this._loginRepo.findOne({ where: { userId: passReset.userId } });
+
+        entity.passwordHash = await this._crypto.hashPassword(password);
+        await entity.save();
+
+        await passReset.remove();
+    }
+
+    public async generatePasswordResetCode(login: LocalLoginEntity, loginModel: LoginModel): Promise<string> {
+        if (!login.emailConfirmed) {
+            throw new UserNotConfirmedException();
+        }
+
+        const code = cryptoRandomString({ length: PASSWORD_RESET_CODE_LENGTH, type: "hex" }).toUpperCase();
+        let passReset = await this._passResetRepo.findOne({ where: { userId: login.userId } });
+        if (passReset) {
+            passReset.createdAt = new Date();
+        } else {
+            passReset = new PasswordResetEntity();
+            passReset.userId = login.userId;
+        }
+        passReset.method = this.getPasswordResetMethod(loginModel);
+        passReset.code = code;
+        await passReset.save();
+
+        return code;
+    }
+
+    public async verifyPassword(userId: string, password: string): Promise<boolean> {
+        const user = await this._loginRepo.findOne({ userId: userId });
+        return await this._crypto.verifyPassword(password, user.passwordHash);
+    }
+
+    private getPasswordResetMethod(login: LoginModel): PasswordResetMethod {
+        const primary = login.getPrimary();
+        if (primary === PrimaryLoginType.email) {
+            return PasswordResetMethod.email;
+        }
+        if (primary === PrimaryLoginType.phone) {
+            return PasswordResetMethod.phone;
+        }
+        throw new Error("Invalid password reset method.");
+    }
+
+    private isSendRequestTooOften(lastRequestAt: Date): boolean {
+        return unixTimestampS() - toUnixTimestampS(lastRequestAt) < this._resendTimeLimit.seconds;
+    }
+
+    private findByConditions(login: LoginModel) {
+        const conditions: FindConditions<LocalLoginEntity>[] = [];
+        if (login.email) {
+            conditions.push({ email: login.email });
+        }
+        if (login.username) {
+            conditions.push({ username: login.username });
+        }
+        if (login.phone) {
+            conditions.push({ phoneCode: login.phone.code, phoneNumber: login.phone.number });
+        }
+        return conditions;
+    }
+
+    private findByPrimaryConditions(login: LoginModel) {
+        const conditions: FindConditions<LocalLoginEntity> = {};
+        const primary = login.getPrimary();
+        if (primary === PrimaryLoginType.email) {
+            conditions.email = login.email;
+        } else if (primary === PrimaryLoginType.username) {
+            conditions.username = login.username;
+        } else if (primary === PrimaryLoginType.phone) {
+            conditions.phoneCode = login.phone.code;
+            conditions.phoneNumber = login.phone.number;
+        }
+        return conditions;
+    }
+}

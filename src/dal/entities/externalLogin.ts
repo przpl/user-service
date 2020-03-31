@@ -1,4 +1,5 @@
-import { Entity, BaseEntity, CreateDateColumn, UpdateDateColumn, PrimaryColumn, Column } from "typeorm";
+import { Entity, BaseEntity, PrimaryColumn, Column, OneToOne } from "typeorm";
+import { UserEntity } from "./userEntity";
 
 export enum ExternalLoginProvider {
     facebook = 0,
@@ -7,21 +8,26 @@ export enum ExternalLoginProvider {
 
 @Entity({ name: "external-login" })
 export class ExternalLoginEntity extends BaseEntity {
+    constructor(externalUserId: string, userId: string, provider: ExternalLoginProvider, email: string) {
+        super();
+        this.externalUserId = externalUserId;
+        this.userId = userId;
+        this.provider = provider;
+        this.email = email;
+    }
+
     @PrimaryColumn()
     externalUserId: string;
+
+    @Column({ nullable: true })
+    userId: string;
+
+    @OneToOne(type => UserEntity)
+    user: UserEntity;
 
     @Column({ type: "smallint" })
     provider: number;
 
     @Column({ nullable: true })
     email: string;
-
-    @Column()
-    userId: string; // TODO foreign key
-
-    @CreateDateColumn({ type: "timestamp" })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: "timestamp" })
-    updatedAt: Date;
 }

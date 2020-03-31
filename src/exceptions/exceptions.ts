@@ -25,3 +25,10 @@ export class EmailResendCodeTimeLimitException extends Error {
         Object.setPrototypeOf(this, EmailResendCodeTimeLimitException.prototype);
     }
 }
+
+export class MfaException extends Error {
+    constructor(message?: string) {
+        super(message);
+        Object.setPrototypeOf(this, MfaException.prototype);
+    }
+}

@@ -35,7 +35,12 @@ export default class LocalUserRouter {
         router.post("/logout", validator.logout, (req: Request, res: Response, next: NextFunction) => ctrl.logout(req, res, next));
 
         if (config.security.mfa.enabled) {
-            router.post("/login/mfa", validator.loginWithMfa, (req: Request, res: Response, next: NextFunction) => ctrl.loginWithMfa(req, res, next));
+            router.post(
+                "/login/mfa",
+                validator.loginWithMfa,
+                (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
+                (req: Request, res: Response, next: NextFunction) => ctrl.loginWithMfa(req, res, next)
+            );
         }
 
         return router;

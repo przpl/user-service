@@ -1,4 +1,4 @@
-import { MfaMethod } from "../dal/entities/userEntity";
+import { MfaMethod } from "../dal/entities/mfaEntity";
 
 export interface User {
     id: string;

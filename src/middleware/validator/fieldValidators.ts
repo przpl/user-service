@@ -6,6 +6,7 @@ import {
     MFA_LOGIN_TOKEN_LENGHT,
     ONE_TIME_PASS_LENGHT,
     EMAIL_CODE_LENGTH,
+    REFRESH_TOKEN_LENGTH,
 } from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {
@@ -28,9 +29,7 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
         .isLength({ min: USER_ID_LENGTH, max: USER_ID_LENGTH })
-        .withMessage(FIELD_ERROR_MSG.isLength)
-        .isUUID()
-        .withMessage(FIELD_ERROR_MSG.isUUID),
+        .withMessage(FIELD_ERROR_MSG.isLength),
     username: null as (isRequired: boolean) => ValidationChain,
     email: null as (isRequired: boolean) => ValidationChain,
     emailCode: body("code")
@@ -46,9 +45,10 @@ export const fieldValidators = {
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: 88, max: 88 })
+        .isLength({ min: REFRESH_TOKEN_LENGTH, max: REFRESH_TOKEN_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength)
-        .isBase64()
+        // eslint-disable-next-line prettier/prettier
+        .matches("^[0-9a-zA-Z\+\/\=]+$")
         .withMessage(FIELD_ERROR_MSG.isBase64),
     register: {} as ValidationChain,
     weakPassword: {} as ValidationChain,

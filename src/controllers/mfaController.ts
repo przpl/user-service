@@ -2,27 +2,33 @@ import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError } from "../utils/expressUtils";
-import { UserManager } from "../managers/userManger";
-import { MfaMethod } from "../dal/entities/userEntity";
-import { MfaService } from "../services/mfaService";
+import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { Config } from "../utils/config/config";
+import { MfaManager } from "../managers/mfaManager";
+import { MfaMethod } from "../dal/entities/mfaEntity";
+import { InvalidPasswordException } from "../exceptions/userExceptions";
+import { LocalLoginManager } from "../managers/localLoginManager";
+import { MfaException } from "../exceptions/exceptions";
 
 @singleton()
 export default class MfaController {
-    constructor(private _userManager: UserManager, private _mfaService: MfaService, private _config: Config) {}
+    constructor(private _localLoginManager: LocalLoginManager, private _mfaManager: MfaManager, private _config: Config) {}
 
     public async requestMfa(req: Request, res: Response, next: NextFunction) {
-        const user = await this._userManager.getUserById(req.authenticatedUser.sub);
-
-        if (!user.isLocalAccount) {
-            return forwardError(next, "notLocalAccount", HttpStatus.METHOD_NOT_ALLOWED);
+        let otpAuthPath: string = null;
+        try {
+            otpAuthPath = await this._mfaManager.issueHotpOtpAuth(
+                req.authenticatedUser.sub,
+                MfaMethod.code,
+                req.ip,
+                this._config.security.mfa.appName
+            );
+        } catch (error) {
+            if (error instanceof MfaException) {
+                return forwardError(next, "mfaAlreadyActivated", HttpStatus.METHOD_NOT_ALLOWED);
+            }
         }
-        if (user.mfaMethod !== MfaMethod.none) {
-            return forwardError(next, "mfaAlreadyActivated", HttpStatus.METHOD_NOT_ALLOWED);
-        }
 
-        const otpAuthPath = await this._mfaService.issueHotpOtpAuth(req.authenticatedUser.sub, this._config.security.mfa.appName);
         res.json({ otpAuthPath: otpAuthPath });
     }
 
@@ -30,11 +36,18 @@ export default class MfaController {
         const userId = req.authenticatedUser.sub;
         const { password, oneTimePassword } = req.body;
 
-        if (!(await this.authorizeRequest(userId, password, oneTimePassword, next))) {
-            return;
+        if (!(await this._localLoginManager.verifyPassword(userId, password))) {
+            return forwardError(next, "invalidPassword", HttpStatus.FORBIDDEN);
         }
 
-        await this._userManager.enableHtopFa(userId);
+        try {
+            await this._mfaManager.enableHtopFa(userId, oneTimePassword, req.ip);
+        } catch (error) {
+            if (error instanceof InvalidPasswordException) {
+                return forwardError(next, "invalidOneTimePassword", HttpStatus.FORBIDDEN);
+            }
+            return forwardInternalError(next, error);
+        }
 
         res.json({ result: true });
     }
@@ -43,24 +56,19 @@ export default class MfaController {
         const userId = req.authenticatedUser.sub;
         const { password, oneTimePassword } = req.body;
 
-        if (!(await this.authorizeRequest(userId, password, oneTimePassword, next))) {
-            return;
+        if (!(await this._localLoginManager.verifyPassword(userId, password))) {
+            return forwardError(next, "invalidPassword", HttpStatus.FORBIDDEN);
         }
 
-        await this._userManager.disableHtopFa(userId);
+        try {
+            await this._mfaManager.disableHtopFa(userId, oneTimePassword);
+        } catch (error) {
+            if (error instanceof InvalidPasswordException) {
+                return forwardError(next, "invalidOneTimePassword", HttpStatus.FORBIDDEN);
+            }
+            return forwardInternalError(next, error);
+        }
 
         res.json({ result: true });
-    }
-
-    private async authorizeRequest(userId: string, password: string, oneTimePassword: string, next: NextFunction): Promise<boolean> {
-        if (!(await this._mfaService.verifyHtop(userId, oneTimePassword))) {
-            forwardError(next, "invalidOneTimePassword", HttpStatus.FORBIDDEN);
-            return false;
-        }
-        if (!(await this._userManager.verifyPassword(userId, password))) {
-            forwardError(next, "invalidPassword", HttpStatus.FORBIDDEN);
-            return false;
-        }
-        return true;
     }
 }

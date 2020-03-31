@@ -41,14 +41,3 @@ export class UserNotConfirmedException extends Error {
         Object.setPrototypeOf(this, UserNotConfirmedException.prototype);
     }
 }
-
-export class UserLockedOutException extends Error {
-    constructor(private _lockReason: string, message?: string) {
-        super(message);
-        Object.setPrototypeOf(this, UserLockedOutException.prototype);
-    }
-
-    public get reason(): string {
-        return this._lockReason;
-    }
-}
