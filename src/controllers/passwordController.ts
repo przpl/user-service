@@ -7,9 +7,7 @@ import { UserNotConfirmedException, UserNotExistsException, InvalidPasswordExcep
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
 import { LockManager } from "../managers/lockManager";
-import { RequestBody } from "../types/express/requestBody";
-import { LoginModel } from "../models/loginModel";
-import { PhoneModel } from "../models/phoneModel";
+import { extractCredentials } from "../models/utils/toModelMappers";
 
 @singleton()
 export default class PasswordController {
@@ -30,8 +28,8 @@ export default class PasswordController {
 
     // TODO check if user or email is enabled
     public async forgotPassword(req: Request, res: Response, next: NextFunction) {
-        const loginModel = this.mapDtoToLogin(req.body);
-        const login = await this._localLoginManager.getByLogin(loginModel);
+        const credentials = extractCredentials(req.body);
+        const login = await this._localLoginManager.getByLogin(credentials);
         const lockReason = await this._lockManager.getReason(login.userId);
         if (lockReason) {
             return res.json({ result: true });
@@ -39,7 +37,7 @@ export default class PasswordController {
 
         let code: string;
         try {
-            code = await this._localLoginManager.generatePasswordResetCode(login, loginModel);
+            code = await this._localLoginManager.generatePasswordResetCode(login, credentials);
         } catch (error) {
             if (error instanceof UserNotExistsException) {
                 return res.json({ result: true });
@@ -69,14 +67,5 @@ export default class PasswordController {
         }
 
         res.json({ result: true });
-    }
-
-    private mapDtoToLogin(body: RequestBody): LoginModel {
-        const phoneDto = body.phone;
-        let phone: PhoneModel = null;
-        if (phoneDto && phoneDto.code && phoneDto.number) {
-            phone = new PhoneModel(body.phone.code, body.phone.number);
-        }
-        return new LoginModel(body.email, body.username, phone);
     }
 }

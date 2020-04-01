@@ -1,4 +1,4 @@
-import { PhoneInterface } from "../../models/phoneInterface";
+import { PhoneDto } from "../../models/phoneInterface";
 
 export interface RequestBody {
     // Change password
@@ -20,7 +20,7 @@ export interface RequestBody {
 
     // Common
     username?: string;
-    phone?: PhoneInterface;
+    phone?: PhoneDto;
     token?: string;
     userId?: string;
     code?: string;

@@ -6,12 +6,13 @@ import cookieParser from "cookie-parser";
 import { createConnection, Connection } from "typeorm";
 import { container } from "tsyringe";
 
+import UserRouter from "./routes/user/userRouter";
 import LocalUserRouter from "./routes/user/localUserRouter";
+import ExternalUserRouter from "./routes/user/externalUserRouter";
 import ServiceRouter from "./routes/serviceRouter";
 import PasswordRouter from "./routes/passwordRouter";
 import EmailRouter from "./routes/emailRouter";
 import TokenRouter from "./routes/tokenRouter";
-import ExternalUserRouter from "./routes/user/externalUserRouter";
 import MfaRouter from "./routes/mfaRouter";
 import InternalRouter from "./routes/internalRouter";
 
@@ -97,7 +98,9 @@ async function start() {
 
     app.use("/api/service", ServiceRouter.getExpressRouter());
     app.use("/api/internal", InternalRouter.getExpressRouter());
-    app.use("/api/user", LocalUserRouter.getExpressRouter());
+
+    app.use("/api/user", UserRouter.getExpressRouter());
+    app.use("/api/user/local", LocalUserRouter.getExpressRouter());
     app.use("/api/user/external", ExternalUserRouter.getExpressRouter());
     app.use("/api/user/password", PasswordRouter.getExpressRouter());
     app.use("/api/user/email", EmailRouter.getExpressRouter());

@@ -1,8 +1,8 @@
 import { getRepository, FindConditions } from "typeorm";
 import { singleton } from "tsyringe";
 
-import { LocalLoginEntity } from "../dal/entities/localLogin";
-import { LoginModel, PrimaryLoginType } from "../models/loginModel";
+import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
+import { Credentials, PrimaryLoginType } from "../models/credentials";
 import { CryptoService } from "../services/cryptoService";
 import { UserNotExistsException, UserNotConfirmedException, InvalidPasswordException } from "../exceptions/userExceptions";
 import { Config } from "../utils/config/config";
@@ -13,6 +13,7 @@ import { EMAIL_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalCo
 import { EmailConfirmEntity } from "../dal/entities/emailConfirmEntity";
 import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
 import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
+import { LocalLogin } from "../models/localLogin";
 
 export enum LoginDuplicateType {
     none,
@@ -51,36 +52,38 @@ export class LocalLoginManager {
         }
     }
 
-    public async isDuplicate(login: LoginModel): Promise<LoginDuplicateType> {
-        const entity = await this._loginRepo.findOne({ where: this.findByConditions(login) });
+    public async isDuplicate(credentials: Credentials): Promise<LoginDuplicateType> {
+        const entity = await this._loginRepo.findOne({ where: this.findByConditions(credentials) });
         if (!entity) {
             return LoginDuplicateType.none;
         }
-        if (entity.email === login.email) {
+        if (entity.email === credentials.email) {
             return LoginDuplicateType.email;
         }
-        if (entity.username === login.username) {
+        if (entity.username === credentials.username) {
             return LoginDuplicateType.username;
         }
-        if (entity.email === login.email) {
+        if (entity.email === credentials.email) {
             return LoginDuplicateType.phone;
         }
         throw new Error("Unable to find local login duplicate.");
     }
 
-    public async create(login: LoginModel, userId: string, password: string) {
+    public async create(credentials: Credentials, userId: string, password: string): Promise<LocalLogin> {
         const entity = new LocalLoginEntity();
         entity.userId = userId;
-        entity.email = login.email;
-        entity.username = login.username;
-        entity.phoneCode = login.phone.code;
-        entity.phoneNumber = login.phone.number;
+        entity.email = credentials.email;
+        entity.username = credentials.username;
+        entity.phoneCode = credentials.phone.code;
+        entity.phoneNumber = credentials.phone.number;
         entity.passwordHash = await this._crypto.hashPassword(password);
         await entity.save();
+
+        return new LocalLogin(credentials.email, false, credentials.username, credentials.phone);
     }
 
-    public async authenticate(login: LoginModel, password: string): Promise<LoginOperationResult> {
-        const entity = await this._loginRepo.findOne({ where: this.findByPrimaryConditions(login) });
+    public async authenticate(credentials: Credentials, password: string): Promise<LoginOperationResult> {
+        const entity = await this._loginRepo.findOne({ where: this.findByPrimaryConditions(credentials) });
         if (!entity) {
             await this._crypto.hashPassword(password); // ? prevents time attack
             return { result: LoginResult.userNotFound, login: null };
@@ -98,11 +101,11 @@ export class LocalLoginManager {
         return { result: LoginResult.success, login: entity };
     }
 
-    public async getByLogin(login: LoginModel): Promise<LocalLoginEntity> {
-        return await this._loginRepo.findOne(this.findByPrimaryConditions(login));
+    public async getByLogin(credentials: Credentials): Promise<LocalLoginEntity> {
+        return await this._loginRepo.findOne(this.findByPrimaryConditions(credentials));
     }
 
-    public async generateCode(userId: string, email: string) {
+    public async generateEmailCode(userId: string, email: string): Promise<string> {
         const entity = new EmailConfirmEntity();
         entity.userId = userId;
         entity.email = email;
@@ -110,6 +113,7 @@ export class LocalLoginManager {
         entity.sentCount = 1;
         entity.lastSendRequestAt = new Date();
         await entity.save();
+        return entity.code;
     }
 
     public async getCodeAndIncrementCounter(email: string): Promise<string> {
@@ -174,7 +178,7 @@ export class LocalLoginManager {
         await passReset.remove();
     }
 
-    public async generatePasswordResetCode(login: LocalLoginEntity, loginModel: LoginModel): Promise<string> {
+    public async generatePasswordResetCode(login: LocalLoginEntity, credentials: Credentials): Promise<string> {
         if (!login.emailConfirmed) {
             throw new UserNotConfirmedException();
         }
@@ -187,7 +191,7 @@ export class LocalLoginManager {
             passReset = new PasswordResetEntity();
             passReset.userId = login.userId;
         }
-        passReset.method = this.getPasswordResetMethod(loginModel);
+        passReset.method = this.getPasswordResetMethod(credentials);
         passReset.code = code;
         await passReset.save();
 
@@ -199,8 +203,8 @@ export class LocalLoginManager {
         return await this._crypto.verifyPassword(password, user.passwordHash);
     }
 
-    private getPasswordResetMethod(login: LoginModel): PasswordResetMethod {
-        const primary = login.getPrimary();
+    private getPasswordResetMethod(credentials: Credentials): PasswordResetMethod {
+        const primary = credentials.getPrimary();
         if (primary === PrimaryLoginType.email) {
             return PasswordResetMethod.email;
         }
@@ -214,30 +218,30 @@ export class LocalLoginManager {
         return unixTimestampS() - toUnixTimestampS(lastRequestAt) < this._resendTimeLimit.seconds;
     }
 
-    private findByConditions(login: LoginModel) {
+    private findByConditions(credentials: Credentials) {
         const conditions: FindConditions<LocalLoginEntity>[] = [];
-        if (login.email) {
-            conditions.push({ email: login.email });
+        if (credentials.email) {
+            conditions.push({ email: credentials.email });
         }
-        if (login.username) {
-            conditions.push({ username: login.username });
+        if (credentials.username) {
+            conditions.push({ username: credentials.username });
         }
-        if (login.phone) {
-            conditions.push({ phoneCode: login.phone.code, phoneNumber: login.phone.number });
+        if (credentials.phone) {
+            conditions.push({ phoneCode: credentials.phone.code, phoneNumber: credentials.phone.number });
         }
         return conditions;
     }
 
-    private findByPrimaryConditions(login: LoginModel) {
+    private findByPrimaryConditions(credentials: Credentials) {
         const conditions: FindConditions<LocalLoginEntity> = {};
-        const primary = login.getPrimary();
+        const primary = credentials.getPrimary();
         if (primary === PrimaryLoginType.email) {
-            conditions.email = login.email;
+            conditions.email = credentials.email;
         } else if (primary === PrimaryLoginType.username) {
-            conditions.username = login.username;
+            conditions.username = credentials.username;
         } else if (primary === PrimaryLoginType.phone) {
-            conditions.phoneCode = login.phone.code;
-            conditions.phoneNumber = login.phone.number;
+            conditions.phoneCode = credentials.phone.code;
+            conditions.phoneNumber = credentials.phone.number;
         }
         return conditions;
     }

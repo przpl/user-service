@@ -1,5 +1,4 @@
-// TODO it's PhoneDto
-export interface PhoneInterface {
+export interface PhoneDto {
     code: string;
     number: string;
 }

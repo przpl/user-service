@@ -1,14 +1,14 @@
 import nameof from "../utils/nameof";
 import { throwCtorArgError } from "../utils/commonErrors";
 
-export class PhoneModel {
+export class Phone {
     constructor(private _code: string, private _number: string) {
         if (!_code) {
-            throwCtorArgError(nameof<PhoneModel>("code"));
+            throwCtorArgError(nameof<Phone>("code"));
         }
 
         if (!_number) {
-            throwCtorArgError(nameof<PhoneModel>("number"));
+            throwCtorArgError(nameof<Phone>("number"));
         }
     }
 

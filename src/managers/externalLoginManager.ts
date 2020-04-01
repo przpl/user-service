@@ -1,7 +1,7 @@
 import { getRepository } from "typeorm";
 import { singleton } from "tsyringe";
 
-import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLogin";
+import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLoginEntity";
 
 @singleton()
 export class ExternalLoginManager {

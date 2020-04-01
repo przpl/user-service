@@ -3,7 +3,7 @@ import { container } from "tsyringe";
 
 import Validator from "../../middleware/validator/validator";
 import AuthMiddleware from "../../middleware/authMiddleware";
-import { ExternalLoginProvider } from "../../dal/entities/externalLogin";
+import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
 import ExternalUserController from "../../controllers/user/externalUserController";
 import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
 import { Config } from "../../utils/config/config";
@@ -23,7 +23,7 @@ export default class ExternalUserRouter {
                 validator.loginWithGoogle,
                 (req: Request, res: Response, next: NextFunction) => auth.authGoogle(req, res, next),
                 (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => ctrl.loginWithExternalProvider(req, res, next, ExternalLoginProvider.google)
+                (req: Request, res: Response, next: NextFunction) => ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.google)
             );
         }
 
@@ -33,7 +33,7 @@ export default class ExternalUserRouter {
                 validator.loginWithFacebook,
                 (req: Request, res: Response, next: NextFunction) => auth.authFacebook(req, res, next),
                 (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => ctrl.loginWithExternalProvider(req, res, next, ExternalLoginProvider.facebook)
+                (req: Request, res: Response, next: NextFunction) => ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.facebook)
             );
         }
 

@@ -1,4 +1,4 @@
-import { PhoneModel } from "./phoneModel";
+import { Phone } from "./phone";
 
 export enum PrimaryLoginType {
     email,
@@ -6,8 +6,16 @@ export enum PrimaryLoginType {
     phone,
 }
 
-export class LoginModel {
-    constructor(private _email: string, private _username: string, private _phone: PhoneModel) {}
+export class Credentials {
+    protected _email: string;
+    protected _username: string;
+    protected _phone: Phone;
+
+    constructor(email: string, username: string, phone: Phone) {
+        this._email = email;
+        this._username = username;
+        this._phone = phone;
+    }
 
     public get email(): string {
         return this._email;
@@ -17,7 +25,7 @@ export class LoginModel {
         return this._username;
     }
 
-    public get phone(): PhoneModel {
+    public get phone(): Phone {
         return this._phone;
     }
 
