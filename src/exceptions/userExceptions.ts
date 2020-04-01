@@ -1,19 +1,3 @@
-type UserExistsConflictType = "email" | "username" | "phone";
-
-export class UserExistsException extends Error {
-    private _conflictType: UserExistsConflictType;
-
-    constructor(conflictType: UserExistsConflictType, message?: string) {
-        super(message);
-        this._conflictType = conflictType;
-        Object.setPrototypeOf(this, UserExistsException.prototype);
-    }
-
-    public get conflictType(): UserExistsConflictType {
-        return this._conflictType;
-    }
-}
-
 export class NotFoundException extends Error {
     constructor(message?: string) {
         super(message);
