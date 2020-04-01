@@ -12,56 +12,53 @@ import { MfaException } from "../exceptions/exceptions";
 
 @singleton()
 export default class MfaController {
-    constructor(private _localLoginManager: LocalLoginManager, private _mfaManager: MfaManager, private _config: Config) {}
+    constructor(private _loginManager: LocalLoginManager, private _mfaManager: MfaManager, private _config: Config) {}
 
     public async requestMfa(req: Request, res: Response, next: NextFunction) {
+        const userId = req.authenticatedUser.sub;
+
+        if (!(await this._loginManager.isLocal(userId))) {
+            return forwardError(next, "notLocalUser", HttpStatus.FORBIDDEN);
+        }
+
+        const { appName } = this._config.security.mfa;
         let otpAuthPath: string = null;
         try {
-            otpAuthPath = await this._mfaManager.issueHotpOtpAuth(
-                req.authenticatedUser.sub,
-                MfaMethod.code,
-                req.ip,
-                this._config.security.mfa.appName
-            );
+            otpAuthPath = await this._mfaManager.issueHotpOtpAuth(userId, MfaMethod.code, req.ip, appName);
         } catch (error) {
             if (error instanceof MfaException) {
-                return forwardError(next, "mfaAlreadyActivated", HttpStatus.METHOD_NOT_ALLOWED);
+                return forwardError(next, "mfaAlreadyActivated", HttpStatus.FORBIDDEN);
             }
+            return forwardInternalError(next, error);
         }
 
         res.json({ otpAuthPath: otpAuthPath });
     }
 
     public async enableMfa(req: Request, res: Response, next: NextFunction) {
-        const userId = req.authenticatedUser.sub;
-        const { password, oneTimePassword } = req.body;
-
-        if (!(await this._localLoginManager.verifyPassword(userId, password))) {
-            return forwardError(next, "invalidPassword", HttpStatus.FORBIDDEN);
-        }
-
-        try {
-            await this._mfaManager.enableHtopFa(userId, oneTimePassword, req.ip);
-        } catch (error) {
-            if (error instanceof InvalidPasswordException) {
-                return forwardError(next, "invalidOneTimePassword", HttpStatus.FORBIDDEN);
-            }
-            return forwardInternalError(next, error);
-        }
-
-        res.json({ result: true });
+        const shouldEnable = true;
+        this.changeMfa(req, res, next, shouldEnable);
     }
 
     public async disableMfa(req: Request, res: Response, next: NextFunction) {
+        const shouldEnable = false;
+        this.changeMfa(req, res, next, shouldEnable);
+    }
+
+    private async changeMfa(req: Request, res: Response, next: NextFunction, enableMfa: boolean) {
         const userId = req.authenticatedUser.sub;
         const { password, oneTimePassword } = req.body;
 
-        if (!(await this._localLoginManager.verifyPassword(userId, password))) {
+        if (!(await this._loginManager.verifyPassword(userId, password))) {
             return forwardError(next, "invalidPassword", HttpStatus.FORBIDDEN);
         }
 
         try {
-            await this._mfaManager.disableHtopFa(userId, oneTimePassword);
+            if (enableMfa) {
+                await this._mfaManager.enableHtopFa(userId, oneTimePassword, req.ip);
+            } else {
+                await this._mfaManager.disableHtopFa(userId, oneTimePassword);
+            }
         } catch (error) {
             if (error instanceof InvalidPasswordException) {
                 return forwardError(next, "invalidOneTimePassword", HttpStatus.FORBIDDEN);

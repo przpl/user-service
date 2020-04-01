@@ -14,6 +14,7 @@ import { CacheDb } from "../dal/cacheDb";
 import { JwtService } from "../services/jwtService";
 import Env from "../utils/config/env";
 import { Config } from "../utils/config/config";
+import { Session } from "../models/session";
 
 @singleton()
 export class SessionManager {
@@ -50,7 +51,7 @@ export class SessionManager {
         return token;
     }
 
-    public async refreshSessionAndGetUserId(refreshToken: string, ip: string): Promise<string> {
+    public async refreshSessionAndGetUserId(refreshToken: string, ip: string): Promise<Session> {
         const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
         if (!session) {
             return null;
@@ -65,7 +66,7 @@ export class SessionManager {
         session.lastRefreshIp = ip;
         session.lastUseAt = new Date();
         await session.save();
-        return session.userId;
+        return this.toSessionModel(session);
     }
 
     public async revokeAllSessions(userId: string): Promise<boolean> {
@@ -111,5 +112,9 @@ export class SessionManager {
         await this._sessionRepo.remove(sessionsToRemove);
 
         return sessions.length - redundantSessionsCount;
+    }
+
+    private toSessionModel(entity: SessionEntity): Session {
+        return new Session(entity.token, entity.userId);
     }
 }

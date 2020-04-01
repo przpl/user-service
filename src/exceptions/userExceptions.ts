@@ -14,10 +14,10 @@ export class UserExistsException extends Error {
     }
 }
 
-export class UserNotExistsException extends Error {
+export class NotFoundException extends Error {
     constructor(message?: string) {
         super(message);
-        Object.setPrototypeOf(this, UserNotExistsException.prototype);
+        Object.setPrototypeOf(this, NotFoundException.prototype);
     }
 }
 
@@ -32,12 +32,5 @@ export class InvalidPasswordException extends Error {
     constructor(message?: string) {
         super(message);
         Object.setPrototypeOf(this, InvalidPasswordException.prototype);
-    }
-}
-
-export class UserNotConfirmedException extends Error {
-    constructor(message?: string) {
-        super(message);
-        Object.setPrototypeOf(this, UserNotConfirmedException.prototype);
     }
 }

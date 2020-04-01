@@ -7,6 +7,7 @@ import { SessionManager } from "../managers/sessionManager";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { RoleManager } from "../managers/roleManager";
+import { Session } from "../models/session";
 
 @singleton()
 export default class TokenController {
@@ -15,9 +16,9 @@ export default class TokenController {
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const { refreshToken } = req.cookies;
 
-        let userId: string;
+        let session: Session;
         try {
-            userId = await this._sessionManager.refreshSessionAndGetUserId(refreshToken, req.ip);
+            session = await this._sessionManager.refreshSessionAndGetUserId(refreshToken, req.ip);
         } catch (error) {
             if (error instanceof StaleRefreshTokenException) {
                 return forwardError(next, "staleRefreshToken", HttpStatus.FORBIDDEN);
@@ -25,12 +26,12 @@ export default class TokenController {
             return forwardInternalError(next, error);
         }
 
-        if (!userId) {
+        if (!session) {
             return forwardError(next, "sessionDoesNotExist", HttpStatus.UNAUTHORIZED);
         }
 
-        const roles = await this._roleManager.getRoles(userId);
-        const accessToken = this._jwtService.issueAccessToken(refreshToken, userId, roles);
+        const roles = await this._roleManager.getRoles(session.userId);
+        const accessToken = this._jwtService.issueAccessToken(refreshToken, session.userId, roles);
 
         res.json({ accessToken: accessToken });
     }

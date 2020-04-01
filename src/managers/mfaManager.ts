@@ -4,7 +4,6 @@ import speakeasy from "speakeasy";
 
 import { MfaEntity, MfaMethod } from "../dal/entities/mfaEntity";
 import { MfaException } from "../exceptions/exceptions";
-import { MfaService } from "../services/mfaService";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
 
 const SECRET_ENCODING = "base32";
@@ -12,8 +11,6 @@ const SECRET_ENCODING = "base32";
 @singleton()
 export class MfaManager {
     private _repo = getRepository(MfaEntity);
-
-    constructor(private _mfaService: MfaService) {}
 
     public async getActiveMethod(userId: string): Promise<MfaMethod> {
         const entity = await this._repo.findOne({ where: { userId: userId } });

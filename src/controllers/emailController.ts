@@ -9,10 +9,10 @@ import { LocalLoginManager } from "../managers/localLoginManager";
 
 @singleton()
 export default class EmailController {
-    constructor(private _localLoginManager: LocalLoginManager, private _queueService: QueueService) {}
+    constructor(private _loginManager: LocalLoginManager, private _queueService: QueueService) {}
 
     public async confirmEmail(req: Request, res: Response, next: NextFunction) {
-        const success = await this._localLoginManager.confirmCode(req.body.email, req.body.code);
+        const success = await this._loginManager.confirmCode(req.body.email, req.body.code);
         res.json({ result: success });
     }
 
@@ -21,7 +21,7 @@ export default class EmailController {
 
         let code: string;
         try {
-            code = await this._localLoginManager.getCodeAndIncrementCounter(email);
+            code = await this._loginManager.getCodeAndIncrementCounter(email);
         } catch (error) {
             if (error instanceof EmailResendCodeLimitException) {
                 return forwardError(next, "limitExceeded", HttpStatus.BAD_REQUEST);

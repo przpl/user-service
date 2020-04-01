@@ -26,10 +26,6 @@ export default class ExternalUserController extends UserController {
             return;
         }
 
-        if (!(await this.handleMfa(req, res, userId))) {
-            return;
-        }
-
         this.sendTokens(req, res, userId);
     }
 }
