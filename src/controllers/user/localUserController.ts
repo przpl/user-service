@@ -12,7 +12,7 @@ import { SessionManager } from "../../managers/sessionManager";
 import { QueueService } from "../../services/queueService";
 import { RoleManager } from "../../managers/roleManager";
 import { ErrorResponse } from "../../interfaces/errorResponse";
-import { LocalLoginManager, LoginDuplicateType } from "../../managers/localLoginManager";
+import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
 import { LoginModel } from "../../models/loginModel";
 import { PhoneModel } from "../../models/phoneModel";
 import { RequestBody } from "../../types/express/requestBody";
@@ -67,24 +67,21 @@ export default class LocalUserController extends UserController {
     public async login(req: Request, res: Response, next: NextFunction) {
         const login = this.mapDtoToLogin(req.body);
 
-        let authenticated: LocalLoginEntity = null;
-        try {
-            authenticated = await this._localLoginManager.authenticate(login, req.body.password);
-        } catch (error) {
-            if (error instanceof UserNotExistsException) {
-                return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);
-            } else if (error instanceof UserNotConfirmedException) {
-                return forwardError(next, "emailNotConfirmed", HttpStatus.FORBIDDEN);
-            }
-            return forwardError(next, [], HttpStatus.FORBIDDEN, error);
-        }
-
-        if (!authenticated) {
+        const result = await this._localLoginManager.authenticate(login, req.body.password);
+        if (result.result === LoginResult.userNotFound || result.result === LoginResult.invalidPassword) {
             return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);
         }
+        if (result.result === LoginResult.emailNotConfirmed) {
+            const errors: ErrorResponse = {
+                id: "emailNotConfirmed",
+                data: { user: { email: result.login.email } }, // user can login with username or phone number, client app may need reference
+            };
+            return forwardError(next, errors, HttpStatus.FORBIDDEN);
+        }
 
+        const userId = result.login.userId;
         // TODO duplicated with externalUserController
-        const lockReason = await this._lockManager.getReason(authenticated.userId);
+        const lockReason = await this._lockManager.getReason(userId);
         if (lockReason) {
             const errors: ErrorResponse = {
                 id: "userLockedOut",
@@ -93,12 +90,12 @@ export default class LocalUserController extends UserController {
             return forwardError(next, errors, HttpStatus.FORBIDDEN);
         }
 
-        const mfaMethod = await this._mfaManager.getActiveMethod(authenticated.userId);
+        const mfaMethod = await this._mfaManager.getActiveMethod(userId);
         if (mfaMethod !== MfaMethod.none) {
-            return this.sendMfaLoginToken(req, res, authenticated.userId);
+            return this.sendMfaLoginToken(req, res, userId);
         }
 
-        this.sendTokens(req, res, authenticated.userId);
+        this.sendTokens(req, res, userId);
     }
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {

@@ -21,6 +21,18 @@ export enum LoginDuplicateType {
     phone,
 }
 
+export enum LoginResult {
+    success,
+    emailNotConfirmed,
+    userNotFound,
+    invalidPassword,
+}
+
+export class LoginOperationResult {
+    result: LoginResult;
+    login: LocalLoginEntity;
+}
+
 @singleton()
 export class LocalLoginManager {
     private _loginRepo = getRepository(LocalLoginEntity);
@@ -67,23 +79,23 @@ export class LocalLoginManager {
         await entity.save();
     }
 
-    public async authenticate(login: LoginModel, password: string): Promise<LocalLoginEntity> {
+    public async authenticate(login: LoginModel, password: string): Promise<LoginOperationResult> {
         const entity = await this._loginRepo.findOne({ where: this.findByPrimaryConditions(login) });
         if (!entity) {
             await this._crypto.hashPassword(password); // ? prevents time attack
-            throw new UserNotExistsException(); // TODO rename to LoginNotFoundException
+            return { result: LoginResult.userNotFound, login: null };
         }
 
         const isPasswordMatch = await this._crypto.verifyPassword(password, entity.passwordHash);
         if (!isPasswordMatch) {
-            return null;
+            return { result: LoginResult.invalidPassword, login: entity };
         }
 
         if (this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !entity.emailConfirmed) {
-            throw new UserNotConfirmedException("User account is not confirmed.");
+            return { result: LoginResult.emailNotConfirmed, login: entity };
         }
 
-        return entity;
+        return { result: LoginResult.success, login: entity };
     }
 
     public async getByLogin(login: LoginModel): Promise<LocalLoginEntity> {
