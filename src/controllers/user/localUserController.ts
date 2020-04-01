@@ -125,7 +125,7 @@ export default class LocalUserController extends UserController {
 
     private async sendMfaLoginToken(req: Request, res: Response, userId: string) {
         const response = await this._mfaService.issueLoginToken(userId, req.ip);
-        return res.json({ mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
+        return res.json({ user: { id: userId }, mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
     }
 
     // TODO duplicate with password controller
