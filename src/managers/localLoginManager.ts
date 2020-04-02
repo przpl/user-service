@@ -33,7 +33,7 @@ export enum LoginResult {
 
 export class LoginOperationResult {
     result: LoginResult;
-    login: LocalLoginEntity;
+    login: LocalLogin;
 }
 
 @singleton()
@@ -91,16 +91,15 @@ export class LocalLoginManager {
             return { result: LoginResult.userNotFound, login: null };
         }
 
-        const isPasswordMatch = await this._passService.verify(password, entity.passwordHash);
-        if (!isPasswordMatch) {
-            return { result: LoginResult.invalidPassword, login: entity };
+        if (!(await this._passService.verify(password, entity.passwordHash))) {
+            return { result: LoginResult.invalidPassword, login: this.toLocalLoginModel(entity) };
         }
 
-        if (this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !entity.emailConfirmed) {
-            return { result: LoginResult.emailNotConfirmed, login: entity };
+        if (this.isEmailNotConfirmed(entity)) {
+            return { result: LoginResult.emailNotConfirmed, login: this.toLocalLoginModel(entity) };
         }
 
-        return { result: LoginResult.success, login: entity };
+        return { result: LoginResult.success, login: this.toLocalLoginModel(entity) };
     }
 
     public async isLocal(userId: string): Promise<boolean> {
@@ -127,7 +126,7 @@ export class LocalLoginManager {
         return entity.code;
     }
 
-    public async getCodeAndIncrementCounter(email: string): Promise<string> {
+    public async getEmailCode(email: string): Promise<string> {
         const entity = await this._emailConfirmRepo.findOne({ email: email });
         if (!entity) {
             return null;
@@ -148,7 +147,7 @@ export class LocalLoginManager {
         return entity.code;
     }
 
-    public async confirmCode(email: string, code: string): Promise<boolean> {
+    public async confirmEmail(email: string, code: string): Promise<boolean> {
         const confirm = await this._emailConfirmRepo.findOne({ email: email, code: code });
         if (!confirm) {
             return false;
@@ -166,17 +165,17 @@ export class LocalLoginManager {
             throw new UserNotLocalException();
         }
 
-        const isPasswordMatch = await this._passService.verify(oldPassword, entity.passwordHash);
-        if (!isPasswordMatch) {
+        if (!(await this._passService.verify(oldPassword, entity.passwordHash))) {
             throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
         }
+
         entity.passwordHash = await this._passService.hash(newPassword);
         await entity.save();
     }
 
-    public async resetPassword(token: string, password: string) {
-        token = token.toUpperCase();
-        const passReset = await this._passResetRepo.findOne({ where: { code: token } });
+    public async resetPassword(code: string, password: string) {
+        code = code.toUpperCase();
+        const passReset = await this._passResetRepo.findOne({ where: { code: code } });
         if (!passReset) {
             throw new NotFoundException();
         }
@@ -186,36 +185,40 @@ export class LocalLoginManager {
             throw new ExpiredResetCodeException();
         }
 
-        const entity = await this._loginRepo.findOne({ where: { userId: passReset.userId } });
+        const login = await this._loginRepo.findOne({ where: { userId: passReset.userId } });
 
-        entity.passwordHash = await this._passService.hash(password);
-        await entity.save();
+        login.passwordHash = await this._passService.hash(password);
+        await login.save();
 
         await passReset.remove();
     }
 
     public async generatePasswordResetCode(login: LocalLogin): Promise<string> {
         const code = cryptoRandomString({ length: PASSWORD_RESET_CODE_LENGTH, type: "hex" }).toUpperCase();
-        let passReset = await this._passResetRepo.findOne({ where: { userId: login.userId } });
-        if (passReset) {
-            passReset.createdAt = new Date();
+        let entity = await this._passResetRepo.findOne({ where: { userId: login.userId } });
+        if (entity) {
+            entity.createdAt = new Date();
         } else {
-            passReset = new PasswordResetEntity();
-            passReset.userId = login.userId;
+            entity = new PasswordResetEntity();
+            entity.userId = login.userId;
         }
-        passReset.method = this.getPasswordResetMethod(login);
-        passReset.code = code;
-        await passReset.save();
+        entity.method = this.getPasswordResetMethod(login);
+        entity.code = code;
+        await entity.save();
 
         return code;
     }
 
     public async verifyPassword(userId: string, password: string): Promise<boolean> {
-        const user = await this._loginRepo.findOne({ userId: userId });
-        if (!user) {
+        const entity = await this._loginRepo.findOne({ userId: userId });
+        if (!entity) {
             return false;
         }
-        return await this._passService.verify(password, user.passwordHash);
+        return await this._passService.verify(password, entity.passwordHash);
+    }
+
+    private isEmailNotConfirmed(login: LocalLoginEntity) {
+        return this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !login.emailConfirmed;
     }
 
     private getPasswordResetMethod(credentials: Credentials): PasswordResetMethod {
