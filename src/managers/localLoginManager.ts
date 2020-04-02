@@ -1,12 +1,12 @@
 import { getRepository, FindConditions } from "typeorm";
 import { singleton } from "tsyringe";
+import moment from "moment";
 
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
 import { Credentials, PrimaryLoginType } from "../models/credentials";
-import { CryptoService } from "../services/cryptoService";
+import { PasswordService } from "../services/passwordService";
 import { NotFoundException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { Config } from "../utils/config/config";
-import { unixTimestampS, toUnixTimestampS, isExpired } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 import cryptoRandomString from "crypto-random-string";
 import { EMAIL_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
@@ -15,6 +15,7 @@ import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException, Expir
 import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
 import { LocalLogin } from "../models/localLogin";
 import { Phone } from "../models/phone";
+import { PasswordReset } from "../models/passwordReset";
 
 export enum LoginDuplicateType {
     none,
@@ -44,7 +45,7 @@ export class LocalLoginManager {
     private _resendTimeLimit: TimeSpan;
     private _passResetCodeTTL: TimeSpan;
 
-    constructor(private _crypto: CryptoService, private _config: Config) {
+    constructor(private _passService: PasswordService, private _config: Config) {
         this._resendCountLimit = _config.localLogin.email.resendLimit;
         this._resendTimeLimit = TimeSpan.fromSeconds(_config.localLogin.email.resendTimeLimitSeconds);
         this._passResetCodeTTL = TimeSpan.fromMinutes(_config.passwordReset.codeTTLMinutes);
@@ -77,7 +78,7 @@ export class LocalLoginManager {
         entity.username = credentials.username;
         entity.phoneCode = credentials.phone.code;
         entity.phoneNumber = credentials.phone.number;
-        entity.passwordHash = await this._crypto.hashPassword(password);
+        entity.passwordHash = await this._passService.hash(password);
         await entity.save();
 
         return this.toLocalLoginModel(entity);
@@ -86,11 +87,11 @@ export class LocalLoginManager {
     public async authenticate(credentials: Credentials, password: string): Promise<LoginOperationResult> {
         const entity = await this._loginRepo.findOne({ where: this.findByPrimaryConditions(credentials) });
         if (!entity) {
-            await this._crypto.hashPassword(password); // ? prevents time attack
+            await this._passService.hash(password); // ? prevents time attack
             return { result: LoginResult.userNotFound, login: null };
         }
 
-        const isPasswordMatch = await this._crypto.verifyPassword(password, entity.passwordHash);
+        const isPasswordMatch = await this._passService.verify(password, entity.passwordHash);
         if (!isPasswordMatch) {
             return { result: LoginResult.invalidPassword, login: entity };
         }
@@ -165,11 +166,11 @@ export class LocalLoginManager {
             throw new UserNotLocalException();
         }
 
-        const isPasswordMatch = await this._crypto.verifyPassword(oldPassword, entity.passwordHash);
+        const isPasswordMatch = await this._passService.verify(oldPassword, entity.passwordHash);
         if (!isPasswordMatch) {
             throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
         }
-        entity.passwordHash = await this._crypto.hashPassword(newPassword);
+        entity.passwordHash = await this._passService.hash(newPassword);
         await entity.save();
     }
 
@@ -180,13 +181,14 @@ export class LocalLoginManager {
             throw new NotFoundException();
         }
 
-        if (isExpired(passReset.createdAt, this._passResetCodeTTL)) {
+        const model = this.toPasswordResetModel(passReset);
+        if (model.isExpired(this._passResetCodeTTL)) {
             throw new ExpiredResetCodeException();
         }
 
         const entity = await this._loginRepo.findOne({ where: { userId: passReset.userId } });
 
-        entity.passwordHash = await this._crypto.hashPassword(password);
+        entity.passwordHash = await this._passService.hash(password);
         await entity.save();
 
         await passReset.remove();
@@ -213,7 +215,7 @@ export class LocalLoginManager {
         if (!user) {
             return false;
         }
-        return await this._crypto.verifyPassword(password, user.passwordHash);
+        return await this._passService.verify(password, user.passwordHash);
     }
 
     private getPasswordResetMethod(credentials: Credentials): PasswordResetMethod {
@@ -228,7 +230,7 @@ export class LocalLoginManager {
     }
 
     private isSendRequestTooOften(lastRequestAt: Date): boolean {
-        return unixTimestampS() - toUnixTimestampS(lastRequestAt) < this._resendTimeLimit.seconds;
+        return moment().unix() - moment(lastRequestAt).unix() < this._resendTimeLimit.seconds;
     }
 
     private toLocalLoginModel(entity: LocalLoginEntity): LocalLogin {
@@ -262,5 +264,9 @@ export class LocalLoginManager {
             conditions.phoneNumber = credentials.phone.number;
         }
         return conditions;
+    }
+
+    private toPasswordResetModel(entity: PasswordResetEntity): PasswordReset {
+        return new PasswordReset(entity.userId, entity.code, entity.method, entity.createdAt);
     }
 }

@@ -4,7 +4,7 @@ import { UserEntity } from "./userEntity";
 
 export enum MfaMethod {
     none = 0,
-    code = 1,
+    totp = 1,
     email = 2,
     sms = 3,
 }

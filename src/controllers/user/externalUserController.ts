@@ -15,7 +15,7 @@ export default class ExternalUserController extends UserController {
 
     public async registerOrLogin(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {
         const externalUser = req.user as ExternalUser;
-        let userId = await this._loginManager.get(externalUser.id, provider);
+        let userId = await this._loginManager.getUserId(externalUser.id, provider);
         if (!userId) {
             userId = await this._userManager.create();
             await this._loginManager.create(userId, externalUser.id, externalUser.email, provider);

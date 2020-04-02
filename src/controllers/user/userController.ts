@@ -11,7 +11,6 @@ import { ErrorResponse } from "../../interfaces/errorResponse";
 import { forwardError } from "../../utils/expressUtils";
 import { MfaMethod } from "../../dal/entities/mfaEntity";
 import { MfaManager } from "../../managers/mfaManager";
-import { MfaService } from "../../services/mfaService";
 import { RequestBody } from "../../types/express/requestBody";
 import { Credentials } from "../../models/credentials";
 import { Config } from "../../utils/config/config";
@@ -24,22 +23,21 @@ export default class UserController {
     protected _lockManager = container.resolve(LockManager);
     protected _mfaManager = container.resolve(MfaManager);
     protected _jwtService = container.resolve(JwtService);
-    protected _mfaService = container.resolve(MfaService);
     protected _queueService = container.resolve(QueueService);
     protected _config = container.resolve(Config);
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
         const { mfaLoginToken, oneTimePassword, userId } = req.body;
 
-        if (!(await this._mfaService.verifyLoginToken(userId, mfaLoginToken, req.ip))) {
+        if (!(await this._mfaManager.verifyLoginToken(userId, mfaLoginToken, req.ip))) {
             return forwardError(next, "invalidMfaToken", HttpStatus.UNAUTHORIZED);
         }
 
-        if (!(await this._mfaManager.verifyHtop(userId, oneTimePassword))) {
+        if (!(await this._mfaManager.verifyTotp(userId, oneTimePassword))) {
             return forwardError(next, "invalidOneTimePassword", HttpStatus.UNAUTHORIZED);
         }
 
-        this._mfaService.revokeLoginToken(userId);
+        this._mfaManager.revokeLoginToken(userId);
 
         this.sendTokens(req, res, userId);
     }
@@ -59,11 +57,11 @@ export default class UserController {
     }
 
     protected async handleUserLock(next: NextFunction, userId: string): Promise<boolean> {
-        const lockReason = await this._lockManager.getReason(userId);
-        if (lockReason) {
+        const lock = await this._lockManager.getActive(userId);
+        if (lock) {
             const errors: ErrorResponse = {
                 id: "userLockedOut",
-                data: { reason: lockReason },
+                data: { reason: lock.reason },
             };
             forwardError(next, errors, HttpStatus.FORBIDDEN);
             return false;
@@ -92,7 +90,7 @@ export default class UserController {
     }
 
     private async sendMfaLoginToken(req: Request, res: Response, userId: string) {
-        const response = await this._mfaService.issueLoginToken(userId, req.ip);
+        const response = await this._mfaManager.issueLoginToken(userId, req.ip);
         return res.json({ user: { id: userId }, mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
     }
 

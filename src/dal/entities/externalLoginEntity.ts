@@ -9,12 +9,12 @@ export enum ExternalLoginProvider {
 
 @Entity({ name: "external-login" })
 export class ExternalLoginEntity extends BaseEntity {
-    constructor(externalUserId: string, userId: string, provider: ExternalLoginProvider, email: string) {
+    constructor(userId: string, externalUserId: string, email: string, provider: ExternalLoginProvider) {
         super();
-        this.externalUserId = externalUserId;
         this.userId = userId;
-        this.provider = provider;
+        this.externalUserId = externalUserId;
         this.email = email;
+        this.provider = provider;
     }
 
     @PrimaryColumn()

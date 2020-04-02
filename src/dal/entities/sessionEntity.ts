@@ -1,4 +1,4 @@
-import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryColumn, OneToOne, JoinColumn } from "typeorm";
+import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryColumn, JoinColumn, ManyToOne } from "typeorm";
 import { UserEntity } from "./userEntity";
 
 @Entity({ name: "session" })
@@ -9,7 +9,7 @@ export class SessionEntity extends BaseEntity {
     @Column()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @ManyToOne(type => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

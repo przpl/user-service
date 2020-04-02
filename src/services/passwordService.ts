@@ -5,7 +5,7 @@ import { singleton } from "tsyringe";
 import { Config } from "../utils/config/config";
 
 @singleton()
-export class CryptoService {
+export class PasswordService {
     private _bcryptRounds: number;
 
     constructor(config: Config) {
@@ -15,7 +15,7 @@ export class CryptoService {
         }
     }
 
-    public hashPassword(password: string): Promise<string> {
+    public hash(password: string): Promise<string> {
         if (isNullOrUndefined(password)) {
             throw new Error("Cannot hash null or undefined password.");
         }
@@ -23,7 +23,7 @@ export class CryptoService {
         return bcrypt.hash(password, this._bcryptRounds);
     }
 
-    public verifyPassword(password: string, expectedHash: string): Promise<boolean> {
+    public verify(password: string, expectedHash: string): Promise<boolean> {
         return bcrypt.compare(password, expectedHash);
     }
 }

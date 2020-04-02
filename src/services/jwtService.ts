@@ -1,18 +1,11 @@
 import jwt from "jsonwebtoken";
 import { singleton } from "tsyringe";
+import moment from "moment";
 
-import { unixTimestampS } from "../utils/timeUtils";
 import { TimeSpan } from "../utils/timeSpan";
 import { JWT_ID_LENGTH } from "../utils/globalConsts";
 import Env from "../utils/config/env";
-
-export interface AccessToken {
-    sub: string;
-    ref: string;
-    rol: string[];
-    iat: number;
-    exp: number;
-}
+import { AccessTokenDto } from "../models/dtos/accessTokenDto";
 
 @singleton()
 export class JwtService {
@@ -35,7 +28,7 @@ export class JwtService {
     }
 
     public issueAccessToken<PayloadType>(refreshToken: string, userId: string, roles: string[], payload?: PayloadType): string {
-        const now = unixTimestampS();
+        const now = moment().unix();
         const dataToSign = {
             sub: userId,
             ref: this.getTokenRef(refreshToken),
@@ -47,8 +40,8 @@ export class JwtService {
         return jwt.sign(dataToSign, this._jwtPrivateKey);
     }
 
-    public decodeAccessToken<PayloadType>(token: string): AccessToken & PayloadType {
-        return jwt.verify(token, this._jwtPrivateKey) as AccessToken & PayloadType;
+    public decodeAccessToken<PayloadType>(token: string): AccessTokenDto & PayloadType {
+        return jwt.verify(token, this._jwtPrivateKey) as AccessTokenDto & PayloadType;
     }
 
     public getTokenRef(refreshToken: string) {

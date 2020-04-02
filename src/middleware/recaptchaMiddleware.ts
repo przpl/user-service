@@ -29,10 +29,8 @@ export default class RecaptchaMiddleware {
             return next();
         }
 
-        const { recaptchaKey } = req.body;
-
         try {
-            await this._reCaptcha.validate(recaptchaKey);
+            await this._reCaptcha.validate(req.body.recaptchaKey);
         } catch (error) {
             if (isArray(error)) {
                 const captchaError = error[0];

@@ -1,43 +1,47 @@
 import { getRepository } from "typeorm";
 import { singleton } from "tsyringe";
+import moment from "moment";
 
 import { LockEntity } from "../dal/entities/lockEntity";
-import { toUnixTimestampS, unixTimestampS } from "../utils/timeUtils";
-import { NotFoundException } from "../exceptions/userExceptions";
+import { Lock } from "../models/lock";
 
 @singleton()
 export class LockManager {
     private _repo = getRepository(LockEntity);
 
-    public async getReason(userId: string): Promise<string> {
-        const entity = await this._repo.findOne({ where: { userId: userId } });
-        if (!entity) {
+    public async getActive(userId: string): Promise<Lock> {
+        const entity = await this.getByUserId(userId);
+        if (!entity || moment().isAfter(entity.until)) {
             return null;
         }
 
-        if (entity.until && toUnixTimestampS(entity.until) >= unixTimestampS()) {
-            return entity.reason;
-        }
-
-        return null;
+        return this.toLockModel(entity);
     }
 
-    public async lock(userId: string, until: Date, reason: string) {
-        const user = await this._repo.findOne({ where: { userId: userId } });
-        if (!user) {
-            throw new NotFoundException();
+    public async lock(userId: string, until: Date, reason: string, by: string) {
+        let entity = await this.getByUserId(userId);
+        if (!entity) {
+            entity = new LockEntity();
+            entity.userId = userId;
         }
-        user.until = until;
-        user.reason = reason;
-        await user.save();
+        entity.until = until;
+        entity.reason = reason;
+        entity.by = by;
+        entity.at = new Date();
+
+        await entity.save();
     }
 
-    public async unlock(userId: string) {
-        const user = await this._repo.findOne({ where: { userId: userId } });
-        if (!user) {
-            throw new NotFoundException();
-        }
-        user.until = null;
-        await user.save();
+    public async unlock(userId: string): Promise<boolean> {
+        const result = await this._repo.delete({ userId: userId });
+        return result.affected > 0;
+    }
+
+    private getByUserId(userId: string): Promise<LockEntity> {
+        return this._repo.findOne({ where: { userId: userId } });
+    }
+
+    private toLockModel(entity: LockEntity): Lock {
+        return new Lock(entity.userId, entity.reason);
     }
 }

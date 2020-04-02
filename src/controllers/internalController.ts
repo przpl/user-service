@@ -60,9 +60,9 @@ export default class InternalController {
             return;
         }
 
-        const { lockUntil, lockReason } = req.body;
-        const lockUntilDate = new Date(lockUntil);
-        await this._lockManager.lock(userId, lockUntilDate, lockReason);
+        const { until, reason, by } = req.body.lock;
+        const untilDate = new Date(until);
+        await this._lockManager.lock(userId, untilDate, reason, by);
         await this._sessionManager.revokeAllSessions(userId);
 
         res.json({ result: true });
@@ -75,9 +75,9 @@ export default class InternalController {
             return;
         }
 
-        await this._lockManager.unlock(userId);
+        const result = await this._lockManager.unlock(userId);
 
-        res.json({ result: true });
+        res.json({ result: result });
     }
 
     private async assertUserExists(next: NextFunction, userId: string): Promise<boolean> {

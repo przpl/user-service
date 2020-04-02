@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
+import moment from "moment";
 
 import Env from "../utils/config/env";
-import { toUnixTimestampS } from "../utils/timeUtils";
 
 @singleton()
 export default class ServiceController {
@@ -14,7 +14,7 @@ export default class ServiceController {
             return res.status(HttpStatus.FORBIDDEN).send();
         }
 
-        const currentTime = new Date();
+        const currentTime = moment();
         const data = {
             serviceId: this._env.serviceId,
             environment: {
@@ -22,8 +22,8 @@ export default class ServiceController {
                 value: this._env.environment,
             },
             currentTime: {
-                unixTimestamp: toUnixTimestampS(currentTime),
-                utcString: currentTime.toUTCString(),
+                unixTimestamp: currentTime.unix(),
+                utcString: currentTime.toString(),
             },
             memoryUsage: this.formatMemoryUsage(process.memoryUsage()),
         };

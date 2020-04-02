@@ -1,10 +1,10 @@
-import { AccessToken } from "../services/jwtService";
 import { RequestBody } from "./express/requestBody";
 import { RequestCookies } from "./express/requestCookies";
+import { AccessTokenDto } from "../models/dtos/accessTokenDto";
 
 declare module "express" {
     export interface Request {
-        authenticatedUser?: AccessToken;
+        authenticatedUser?: AccessTokenDto;
         body: RequestBody;
         cookies: RequestCookies;
         userAgent?: IUAParser.IResult;

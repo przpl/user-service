@@ -1,10 +1,10 @@
 import { getRepository } from "typeorm";
 import cryptoRandomString from "crypto-random-string";
 import { singleton } from "tsyringe";
+import moment from "moment";
 
 import { SessionEntity } from "../dal/entities/sessionEntity";
 import { UserEntity } from "../dal/entities/userEntity";
-import { isExpired, toUnixTimestampS, unixTimestampS } from "../utils/timeUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
@@ -16,88 +16,110 @@ import Env from "../utils/config/env";
 import { Config } from "../utils/config/config";
 import { Session } from "../models/session";
 
+const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
+
 @singleton()
 export class SessionManager {
     private _userRepo = getRepository(UserEntity);
     private _sessionRepo = getRepository(SessionEntity);
     private _tokenTTL: TimeSpan;
+    private _refreshStaleAfter: TimeSpan;
 
-    constructor(private _jwtService: JwtService, private _cacheDb: CacheDb, env: Env, private config: Config) {
+    constructor(private _jwtService: JwtService, private _cacheDb: CacheDb, env: Env, private _config: Config) {
         this._tokenTTL = TimeSpan.fromMinutes(env.tokenTTLMinutes);
+        this._refreshStaleAfter = TimeSpan.fromHours(this._config.session.staleRefreshTokenAfterHours);
     }
 
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
-        const user = await this._userRepo.findOne({ where: { id: userId } });
-        if (user.activeSessions >= this.config.session.maxPerUser) {
-            const sessionsAfterRemoval = await this.removeOldestSession(userId, this.config.session.maxPerUser);
-            user.activeSessions = sessionsAfterRemoval;
-        }
-
-        user.activeSessions++;
-        await user.save();
+        await this.manageActiveSessions(userId);
 
         const token = cryptoRandomString({ length: REFRESH_TOKEN_LENGTH, type: "base64" });
-        const session = new SessionEntity();
-        session.token = token;
-        session.userId = userId;
-        session.createIp = ip;
-        session.lastRefreshIp = ip;
-        session.browser = userAgent.browser;
-        session.os = userAgent.os;
-        session.osVersion = userAgent.osVersion;
-        session.lastUseAt = new Date();
-        await session.save();
+        const entity = new SessionEntity();
+        entity.token = token;
+        entity.userId = userId;
+        entity.createIp = ip;
+        entity.lastRefreshIp = ip;
+        entity.browser = userAgent.browser;
+        entity.os = userAgent.os;
+        entity.osVersion = userAgent.osVersion;
+        entity.lastUseAt = new Date();
+        await entity.save();
 
         return token;
     }
 
-    public async refreshSessionAndGetUserId(refreshToken: string, ip: string): Promise<Session> {
-        const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
-        if (!session) {
+    public async refreshSession(refreshToken: string, ip: string): Promise<Session> {
+        const entity = await this._sessionRepo.findOne({ where: { token: refreshToken } });
+        if (!entity) {
             return null;
         }
 
-        if (isExpired(session.lastUseAt, TimeSpan.fromHours(this.config.session.staleRefreshTokenAfterHours))) {
-            await this._sessionRepo.remove(session);
-            await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
-            throw new StaleRefreshTokenException();
-        }
+        await this.assertRefreshTokenNotStale(entity);
 
-        session.lastRefreshIp = ip;
-        session.lastUseAt = new Date();
-        await session.save();
-        return this.toSessionModel(session);
+        entity.lastRefreshIp = ip;
+        entity.lastUseAt = new Date();
+        await entity.save();
+
+        return this.toSessionModel(entity);
     }
 
     public async revokeAllSessions(userId: string): Promise<boolean> {
-        const sessions = await this._sessionRepo.find({ where: { userId: userId } });
-        await this.revokeAccessTokens(sessions);
-        await this._sessionRepo.remove(sessions);
+        const entity = await this._sessionRepo.find({ where: { userId: userId } });
+        await this.revokeAccessTokens(entity);
+        await this._sessionRepo.remove(entity);
         await this._userRepo.update({ id: userId }, { activeSessions: 0 });
         return true;
     }
 
     public async revokeSession(refreshToken: string): Promise<boolean> {
-        const session = await this._sessionRepo.findOne({ where: { token: refreshToken } });
-        if (!session) {
+        const entity = await this._sessionRepo.findOne({ where: { token: refreshToken } });
+        if (!entity) {
             return false;
         }
-        await this.revokeAccessTokens([session]);
+        await this.revokeAccessTokens([entity]);
+        await this.removeSession(entity);
+
+        return true;
+    }
+
+    private async assertRefreshTokenNotStale(session: SessionEntity) {
+        const model = this.toSessionModel(session);
+        if (model.isExpired(this._refreshStaleAfter)) {
+            await this.removeSession(session);
+            throw new StaleRefreshTokenException();
+        }
+    }
+
+    private async removeSession(session: SessionEntity) {
         await this._sessionRepo.remove(session);
         await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
-        return true;
     }
 
     private async revokeAccessTokens(sessions: SessionEntity[]) {
         for (const session of sessions) {
-            const expireOffsetS = 20; // additional offset to be 100% sure access token is expired
-            const ref = this._jwtService.getTokenRef(session.token);
-            const accessExpiresAtS = toUnixTimestampS(session.lastUseAt) + this._tokenTTL.seconds; // TODO seperate method for calculating this
-            const timeRmainingToExpireS = accessExpiresAtS - unixTimestampS();
-            if (timeRmainingToExpireS > expireOffsetS * -1) {
-                await this._cacheDb.revokeAccessToken(session.userId, ref, TimeSpan.fromSeconds(timeRmainingToExpireS + expireOffsetS));
+            const secondsToExpire = this.getSecondsToExpire(session);
+            if (secondsToExpire > ACCESS_TOKEN_EXPIRE_OFFSET * -1) {
+                const ref = this._jwtService.getTokenRef(session.token);
+                const secondsToExpireWithOffset = TimeSpan.fromSeconds(secondsToExpire + ACCESS_TOKEN_EXPIRE_OFFSET);
+                await this._cacheDb.revokeAccessToken(session.userId, ref, secondsToExpireWithOffset);
             }
         }
+    }
+
+    private getSecondsToExpire(session: SessionEntity): number {
+        const expiresAt = moment(session.lastUseAt).unix() + this._tokenTTL.seconds;
+        return expiresAt - moment().unix();
+    }
+
+    private async manageActiveSessions(userId: string) {
+        const user = await this._userRepo.findOne({ where: { id: userId } });
+        if (user.activeSessions >= this._config.session.maxPerUser) {
+            const sessionsAfterRemoval = await this.removeOldestSession(userId, this._config.session.maxPerUser);
+            user.activeSessions = sessionsAfterRemoval;
+        }
+
+        user.activeSessions++;
+        await user.save();
     }
 
     private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {
@@ -115,6 +137,6 @@ export class SessionManager {
     }
 
     private toSessionModel(entity: SessionEntity): Session {
-        return new Session(entity.token, entity.userId);
+        return new Session(entity.token, entity.userId, entity.lastUseAt);
     }
 }

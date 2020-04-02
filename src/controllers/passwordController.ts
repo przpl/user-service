@@ -37,8 +37,7 @@ export default class PasswordController {
             return res.json({ result: true });
         }
 
-        const lockReason = await this._lockManager.getReason(login.userId);
-        if (lockReason) {
+        if (!(await this._lockManager.getActive(login.userId))) {
             return res.json({ result: true });
         }
 

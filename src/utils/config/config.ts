@@ -33,7 +33,7 @@ export class Config {
         staleRefreshTokenAfterHours: number;
     };
     localLogin: {
-        allowLoginWithoutConfirmedEmail: boolean; // TODO move inside email
+        allowLoginWithoutConfirmedEmail: boolean;
         email: {
             required: boolean;
             allowLogin: boolean;

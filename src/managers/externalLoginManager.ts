@@ -8,11 +8,11 @@ export class ExternalLoginManager {
     private _repo = getRepository(ExternalLoginEntity);
 
     public async create(userId: string, externalUserId: string, email: string, provider: ExternalLoginProvider) {
-        const login = new ExternalLoginEntity(externalUserId, userId, provider, email);
-        await login.save();
+        const entity = new ExternalLoginEntity(userId, externalUserId, email, provider);
+        await entity.save();
     }
 
-    public async get(externalUserId: string, provider: ExternalLoginProvider): Promise<string> {
+    public async getUserId(externalUserId: string, provider: ExternalLoginProvider): Promise<string> {
         const entity = await this._repo.findOne({ externalUserId: externalUserId, provider: provider }); // sarch also by provider to make sure there aren't two different users across platforms with same user id
         if (!entity) {
             return null;

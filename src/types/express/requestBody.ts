@@ -1,4 +1,5 @@
-import { PhoneDto } from "../../models/phoneInterface";
+import { PhoneDto } from "../../models/dtos/phoneDto";
+import { LockDto } from "../../models/dtos/lockDto";
 
 export interface RequestBody {
     // Change password
@@ -18,6 +19,9 @@ export interface RequestBody {
     // ReCaptcha
     recaptchaKey?: string;
 
+    // Lock
+    lock?: LockDto;
+
     // Common
     username?: string;
     phone?: PhoneDto;
@@ -27,6 +31,4 @@ export interface RequestBody {
     email?: string;
     password?: string;
     userRole?: string;
-    lockUntil?: string;
-    lockReason?: string;
 }

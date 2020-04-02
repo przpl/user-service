@@ -5,7 +5,6 @@ import { singleton } from "tsyringe";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { Config } from "../utils/config/config";
 import { MfaManager } from "../managers/mfaManager";
-import { MfaMethod } from "../dal/entities/mfaEntity";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
 import { MfaException } from "../exceptions/exceptions";
@@ -24,7 +23,7 @@ export default class MfaController {
         const { appName } = this._config.security.mfa;
         let otpAuthPath: string = null;
         try {
-            otpAuthPath = await this._mfaManager.issueHotpOtpAuth(userId, MfaMethod.code, req.ip, appName);
+            otpAuthPath = await this._mfaManager.generateTotp(userId, req.ip, appName);
         } catch (error) {
             if (error instanceof MfaException) {
                 return forwardError(next, "mfaAlreadyActivated", HttpStatus.FORBIDDEN);
@@ -55,9 +54,9 @@ export default class MfaController {
 
         try {
             if (enableMfa) {
-                await this._mfaManager.enableHtopFa(userId, oneTimePassword, req.ip);
+                await this._mfaManager.enableTotp(userId, oneTimePassword, req.ip);
             } else {
-                await this._mfaManager.disableHtopFa(userId, oneTimePassword);
+                await this._mfaManager.disableTotp(userId, oneTimePassword);
             }
         } catch (error) {
             if (error instanceof InvalidPasswordException) {

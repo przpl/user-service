@@ -14,12 +14,12 @@ export class LockEntity extends BaseEntity {
     @Column({ nullable: true })
     reason: string;
 
-    @Column({ nullable: true, type: "timestamp" })
+    @Column({ nullable: true })
+    by: string;
+
+    @Column({ type: "timestamp" })
     until: Date;
 
     @CreateDateColumn({ type: "timestamp" })
     at: Date;
-
-    @Column()
-    by: string;
 }

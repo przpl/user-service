@@ -6,7 +6,7 @@ import { NotFoundException } from "../exceptions/userExceptions";
 
 @singleton()
 export class RoleManager {
-    private _roleRepo = getRepository(RoleEntity);
+    private _repo = getRepository(RoleEntity);
 
     public async addRole(userId: string, role: string) {
         const entity = new RoleEntity();
@@ -23,16 +23,12 @@ export class RoleManager {
     }
 
     public async removeRole(userId: string, role: string): Promise<boolean> {
-        const entity = await this._roleRepo.findOne({ where: { userId: userId, role: role } });
-        if (!entity) {
-            return false;
-        }
-        await this._roleRepo.remove(entity);
-        return true;
+        const result = await this._repo.delete({ userId: userId, role: role });
+        return result.affected > 0;
     }
 
     public async getRoles(userId: string): Promise<string[]> {
-        const roles = await this._roleRepo.find({ where: { userId: userId } });
+        const roles = await this._repo.find({ where: { userId: userId } });
         return roles.map(i => i.role);
     }
 }
