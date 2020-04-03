@@ -15,6 +15,7 @@ import EmailRouter from "./routes/emailRouter";
 import TokenRouter from "./routes/tokenRouter";
 import MfaRouter from "./routes/mfaRouter";
 import InternalRouter from "./routes/internalRouter";
+import PhoneRouter from "./routes/phoneRouter";
 
 import Env from "./utils/config/env";
 import { handleNotFoundError, handleError } from "./utils/expressUtils";
@@ -104,6 +105,7 @@ async function start() {
     app.use("/api/user/external", ExternalUserRouter.getExpressRouter());
     app.use("/api/user/password", PasswordRouter.getExpressRouter());
     app.use("/api/user/email", EmailRouter.getExpressRouter());
+    app.use("/api/user/phone", PhoneRouter.getExpressRouter());
     app.use("/api/user/token", TokenRouter.getExpressRouter());
     app.use("/api/user/mfa", MfaRouter.getExpressRouter());
 

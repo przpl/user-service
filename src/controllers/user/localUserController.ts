@@ -78,12 +78,12 @@ export default class LocalUserController extends UserController {
     }
 
     private async pushEmailCode(userId: string, email: string) {
-        const code = await this._loginManager.generateEmailCode(userId, email);
+        const code = await this._loginManager.generateConfirmationCode(userId, email);
         this._queueService.pushEmailCode(email, code);
     }
 
     private async pushPhoneCode(userId: string, phone: Phone) {
-        const code = await this._loginManager.generatePhoneCode(userId, phone);
+        const code = await this._loginManager.generateConfirmationCode(userId, phone);
         this._queueService.pushPhoneCode(phone, code);
     }
 }

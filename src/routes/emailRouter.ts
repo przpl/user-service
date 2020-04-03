@@ -3,7 +3,7 @@ import { container } from "tsyringe";
 
 import Validator from "../middleware/validator/validator";
 import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
-import EmailController from "../controllers/emailController";
+import EmailController from "../controllers/confirmationController";
 import { Config } from "../utils/config/config";
 
 export default class EmailRouter {
@@ -23,14 +23,14 @@ export default class EmailRouter {
             "/confirm",
             validator.confirmEmail,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.confirmEmail),
-            (req: Request, res: Response, next: NextFunction) => ctrl.confirmEmail(req, res, next)
+            (req: Request, res: Response, next: NextFunction) => ctrl.confirm(req, res, next)
         );
 
         router.post(
             "/resend",
             validator.resendEmail,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.resendEmail),
-            (req: Request, res: Response, next: NextFunction) => ctrl.resendEmail(req, res, next)
+            (req: Request, res: Response, next: NextFunction) => ctrl.resend(req, res, next)
         );
 
         return router;

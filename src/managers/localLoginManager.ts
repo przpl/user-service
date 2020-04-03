@@ -1,6 +1,7 @@
 import { getRepository, FindConditions } from "typeorm";
 import { singleton } from "tsyringe";
 import moment from "moment";
+import { isString } from "util";
 
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
 import { Credentials, PrimaryLoginType } from "../models/credentials";
@@ -39,6 +40,11 @@ export class LoginOperationResult {
 interface ConfirmationLimit {
     count: number;
     time: TimeSpan;
+}
+
+export interface ConfirmationResult {
+    type: ConfirmationType;
+    code: string;
 }
 
 @singleton()
@@ -130,28 +136,60 @@ export class LocalLoginManager {
         return this.toLocalLoginModel(entity);
     }
 
-    public async generateEmailCode(userId: string, email: string): Promise<string> {
-        return this.generateConfirmationCode(userId, email, ConfirmationType.email);
+    public async generateConfirmationCode(userId: string, emailOrEmail: string | Phone): Promise<string> {
+        const subject = this.toConfirmationSubject(emailOrEmail);
+
+        const entity = new ConfirmationEntity();
+        entity.userId = userId;
+        entity.subject = subject.value;
+        entity.code = cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "numeric" });
+        entity.type = subject.type;
+        entity.sentCount = 1;
+        entity.lastSendRequestAt = new Date();
+        await entity.save();
+        return entity.code;
     }
 
-    public async getEmailCode(email: string): Promise<string> {
-        return this.getConfirmationCode(email, ConfirmationType.email, this._resendLimit.email);
+    public async getConfirmationCode(emailOrEmail: string | Phone): Promise<ConfirmationResult> {
+        const subject = this.toConfirmationSubject(emailOrEmail);
+
+        const entity = await this._confirmRepo.findOne({ subject: subject.value, type: subject.type });
+        if (!entity) {
+            return null;
+        }
+
+        const limit = subject.type === ConfirmationType.email ? this._resendLimit.email : this._resendLimit.phone;
+        if (entity.sentCount >= limit.count + 1) {
+            throw new ResendCodeLimitException();
+        }
+
+        if (this.isSendRequestTooOften(entity.lastSendRequestAt, limit.time.seconds)) {
+            throw new ResendCodeTimeLimitException();
+        }
+
+        entity.lastSendRequestAt = new Date();
+        entity.sentCount++;
+        await entity.save();
+
+        return { type: subject.type, code: entity.code };
     }
 
-    public async confirmEmail(email: string, code: string): Promise<boolean> {
-        return this.confirm(email, code, ConfirmationType.email);
-    }
+    public async confirm(emailOrEmail: string | Phone, code: string): Promise<boolean> {
+        const subject = this.toConfirmationSubject(emailOrEmail);
+        const confirm = await this._confirmRepo.findOne({ subject: subject.value, code: code });
+        if (!confirm) {
+            return false;
+        }
 
-    public async generatePhoneCode(userId: string, phone: Phone): Promise<string> {
-        return this.generateConfirmationCode(userId, phone.toString(), ConfirmationType.phone);
-    }
-
-    public async getPhoneCode(phone: Phone): Promise<string> {
-        return this.getConfirmationCode(phone.toString(), ConfirmationType.phone, this._resendLimit.phone);
-    }
-
-    public async confirmPhone(phone: Phone, code: string): Promise<boolean> {
-        return this.confirm(phone.toString(), code, ConfirmationType.phone);
+        const user = await this._loginRepo.findOne({ userId: confirm.userId });
+        if (subject.type === ConfirmationType.email) {
+            user.emailConfirmed = true;
+        } else {
+            user.phoneConfirmed = true;
+        }
+        await user.save();
+        await this._confirmRepo.remove(confirm);
+        return true;
     }
 
     public async changePassword(userId: string, oldPassword: string, newPassword: string) {
@@ -212,53 +250,15 @@ export class LocalLoginManager {
         return await this._passService.verify(password, entity.passwordHash);
     }
 
-    private async generateConfirmationCode(userId: string, subject: string, type: ConfirmationType): Promise<string> {
-        const entity = new ConfirmationEntity();
-        entity.userId = userId;
-        entity.subject = subject;
-        entity.code = cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "numeric" });
-        entity.type = type;
-        entity.sentCount = 1;
-        entity.lastSendRequestAt = new Date();
-        await entity.save();
-        return entity.code;
-    }
-
-    private async getConfirmationCode(email: string, type: ConfirmationType, limit: ConfirmationLimit): Promise<string> {
-        const entity = await this._confirmRepo.findOne({ subject: email, type: type });
-        if (!entity) {
-            return null;
+    private toConfirmationSubject(emailOrPhone: string | Phone): { value: string; type: ConfirmationType } {
+        if (isString(emailOrPhone)) {
+            return { value: emailOrPhone, type: ConfirmationType.email };
+        }
+        if (emailOrPhone instanceof Phone) {
+            return { value: emailOrPhone.toString(), type: ConfirmationType.phone };
         }
 
-        if (entity.sentCount >= limit.count + 1) {
-            throw new ResendCodeLimitException();
-        }
-
-        if (this.isSendRequestTooOften(entity.lastSendRequestAt, limit.time.seconds)) {
-            throw new ResendCodeTimeLimitException();
-        }
-
-        entity.lastSendRequestAt = new Date();
-        entity.sentCount++;
-        await entity.save();
-
-        return entity.code;
-    }
-
-    private async confirm(subject: string, code: string, type: ConfirmationType): Promise<boolean> {
-        const confirm = await this._confirmRepo.findOne({ subject: subject, code: code });
-        if (!confirm) {
-            return false;
-        }
-        const user = await this._loginRepo.findOne({ userId: confirm.userId });
-        if (type === ConfirmationType.email) {
-            user.emailConfirmed = true;
-        } else {
-            user.phoneConfirmed = true;
-        }
-        await user.save();
-        await this._confirmRepo.remove(confirm);
-        return true;
+        throw new Error("Unknown confirmation type.");
     }
 
     private isEmailNotConfirmed(login: LocalLoginEntity) {

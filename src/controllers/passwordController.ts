@@ -47,7 +47,7 @@ export default class PasswordController {
         if (primary === PrimaryLoginType.email) {
             this._queueService.pushEmailCode(credentials.email, code);
         } else if (primary === PrimaryLoginType.phone) {
-            this._queueService.pushSmsCode(credentials.phone, code);
+            this._queueService.pushPhoneCode(credentials.phone, code);
         }
 
         res.json({ result: true });

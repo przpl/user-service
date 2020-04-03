@@ -3,13 +3,13 @@ import { container } from "tsyringe";
 
 import Validator from "../middleware/validator/validator";
 import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
-import PhoneController from "../controllers/phoneController";
 import { Config } from "../utils/config/config";
+import ConfirmationController from "../controllers/confirmationController";
 
 export default class PhoneRouter {
     static getExpressRouter(): Router {
         const router = express.Router();
-        const ctrl = container.resolve(PhoneController);
+        const ctrl = container.resolve(ConfirmationController);
         const validator = container.resolve(Validator);
         const captcha = container.resolve(RecaptchaMiddleware);
         const config = container.resolve(Config);
@@ -23,14 +23,14 @@ export default class PhoneRouter {
             "/confirm",
             validator.confirmPhone,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.confirmPhone),
-            (req: Request, res: Response, next: NextFunction) => ctrl.confirmPhone(req, res, next)
+            (req: Request, res: Response, next: NextFunction) => ctrl.confirm(req, res, next)
         );
 
         router.post(
             "/resend",
             validator.resendPhone,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.resendPhone),
-            (req: Request, res: Response, next: NextFunction) => ctrl.resendPhone(req, res, next)
+            (req: Request, res: Response, next: NextFunction) => ctrl.resend(req, res, next)
         );
 
         return router;
