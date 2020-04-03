@@ -5,7 +5,7 @@ import {
     PASSWORD_RESET_CODE_LENGTH,
     MFA_LOGIN_TOKEN_LENGHT,
     ONE_TIME_PASS_LENGHT,
-    EMAIL_CODE_LENGTH,
+    CONFIRMATION_CODE_LENGTH,
     REFRESH_TOKEN_LENGTH,
 } from "../../utils/globalConsts";
 
@@ -32,11 +32,11 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isLength),
     username: null as (isRequired: boolean) => ValidationChain,
     email: null as (isRequired: boolean) => ValidationChain,
-    emailCode: body("code")
+    confirmationCode: body("code")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: EMAIL_CODE_LENGTH, max: EMAIL_CODE_LENGTH })
+        .isLength({ min: CONFIRMATION_CODE_LENGTH, max: CONFIRMATION_CODE_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),

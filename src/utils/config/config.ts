@@ -25,6 +25,8 @@ export class Config {
                 resetPassword: boolean;
                 confirmEmail: boolean;
                 resendEmail: boolean;
+                confirmPhone: boolean;
+                resendPhone: boolean;
             };
         };
     };
@@ -47,6 +49,8 @@ export class Config {
         phone: {
             required: boolean;
             allowLogin: boolean;
+            resendLimit: number;
+            resendTimeLimitSeconds: number;
         };
     };
     externalLogin: {

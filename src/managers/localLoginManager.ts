@@ -9,9 +9,9 @@ import { NotFoundException, InvalidPasswordException, UserNotLocalException } fr
 import { Config } from "../utils/config/config";
 import { TimeSpan } from "../utils/timeSpan";
 import cryptoRandomString from "crypto-random-string";
-import { EMAIL_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
-import { EmailConfirmEntity } from "../dal/entities/emailConfirmEntity";
-import { EmailResendCodeLimitException, EmailResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
+import { CONFIRMATION_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
+import { ConfirmationEntity, ConfirmationType } from "../dal/entities/confirmationEntity";
+import { ResendCodeLimitException, ResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
 import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
 import { LocalLogin } from "../models/localLogin";
 import { Phone } from "../models/phone";
@@ -36,18 +36,33 @@ export class LoginOperationResult {
     login: LocalLogin;
 }
 
+interface ConfirmationLimit {
+    count: number;
+    time: TimeSpan;
+}
+
 @singleton()
 export class LocalLoginManager {
     private _loginRepo = getRepository(LocalLoginEntity);
-    private _emailConfirmRepo = getRepository(EmailConfirmEntity);
+    private _confirmRepo = getRepository(ConfirmationEntity);
     private _passResetRepo = getRepository(PasswordResetEntity);
-    private _resendCountLimit: number;
-    private _resendTimeLimit: TimeSpan;
+    private _resendLimit: {
+        email: ConfirmationLimit;
+        phone: ConfirmationLimit;
+    };
     private _passResetCodeTTL: TimeSpan;
 
     constructor(private _passService: PasswordService, private _config: Config) {
-        this._resendCountLimit = _config.localLogin.email.resendLimit;
-        this._resendTimeLimit = TimeSpan.fromSeconds(_config.localLogin.email.resendTimeLimitSeconds);
+        this._resendLimit = {
+            email: {
+                count: _config.localLogin.email.resendLimit,
+                time: TimeSpan.fromSeconds(_config.localLogin.email.resendTimeLimitSeconds),
+            },
+            phone: {
+                count: _config.localLogin.phone.resendLimit,
+                time: TimeSpan.fromSeconds(_config.localLogin.phone.resendTimeLimitSeconds),
+            },
+        };
         this._passResetCodeTTL = TimeSpan.fromMinutes(_config.passwordReset.codeTTLMinutes);
         if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
@@ -116,47 +131,27 @@ export class LocalLoginManager {
     }
 
     public async generateEmailCode(userId: string, email: string): Promise<string> {
-        const entity = new EmailConfirmEntity();
-        entity.userId = userId;
-        entity.email = email;
-        entity.code = cryptoRandomString({ length: EMAIL_CODE_LENGTH, type: "numeric" });
-        entity.sentCount = 1;
-        entity.lastSendRequestAt = new Date();
-        await entity.save();
-        return entity.code;
+        return this.generateConfirmationCode(userId, email, ConfirmationType.email);
     }
 
     public async getEmailCode(email: string): Promise<string> {
-        const entity = await this._emailConfirmRepo.findOne({ email: email });
-        if (!entity) {
-            return null;
-        }
-
-        if (entity.sentCount >= this._resendCountLimit + 1) {
-            throw new EmailResendCodeLimitException();
-        }
-
-        if (this.isSendRequestTooOften(entity.lastSendRequestAt)) {
-            throw new EmailResendCodeTimeLimitException();
-        }
-
-        entity.lastSendRequestAt = new Date();
-        entity.sentCount++;
-        await entity.save();
-
-        return entity.code;
+        return this.getConfirmationCode(email, ConfirmationType.email, this._resendLimit.email);
     }
 
     public async confirmEmail(email: string, code: string): Promise<boolean> {
-        const confirm = await this._emailConfirmRepo.findOne({ email: email, code: code });
-        if (!confirm) {
-            return false;
-        }
-        const user = await this._loginRepo.findOne({ userId: confirm.userId });
-        user.emailConfirmed = true;
-        await user.save();
-        await this._emailConfirmRepo.remove(confirm);
-        return true;
+        return this.confirm(email, code, ConfirmationType.email);
+    }
+
+    public async generatePhoneCode(userId: string, phone: Phone): Promise<string> {
+        return this.generateConfirmationCode(userId, phone.toString(), ConfirmationType.phone);
+    }
+
+    public async getPhoneCode(phone: Phone): Promise<string> {
+        return this.getConfirmationCode(phone.toString(), ConfirmationType.phone, this._resendLimit.phone);
+    }
+
+    public async confirmPhone(phone: Phone, code: string): Promise<boolean> {
+        return this.confirm(phone.toString(), code, ConfirmationType.phone);
     }
 
     public async changePassword(userId: string, oldPassword: string, newPassword: string) {
@@ -217,6 +212,55 @@ export class LocalLoginManager {
         return await this._passService.verify(password, entity.passwordHash);
     }
 
+    private async generateConfirmationCode(userId: string, subject: string, type: ConfirmationType): Promise<string> {
+        const entity = new ConfirmationEntity();
+        entity.userId = userId;
+        entity.subject = subject;
+        entity.code = cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "numeric" });
+        entity.type = type;
+        entity.sentCount = 1;
+        entity.lastSendRequestAt = new Date();
+        await entity.save();
+        return entity.code;
+    }
+
+    private async getConfirmationCode(email: string, type: ConfirmationType, limit: ConfirmationLimit): Promise<string> {
+        const entity = await this._confirmRepo.findOne({ subject: email, type: type });
+        if (!entity) {
+            return null;
+        }
+
+        if (entity.sentCount >= limit.count + 1) {
+            throw new ResendCodeLimitException();
+        }
+
+        if (this.isSendRequestTooOften(entity.lastSendRequestAt, limit.time.seconds)) {
+            throw new ResendCodeTimeLimitException();
+        }
+
+        entity.lastSendRequestAt = new Date();
+        entity.sentCount++;
+        await entity.save();
+
+        return entity.code;
+    }
+
+    private async confirm(subject: string, code: string, type: ConfirmationType): Promise<boolean> {
+        const confirm = await this._confirmRepo.findOne({ subject: subject, code: code });
+        if (!confirm) {
+            return false;
+        }
+        const user = await this._loginRepo.findOne({ userId: confirm.userId });
+        if (type === ConfirmationType.email) {
+            user.emailConfirmed = true;
+        } else {
+            user.phoneConfirmed = true;
+        }
+        await user.save();
+        await this._confirmRepo.remove(confirm);
+        return true;
+    }
+
     private isEmailNotConfirmed(login: LocalLoginEntity) {
         return this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !login.emailConfirmed;
     }
@@ -232,8 +276,8 @@ export class LocalLoginManager {
         throw new Error("Invalid password reset method.");
     }
 
-    private isSendRequestTooOften(lastRequestAt: Date): boolean {
-        return moment().unix() - moment(lastRequestAt).unix() < this._resendTimeLimit.seconds;
+    private isSendRequestTooOften(lastRequestAt: Date, seconds: number): boolean {
+        return moment().unix() - moment(lastRequestAt).unix() < seconds;
     }
 
     private toLocalLoginModel(entity: LocalLoginEntity): LocalLogin {

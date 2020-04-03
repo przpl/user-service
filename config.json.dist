@@ -19,7 +19,9 @@
                 "forgotPassword": true,
                 "resetPassword": true,
                 "confirmEmail": true,
-                "resendEmail": true
+                "resendEmail": true,
+                "confirmPhone": true,
+                "resendPhone": true
             }
         }
     },
@@ -41,7 +43,9 @@
         },
         "phone": {
             "required": true,
-            "allowLogin": true
+            "allowLogin": true,
+            "resendLimit": 3,
+            "resendTimeLimitSeconds": 60
         }
     },
     "externalLogin": {

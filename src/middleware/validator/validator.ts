@@ -20,6 +20,8 @@ export default class Validator {
     public logout: ValidatorArray = [];
     public confirmEmail: ValidatorArray = [];
     public resendEmail: ValidatorArray = [];
+    public confirmPhone: ValidatorArray = [];
+    public resendPhone: ValidatorArray = [];
     public forgotPassword: ValidatorArray = [];
     public resetPassword: ValidatorArray = [];
     public loginWithGoogle: ValidatorArray = [];
@@ -164,8 +166,10 @@ export default class Validator {
         this.changePassword = [fieldValidators.oldPassword, fieldValidators.password("new"), this.validate];
         this.refreshToken = [fieldValidators.refreshToken, this.validate];
         this.logout = [fieldValidators.refreshToken, this.validate];
-        this.confirmEmail = [fieldValidators.email(true), fieldValidators.emailCode, this.validate];
+        this.confirmEmail = [fieldValidators.email(true), fieldValidators.confirmationCode, this.validate];
         this.resendEmail = [fieldValidators.email(true), this.validate];
+        this.confirmPhone = [...fieldValidators.phone(true), fieldValidators.confirmationCode, this.validate];
+        this.resendPhone = [...fieldValidators.phone(true), this.validate];
         this.forgotPassword = [oneOf([fieldValidators.email(true), fieldValidators.phone(true)], "Subject is required."), this.validate];
         this.resetPassword = [fieldValidators.resetPassword, fieldValidators.password("password"), this.validate];
         this.loginWithGoogle = [fieldValidators.googleTokenId, this.validate];

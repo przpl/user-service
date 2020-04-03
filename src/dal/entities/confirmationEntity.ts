@@ -1,16 +1,24 @@
-import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryColumn, OneToOne, JoinColumn } from "typeorm";
+import { Entity, Column, BaseEntity, CreateDateColumn, PrimaryColumn, JoinColumn, ManyToOne } from "typeorm";
 
 import { UserEntity } from "./userEntity";
 
-@Entity({ name: "email-confirmation" })
-export class EmailConfirmEntity extends BaseEntity {
+export enum ConfirmationType {
+    email = 0,
+    phone = 1,
+}
+
+@Entity({ name: "confirmation" })
+export class ConfirmationEntity extends BaseEntity {
     @PrimaryColumn()
-    email: string;
+    subject: string;
+
+    @PrimaryColumn({ type: "smallint" })
+    type: number;
 
     @Column()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @ManyToOne(type => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

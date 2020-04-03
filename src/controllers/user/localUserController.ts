@@ -9,6 +9,7 @@ import { ErrorResponse } from "../../interfaces/errorResponse";
 import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
 import { Credentials } from "../../models/credentials";
 import { extractCredentials } from "../../models/utils/toModelMappers";
+import { Phone } from "../../models/phone";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -29,6 +30,8 @@ export default class LocalUserController extends UserController {
         await this.pushNewUser(req.body, credentials);
         if (login.email) {
             await this.pushEmailCode(userId, credentials.email);
+        } else if (login.phone) {
+            await this.pushPhoneCode(userId, credentials.phone);
         }
 
         res.json({ result: true });
@@ -77,5 +80,10 @@ export default class LocalUserController extends UserController {
     private async pushEmailCode(userId: string, email: string) {
         const code = await this._loginManager.generateEmailCode(userId, email);
         this._queueService.pushEmailCode(email, code);
+    }
+
+    private async pushPhoneCode(userId: string, phone: Phone) {
+        const code = await this._loginManager.generatePhoneCode(userId, phone);
+        this._queueService.pushPhoneCode(phone, code);
     }
 }

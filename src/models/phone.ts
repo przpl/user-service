@@ -19,4 +19,8 @@ export class Phone {
     public get number(): string {
         return this._number;
     }
+
+    public toString(): string {
+        return `${this._code}${this._number}`;
+    }
 }

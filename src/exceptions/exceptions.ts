@@ -12,17 +12,17 @@ export class StaleRefreshTokenException extends Error {
     }
 }
 
-export class EmailResendCodeLimitException extends Error {
+export class ResendCodeLimitException extends Error {
     constructor(message?: string) {
         super(message);
-        Object.setPrototypeOf(this, EmailResendCodeLimitException.prototype);
+        Object.setPrototypeOf(this, ResendCodeLimitException.prototype);
     }
 }
 
-export class EmailResendCodeTimeLimitException extends Error {
+export class ResendCodeTimeLimitException extends Error {
     constructor(message?: string) {
         super(message);
-        Object.setPrototypeOf(this, EmailResendCodeTimeLimitException.prototype);
+        Object.setPrototypeOf(this, ResendCodeTimeLimitException.prototype);
     }
 }
 

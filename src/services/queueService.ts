@@ -8,7 +8,7 @@ export class QueueService {
         // TODO implement
     }
 
-    public pushSmsCode(phone: Phone, code: string) {
+    public pushPhoneCode(phone: Phone, code: string) {
         // TODO implement
     }
 
