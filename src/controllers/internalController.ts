@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
 import { RoleManager } from "../managers/roleManager";
 import { SessionManager } from "../managers/sessionManager";
-import { forwardError } from "../utils/expressUtils";
 import { LockManager } from "../managers/lockManager";
 import { UserManager } from "../managers/userManger";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class InternalController {
@@ -82,7 +81,7 @@ export default class InternalController {
 
     private async assertUserExists(next: NextFunction, userId: string): Promise<boolean> {
         if (!(await this._userManager.exists(userId))) {
-            forwardError(next, "userNotExists", HttpStatus.BAD_REQUEST);
+            errors.userNotExists(next);
             return false;
         }
         return true;

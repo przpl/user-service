@@ -1,17 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError } from "../../utils/expressUtils";
 import { UserManager } from "../../managers/userManger";
 import UserController from "./userController";
-import { ErrorResponse } from "../../interfaces/errorResponse";
 import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
 import { Credentials } from "../../models/credentials";
 import { extractCredentials } from "../../models/utils/toModelMappers";
 import { Phone } from "../../models/phone";
-import { dtoFromPhoneModel } from "../../models/mappers";
 import { ConfirmationType } from "../../dal/entities/confirmationEntity";
+import * as errors from "../commonErrors";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -44,21 +41,13 @@ export default class LocalUserController extends UserController {
 
         const result = await this._loginManager.authenticate(credentials, req.body.password);
         if (result.result === LoginResult.userNotFound || result.result === LoginResult.invalidPassword) {
-            return forwardError(next, "invalidCredentials", HttpStatus.UNAUTHORIZED);
+            return errors.invalidCredentials(next);
         }
         if (result.result === LoginResult.emailNotConfirmed) {
-            const errors: ErrorResponse = {
-                id: "emailNotConfirmed",
-                data: { user: { email: result.login.email } }, // user can login with username or phone number, client app may need reference
-            };
-            return forwardError(next, errors, HttpStatus.FORBIDDEN);
+            return errors.emailNotConfirmed(next, result.login.email);
         }
         if (result.result === LoginResult.phoneNotConfirmed) {
-            const errors: ErrorResponse = {
-                id: "phoneNotConfirmed",
-                data: { user: { phone: dtoFromPhoneModel(result.login.phone) } }, // user can login with username or phone number, client app may need reference
-            };
-            return forwardError(next, errors, HttpStatus.FORBIDDEN);
+            return errors.phoneNotConfirmed(next, result.login.phone);
         }
 
         const userId = result.login.userId;
@@ -76,11 +65,11 @@ export default class LocalUserController extends UserController {
     private async handleLoginDuplicate(next: NextFunction, credentials: Credentials): Promise<boolean> {
         const duplicate = await this._loginManager.isDuplicate(credentials);
         if (duplicate === LoginDuplicateType.email || duplicate === LoginDuplicateType.phone) {
-            forwardError(next, "userAlreadyExists", HttpStatus.BAD_REQUEST);
+            errors.userAlreadyExists(next);
             return false;
         }
         if (duplicate === LoginDuplicateType.username) {
-            forwardError(next, "usernameAlreadyUsed", HttpStatus.BAD_REQUEST);
+            errors.usernameAlreadyUsed(next);
             return false;
         }
         return true;

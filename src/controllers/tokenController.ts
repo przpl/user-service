@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
 import { JwtService } from "../services/jwtService";
 import { SessionManager } from "../managers/sessionManager";
-import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { forwardInternalError } from "../utils/expressUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { RoleManager } from "../managers/roleManager";
 import { Session } from "../models/session";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class TokenController {
@@ -21,13 +21,13 @@ export default class TokenController {
             session = await this._sessionManager.refreshSession(refreshToken, req.ip);
         } catch (error) {
             if (error instanceof StaleRefreshTokenException) {
-                return forwardError(next, "staleRefreshToken", HttpStatus.FORBIDDEN);
+                return errors.staleRefreshToken(next);
             }
             return forwardInternalError(next, error);
         }
 
         if (!session) {
-            return forwardError(next, "sessionDoesNotExist", HttpStatus.UNAUTHORIZED);
+            return errors.sessionDoesNotExist(next);
         }
 
         const roles = await this._roleManager.getRoles(session.userId);

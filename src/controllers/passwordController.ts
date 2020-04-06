@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { forwardInternalError } from "../utils/expressUtils";
 import { NotFoundException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
@@ -10,6 +9,7 @@ import { LockManager } from "../managers/lockManager";
 import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
 import { QueueService } from "../services/queueService";
 import { PrimaryLoginType } from "../models/credentials";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class PasswordController {
@@ -20,9 +20,9 @@ export default class PasswordController {
             await this._loginManager.changePassword(req.authenticatedUser.sub, req.body.old, req.body.new);
         } catch (error) {
             if (error instanceof InvalidPasswordException) {
-                return forwardError(next, "invalidOldPassword", HttpStatus.UNAUTHORIZED);
+                return errors.invalidPassword(next);
             } else if (error instanceof UserNotLocalException) {
-                return forwardError(next, "notALocalUser", HttpStatus.FORBIDDEN);
+                return errors.notLocalUser(next);
             }
             return forwardInternalError(next, error);
         }
@@ -58,9 +58,9 @@ export default class PasswordController {
             await this._loginManager.resetPassword(req.body.token, req.body.password);
         } catch (error) {
             if (error instanceof NotFoundException) {
-                return forwardError(next, "invalidToken", HttpStatus.FORBIDDEN);
+                return errors.invalidToken(next);
             } else if (error instanceof ExpiredResetCodeException) {
-                return forwardError(next, "codeExpired", HttpStatus.BAD_REQUEST);
+                return errors.passwordCodeExpired(next);
             }
             return forwardInternalError(next, error);
         }

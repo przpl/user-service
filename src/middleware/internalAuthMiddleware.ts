@@ -19,7 +19,7 @@ export default class InternalAuthMiddleware {
     public isInternalRequest(req: Request, res: Response, next: NextFunction) {
         const key = req.get("master-key");
         if (this._masterKey !== key) {
-            return forwardError(next, [], HttpStatus.NOT_FOUND);
+            return forwardError(next, "", HttpStatus.NOT_FOUND);
         }
         next();
     }

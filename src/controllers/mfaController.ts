@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { forwardInternalError } from "../utils/expressUtils";
 import { Config } from "../utils/config/config";
 import { MfaManager } from "../managers/mfaManager";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
 import { MfaException } from "../exceptions/exceptions";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class MfaController {
@@ -17,7 +17,7 @@ export default class MfaController {
         const userId = req.authenticatedUser.sub;
 
         if (!(await this._loginManager.isLocal(userId))) {
-            return forwardError(next, "notLocalUser", HttpStatus.FORBIDDEN);
+            return errors.notLocalUser(next);
         }
 
         const { appName } = this._config.security.mfa;
@@ -26,7 +26,7 @@ export default class MfaController {
             otpAuthPath = await this._mfaManager.generateTotp(userId, req.ip, appName);
         } catch (error) {
             if (error instanceof MfaException) {
-                return forwardError(next, "mfaAlreadyActivated", HttpStatus.FORBIDDEN);
+                return errors.mfaAlreadyActivated(next);
             }
             return forwardInternalError(next, error);
         }
@@ -49,7 +49,7 @@ export default class MfaController {
         const { password, oneTimePassword } = req.body;
 
         if (!(await this._loginManager.verifyPassword(userId, password))) {
-            return forwardError(next, "invalidPassword", HttpStatus.FORBIDDEN);
+            return errors.invalidPassword(next);
         }
 
         try {
@@ -60,7 +60,7 @@ export default class MfaController {
             }
         } catch (error) {
             if (error instanceof InvalidPasswordException) {
-                return forwardError(next, "invalidOneTimePassword", HttpStatus.FORBIDDEN);
+                return errors.invalidOneTimePassword(next);
             }
             return forwardInternalError(next, error);
         }

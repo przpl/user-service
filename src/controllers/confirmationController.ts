@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { forwardInternalError } from "../utils/expressUtils";
 import { ResendCodeLimitException, ResendCodeTimeLimitException } from "../exceptions/exceptions";
 import { QueueService } from "../services/queueService";
 import { LocalLoginManager } from "../managers/localLoginManager";
@@ -11,6 +10,7 @@ import { PrimaryLoginType } from "../models/credentials";
 import { RequestBody } from "../types/express/requestBody";
 import { ConfirmationType } from "../dal/entities/confirmationEntity";
 import { Phone } from "../models/phone";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class ConfirmationController {
@@ -35,7 +35,7 @@ export default class ConfirmationController {
             code = await this._loginManager.getConfirmationCode(subject.value, subject.type);
         } catch (error) {
             if (error instanceof ResendCodeLimitException) {
-                return forwardError(next, "limitExceeded", HttpStatus.BAD_REQUEST);
+                return errors.limitExceeded(next);
             } else if (error instanceof ResendCodeTimeLimitException) {
                 return res.json({ result: true, tooOffen: true });
             }
