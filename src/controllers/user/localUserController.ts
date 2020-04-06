@@ -10,6 +10,7 @@ import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../manage
 import { Credentials } from "../../models/credentials";
 import { extractCredentials } from "../../models/utils/toModelMappers";
 import { Phone } from "../../models/phone";
+import { dtoFromPhoneModel } from "../../models/mappers";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -48,6 +49,13 @@ export default class LocalUserController extends UserController {
             const errors: ErrorResponse = {
                 id: "emailNotConfirmed",
                 data: { user: { email: result.login.email } }, // user can login with username or phone number, client app may need reference
+            };
+            return forwardError(next, errors, HttpStatus.FORBIDDEN);
+        }
+        if (result.result === LoginResult.phoneNotConfirmed) {
+            const errors: ErrorResponse = {
+                id: "phoneNotConfirmed",
+                data: { user: { phone: dtoFromPhoneModel(result.login.phone) } }, // user can login with username or phone number, client app may need reference
             };
             return forwardError(next, errors, HttpStatus.FORBIDDEN);
         }

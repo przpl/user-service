@@ -28,6 +28,7 @@ export enum LoginDuplicateType {
 export enum LoginResult {
     success,
     emailNotConfirmed,
+    phoneNotConfirmed,
     userNotFound,
     invalidPassword,
 }
@@ -42,9 +43,9 @@ interface ConfirmationLimit {
     time: TimeSpan;
 }
 
-export interface ConfirmationResult {
+export interface ConfirmationCode {
     type: ConfirmationType;
-    code: string;
+    value: string;
 }
 
 @singleton()
@@ -120,6 +121,10 @@ export class LocalLoginManager {
             return { result: LoginResult.emailNotConfirmed, login: this.toLocalLoginModel(entity) };
         }
 
+        if (this.isPhoneNotConfirmed(entity)) {
+            return { result: LoginResult.phoneNotConfirmed, login: this.toLocalLoginModel(entity) };
+        }
+
         return { result: LoginResult.success, login: this.toLocalLoginModel(entity) };
     }
 
@@ -150,7 +155,7 @@ export class LocalLoginManager {
         return entity.code;
     }
 
-    public async getConfirmationCode(emailOrEmail: string | Phone): Promise<ConfirmationResult> {
+    public async getConfirmationCode(emailOrEmail: string | Phone): Promise<ConfirmationCode> {
         const subject = this.toConfirmationSubject(emailOrEmail);
 
         const entity = await this._confirmRepo.findOne({ subject: subject.value, type: subject.type });
@@ -171,7 +176,7 @@ export class LocalLoginManager {
         entity.sentCount++;
         await entity.save();
 
-        return { type: subject.type, code: entity.code };
+        return { type: subject.type, value: entity.code };
     }
 
     public async confirm(emailOrEmail: string | Phone, code: string): Promise<boolean> {
@@ -263,6 +268,10 @@ export class LocalLoginManager {
 
     private isEmailNotConfirmed(login: LocalLoginEntity) {
         return this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !login.emailConfirmed;
+    }
+
+    private isPhoneNotConfirmed(login: LocalLoginEntity) {
+        return this._config.localLogin.phone.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedPhone && !login.phoneConfirmed;
     }
 
     private getPasswordResetMethod(credentials: Credentials): PasswordResetMethod {

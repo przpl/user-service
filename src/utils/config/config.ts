@@ -36,6 +36,7 @@ export class Config {
     };
     localLogin: {
         allowLoginWithoutConfirmedEmail: boolean;
+        allowLoginWithoutConfirmedPhone: boolean;
         email: {
             required: boolean;
             allowLogin: boolean;

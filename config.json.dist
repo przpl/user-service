@@ -31,6 +31,7 @@
     },
     "localLogin": {
         "allowLoginWithoutConfirmedEmail": false,
+        "allowLoginWithoutConfirmedPhone": false,
         "email": {
             "required": true,
             "allowLogin": true,

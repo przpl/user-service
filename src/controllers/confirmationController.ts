@@ -5,7 +5,7 @@ import { singleton } from "tsyringe";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { ResendCodeLimitException, ResendCodeTimeLimitException } from "../exceptions/exceptions";
 import { QueueService } from "../services/queueService";
-import { LocalLoginManager, ConfirmationResult } from "../managers/localLoginManager";
+import { LocalLoginManager, ConfirmationCode } from "../managers/localLoginManager";
 import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
 import { Phone } from "../models/phone";
 import { PrimaryLoginType } from "../models/credentials";
@@ -17,17 +17,22 @@ export default class ConfirmationController {
     constructor(private _loginManager: LocalLoginManager, private _queueService: QueueService) {}
 
     public async confirm(req: Request, res: Response, next: NextFunction) {
-        const subject = this.extractEmailOrPhone(req.body);
+        const subject = this.extractSubject(req.body);
         const success = await this._loginManager.confirm(subject, req.body.code);
+        const subjectType = this.getPrimaryLoginType(req.body);
+        if (subjectType === PrimaryLoginType.email) {
+            // TODO if user has a phone, generate and push code
+        }
+
         res.json({ result: success });
     }
 
     public async resend(req: Request, res: Response, next: NextFunction) {
-        const subject = this.extractEmailOrPhone(req.body);
+        const subject = this.extractSubject(req.body);
 
-        let result: ConfirmationResult;
+        let code: ConfirmationCode;
         try {
-            result = await this._loginManager.getConfirmationCode(subject);
+            code = await this._loginManager.getConfirmationCode(subject);
         } catch (error) {
             if (error instanceof ResendCodeLimitException) {
                 return forwardError(next, "limitExceeded", HttpStatus.BAD_REQUEST);
@@ -37,16 +42,21 @@ export default class ConfirmationController {
             return forwardInternalError(next, error);
         }
 
-        if (result.type === ConfirmationType.email) {
-            this._queueService.pushEmailCode(subject as string, result.code);
-        } else if (result.type === ConfirmationType.phone) {
-            this._queueService.pushPhoneCode(subject as Phone, result.code);
+        if (code.type === ConfirmationType.email) {
+            this._queueService.pushEmailCode(subject as string, code.value);
+        } else if (code.type === ConfirmationType.phone) {
+            this._queueService.pushPhoneCode(subject as Phone, code.value);
         }
 
         res.json({ result: true });
     }
 
-    private extractEmailOrPhone(body: RequestBody): string | Phone {
+    private getPrimaryLoginType(body: RequestBody): PrimaryLoginType {
+        const credentials = extractCredentialsWithoutUsername(body);
+        return credentials.getPrimary();
+    }
+
+    private extractSubject(body: RequestBody): string | Phone {
         const credentials = extractCredentialsWithoutUsername(body);
         const primary = credentials.getPrimary();
         let emailOrPhone: string | Phone = null;
