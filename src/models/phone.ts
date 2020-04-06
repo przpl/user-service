@@ -21,6 +21,6 @@ export class Phone {
     }
 
     public toString(): string {
-        return `${this._code}${this._number}`;
+        return `${this._code}::${this._number}`;
     }
 }

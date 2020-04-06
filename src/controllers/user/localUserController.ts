@@ -11,6 +11,7 @@ import { Credentials } from "../../models/credentials";
 import { extractCredentials } from "../../models/utils/toModelMappers";
 import { Phone } from "../../models/phone";
 import { dtoFromPhoneModel } from "../../models/mappers";
+import { ConfirmationType } from "../../dal/entities/confirmationEntity";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -86,12 +87,12 @@ export default class LocalUserController extends UserController {
     }
 
     private async pushEmailCode(userId: string, email: string) {
-        const code = await this._loginManager.generateConfirmationCode(userId, email);
+        const code = await this._loginManager.generateConfirmationCode(userId, email, ConfirmationType.email);
         this._queueService.pushEmailCode(email, code);
     }
 
     private async pushPhoneCode(userId: string, phone: Phone) {
-        const code = await this._loginManager.generateConfirmationCode(userId, phone);
+        const code = await this._loginManager.generateConfirmationCode(userId, phone.toString(), ConfirmationType.phone);
         this._queueService.pushPhoneCode(phone, code);
     }
 }

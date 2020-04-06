@@ -43,11 +43,6 @@ interface ConfirmationLimit {
     time: TimeSpan;
 }
 
-export interface ConfirmationCode {
-    type: ConfirmationType;
-    value: string;
-}
-
 @singleton()
 export class LocalLoginManager {
     private _loginRepo = getRepository(LocalLoginEntity);
@@ -141,29 +136,25 @@ export class LocalLoginManager {
         return this.toLocalLoginModel(entity);
     }
 
-    public async generateConfirmationCode(userId: string, emailOrEmail: string | Phone): Promise<string> {
-        const subject = this.toConfirmationSubject(emailOrEmail);
-
+    public async generateConfirmationCode(userId: string, subject: string, type: ConfirmationType): Promise<string> {
         const entity = new ConfirmationEntity();
         entity.userId = userId;
-        entity.subject = subject.value;
+        entity.subject = subject;
         entity.code = cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "numeric" });
-        entity.type = subject.type;
+        entity.type = type;
         entity.sentCount = 1;
         entity.lastSendRequestAt = new Date();
         await entity.save();
         return entity.code;
     }
 
-    public async getConfirmationCode(emailOrEmail: string | Phone): Promise<ConfirmationCode> {
-        const subject = this.toConfirmationSubject(emailOrEmail);
-
-        const entity = await this._confirmRepo.findOne({ subject: subject.value, type: subject.type });
+    public async getConfirmationCode(subject: string, type: ConfirmationType): Promise<string> {
+        const entity = await this._confirmRepo.findOne({ subject: subject, type: type });
         if (!entity) {
             return null;
         }
 
-        const limit = subject.type === ConfirmationType.email ? this._resendLimit.email : this._resendLimit.phone;
+        const limit = type === ConfirmationType.email ? this._resendLimit.email : this._resendLimit.phone;
         if (entity.sentCount >= limit.count + 1) {
             throw new ResendCodeLimitException();
         }
@@ -176,18 +167,17 @@ export class LocalLoginManager {
         entity.sentCount++;
         await entity.save();
 
-        return { type: subject.type, value: entity.code };
+        return entity.code;
     }
 
-    public async confirm(emailOrEmail: string | Phone, code: string): Promise<boolean> {
-        const subject = this.toConfirmationSubject(emailOrEmail);
-        const confirm = await this._confirmRepo.findOne({ subject: subject.value, code: code });
+    public async confirm(subject: string, code: string, type: ConfirmationType): Promise<boolean> {
+        const confirm = await this._confirmRepo.findOne({ subject: subject, code: code });
         if (!confirm) {
             return false;
         }
 
         const user = await this._loginRepo.findOne({ userId: confirm.userId });
-        if (subject.type === ConfirmationType.email) {
+        if (type === ConfirmationType.email) {
             user.emailConfirmed = true;
         } else {
             user.phoneConfirmed = true;
@@ -253,17 +243,6 @@ export class LocalLoginManager {
             return false;
         }
         return await this._passService.verify(password, entity.passwordHash);
-    }
-
-    private toConfirmationSubject(emailOrPhone: string | Phone): { value: string; type: ConfirmationType } {
-        if (isString(emailOrPhone)) {
-            return { value: emailOrPhone, type: ConfirmationType.email };
-        }
-        if (emailOrPhone instanceof Phone) {
-            return { value: emailOrPhone.toString(), type: ConfirmationType.phone };
-        }
-
-        throw new Error("Unknown confirmation type.");
     }
 
     private isEmailNotConfirmed(login: LocalLoginEntity) {

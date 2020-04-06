@@ -12,13 +12,13 @@ export class LocalLoginEntity extends BaseEntity {
     user: UserEntity;
 
     @Column({ unique: true, nullable: true })
+    username: string;
+
+    @Column({ unique: true, nullable: true })
     email: string;
 
     @Column({ default: false })
     emailConfirmed: boolean;
-
-    @Column({ unique: true, nullable: true })
-    username: string;
 
     @Column({ nullable: true })
     phoneCode: string;
