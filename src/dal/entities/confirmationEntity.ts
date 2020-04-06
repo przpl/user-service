@@ -12,9 +12,6 @@ export class ConfirmationEntity extends BaseEntity {
     @PrimaryColumn()
     subject: string;
 
-    @PrimaryColumn({ type: "smallint" })
-    type: number;
-
     @Column()
     userId: string;
 
@@ -24,6 +21,9 @@ export class ConfirmationEntity extends BaseEntity {
 
     @Column()
     code: string;
+
+    @Column({ type: "smallint" })
+    type: number;
 
     @Column({ type: "smallint", default: 0 })
     sentCount: number;

@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, PrimaryColumn, Column, OneToOne, JoinColumn } from "typeorm";
+import { Entity, BaseEntity, PrimaryColumn, Column, JoinColumn, ManyToOne } from "typeorm";
 
 import { UserEntity } from "./userEntity";
 
@@ -20,15 +20,15 @@ export class ExternalLoginEntity extends BaseEntity {
     @PrimaryColumn()
     externalUserId: string;
 
+    @PrimaryColumn({ type: "smallint" })
+    provider: number;
+
     @Column()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @ManyToOne(type => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
-
-    @Column({ type: "smallint" })
-    provider: number;
 
     @Column({ nullable: true })
     email: string;

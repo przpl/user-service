@@ -29,6 +29,6 @@ export class LocalLoginEntity extends BaseEntity {
     @Column({ default: false })
     phoneConfirmed: boolean;
 
-    @Column({ nullable: true })
+    @Column()
     passwordHash: string;
 }
