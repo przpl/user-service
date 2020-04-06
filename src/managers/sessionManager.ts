@@ -4,9 +4,7 @@ import { singleton } from "tsyringe";
 import moment from "moment";
 
 import { SessionEntity } from "../dal/entities/sessionEntity";
-import { UserEntity } from "../dal/entities/userEntity";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
-import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
 import { REFRESH_TOKEN_LENGTH } from "../utils/globalConsts";
 import { UserAgent } from "../interfaces/userAgent";
@@ -20,8 +18,7 @@ const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure acce
 
 @singleton()
 export class SessionManager {
-    private _userRepo = getRepository(UserEntity);
-    private _sessionRepo = getRepository(SessionEntity);
+    private _repo = getRepository(SessionEntity);
     private _tokenTTL: TimeSpan;
     private _refreshStaleAfter: TimeSpan;
 
@@ -49,7 +46,7 @@ export class SessionManager {
     }
 
     public async refreshSession(refreshToken: string, ip: string): Promise<Session> {
-        const entity = await this._sessionRepo.findOne({ where: { token: refreshToken } });
+        const entity = await this._repo.findOne({ where: { token: refreshToken } });
         if (!entity) {
             return null;
         }
@@ -64,15 +61,15 @@ export class SessionManager {
     }
 
     public async revokeAllSessions(userId: string): Promise<boolean> {
-        const entity = await this._sessionRepo.find({ where: { userId: userId } });
+        const entity = await this._repo.find({ where: { userId: userId } });
         await this.revokeAccessTokens(entity);
-        await this._sessionRepo.remove(entity);
-        await this._userRepo.update({ id: userId }, { activeSessions: 0 });
+        await this._repo.remove(entity);
+        await this._cacheDb.deleteActiveSessions(userId);
         return true;
     }
 
     public async revokeSession(refreshToken: string): Promise<boolean> {
-        const entity = await this._sessionRepo.findOne({ where: { token: refreshToken } });
+        const entity = await this._repo.findOne({ where: { token: refreshToken } });
         if (!entity) {
             return false;
         }
@@ -91,8 +88,8 @@ export class SessionManager {
     }
 
     private async removeSession(session: SessionEntity) {
-        await this._sessionRepo.remove(session);
-        await this._userRepo.decrement({ id: session.userId }, nameof<UserEntity>("activeSessions"), 1);
+        await this._repo.remove(session);
+        this._cacheDb.decrementActiveSessions(session.userId);
     }
 
     private async revokeAccessTokens(sessions: SessionEntity[]) {
@@ -112,18 +109,16 @@ export class SessionManager {
     }
 
     private async manageActiveSessions(userId: string) {
-        const user = await this._userRepo.findOne({ where: { id: userId } });
-        if (user.activeSessions >= this._config.session.maxPerUser) {
-            const sessionsAfterRemoval = await this.removeOldestSession(userId, this._config.session.maxPerUser);
-            user.activeSessions = sessionsAfterRemoval;
+        let activeSessions = await this._cacheDb.getActiveSessions(userId);
+        if (activeSessions >= this._config.session.maxPerUser) {
+            activeSessions = await this.removeOldestSession(userId, this._config.session.maxPerUser);
         }
-
-        user.activeSessions++;
-        await user.save();
+        activeSessions++;
+        await this._cacheDb.setActiveSessions(userId, activeSessions);
     }
 
     private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {
-        const sessions = await this._sessionRepo.find({ where: { userId: userId } });
+        const sessions = await this._repo.find({ where: { userId: userId } });
         if (sessions.length < maxSessionsPerUser) {
             return sessions.length;
         }
@@ -131,7 +126,7 @@ export class SessionManager {
         let redundantSessionsCount = sessions.length - maxSessionsPerUser;
         redundantSessionsCount++; // we will create one sesion so we need to remove one more to make a place
         const sessionsToRemove = fromOldestToNewest.slice(0, redundantSessionsCount);
-        await this._sessionRepo.remove(sessionsToRemove);
+        await this._repo.remove(sessionsToRemove);
 
         return sessions.length - redundantSessionsCount;
     }

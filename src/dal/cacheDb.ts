@@ -15,6 +15,7 @@ enum KeyFlag {
 enum KeyName {
     mfaLoginToken = "mlt",
     revokeAccessToken = "rve",
+    activeSessions = "avs",
 }
 
 @singleton()
@@ -27,13 +28,13 @@ export class CacheDb {
         this._client = redis.createClient({ host: host, port: port });
     }
 
-    public setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan) {
-        const keyName = this.getMfaLoginTokenKey(userId);
+    public async setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan): Promise<boolean> {
+        const key = this.getMfaLoginTokenKey(userId);
         const tokenObj: MfaLoginToken = { token: token, ip: ip };
-        return this.set(keyName, JSON.stringify(tokenObj), KeyFlag.expireSeconds, expireTime.seconds);
+        return this.setWithExpiration(key, JSON.stringify(tokenObj), KeyFlag.expireSeconds, expireTime.seconds);
     }
 
-    public getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
+    public async getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
         return new Promise((resolve, reject) => {
             const keyName = this.getMfaLoginTokenKey(userId);
             this._client.GET(keyName, (err, reply) => {
@@ -47,10 +48,60 @@ export class CacheDb {
         });
     }
 
-    public removeMfaLoginToken(userId: string): Promise<number> {
+    public async removeMfaLoginToken(userId: string): Promise<number> {
+        const key = this.getMfaLoginTokenKey(userId);
+        return this.delete(key);
+    }
+
+    public async revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan): Promise<boolean> {
+        const key = this.getRevokeAccessTokenKey(userId, ref);
+        return this.setWithExpiration(key, "", KeyFlag.expireSeconds, expireTime.seconds);
+    }
+
+    public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void): void {
+        const key = this.getRevokeAccessTokenKey(userId, ref);
+        this._client.EXISTS(key, cb);
+    }
+
+    public async decrementActiveSessions(userId: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            const keyName = this.getMfaLoginTokenKey(userId);
-            this._client.del(keyName, (err, reply) => {
+            const keyName = this.getActiveSessionsKey(userId);
+            this._client.decr(keyName, (err, reply) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
+        });
+    }
+
+    public async getActiveSessions(userId: string): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const keyName = this.getActiveSessionsKey(userId);
+            this._client.GET(keyName, (err, reply) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(+reply);
+            });
+        });
+    }
+
+    public async setActiveSessions(userId: string, value: number): Promise<boolean> {
+        const key = this.getActiveSessionsKey(userId);
+        return this.set(key, value.toString());
+    }
+
+    public async deleteActiveSessions(userId: string): Promise<boolean> {
+        const key = this.getActiveSessionsKey(userId);
+        return (await this.delete(key)) > 0;
+    }
+
+    private delete(key: string): Promise<number> {
+        return new Promise((resolve, reject) => {
+            this._client.del(key, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
@@ -60,17 +111,19 @@ export class CacheDb {
         });
     }
 
-    public revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan): Promise<boolean> {
-        const keyName = this.getRevokeAccessTokenKey(userId, ref);
-        return this.set(keyName, "", KeyFlag.expireSeconds, expireTime.seconds);
+    private set(key: string, value: string): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            this._client.SET(key, value, (err, reply) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(reply === "OK");
+            });
+        });
     }
 
-    public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void) {
-        const keyName = this.getRevokeAccessTokenKey(userId, ref);
-        this._client.EXISTS(keyName, cb);
-    }
-
-    private set(key: string, value: string, mode: string, duration: number): Promise<boolean> {
+    private setWithExpiration(key: string, value: string, mode: string, duration: number): Promise<boolean> {
         return new Promise((resolve, reject) => {
             this._client.SET(key, value, mode, duration, (err, reply) => {
                 if (err) {
@@ -80,6 +133,10 @@ export class CacheDb {
                 resolve(reply === "OK");
             });
         });
+    }
+
+    private getActiveSessionsKey(userId: string): string {
+        return `${KeyName.activeSessions}:${userId}`;
     }
 
     private getMfaLoginTokenKey(userId: string): string {
