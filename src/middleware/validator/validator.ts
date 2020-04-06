@@ -99,7 +99,8 @@ export default class Validator {
                 .isLength({ min: cfg.username.isLength.min, max: cfg.username.isLength.max })
                 .withMessage(FIELD_ERROR_MSG.isLength)
                 .isAlphanumeric()
-                .withMessage(FIELD_ERROR_MSG.isAlphanumeric);
+                .withMessage(FIELD_ERROR_MSG.isAlphanumeric)
+                .customSanitizer((value: string) => value.toLowerCase())
             return rule;
         };
 
