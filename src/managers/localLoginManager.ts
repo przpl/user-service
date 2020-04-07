@@ -1,7 +1,6 @@
 import { getRepository, FindConditions } from "typeorm";
 import { singleton } from "tsyringe";
 import moment from "moment";
-import { isString } from "util";
 
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
 import { Credentials, PrimaryLoginType } from "../models/credentials";
@@ -17,6 +16,7 @@ import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwo
 import { LocalLogin } from "../models/localLogin";
 import { Phone } from "../models/phone";
 import { PasswordReset } from "../models/passwordReset";
+import { UserEntity } from "../dal/entities/userEntity";
 
 export enum LoginDuplicateType {
     none,
@@ -175,15 +175,17 @@ export class LocalLoginManager {
         if (!confirm) {
             return false;
         }
-
-        const user = await this._loginRepo.findOne({ userId: confirm.userId });
-        if (type === ConfirmationType.email) {
-            user.emailConfirmed = true;
-        } else {
-            user.phoneConfirmed = true;
-        }
-        await user.save();
+        const userId = confirm.userId;
         await this._confirmRepo.remove(confirm);
+
+        const update: Partial<LocalLoginEntity> = {};
+        if (type === ConfirmationType.email) {
+            update.emailConfirmed = true;
+        } else {
+            update.phoneConfirmed = true;
+        }
+        await this._loginRepo.update({ userId: userId }, { emailConfirmed: true });
+
         return true;
     }
 
@@ -213,10 +215,7 @@ export class LocalLoginManager {
             throw new ExpiredResetCodeException();
         }
 
-        const login = await this._loginRepo.findOne({ where: { userId: passReset.userId } });
-
-        login.passwordHash = await this._passService.hash(password);
-        await login.save();
+        await this._loginRepo.update({ userId: passReset.userId }, { passwordHash: await this._passService.hash(password) });
 
         await passReset.remove();
     }
@@ -265,7 +264,7 @@ export class LocalLoginManager {
     }
 
     private isSendRequestTooOften(lastRequestAt: Date, seconds: number): boolean {
-        return moment().unix() - moment(lastRequestAt).unix() < seconds;
+        return moment().diff(lastRequestAt, "seconds") < seconds;
     }
 
     private toLocalLoginModel(entity: LocalLoginEntity): LocalLogin {

@@ -61,10 +61,13 @@ export class SessionManager {
     }
 
     public async revokeAllSessions(userId: string): Promise<boolean> {
-        const entity = await this._repo.find({ where: { userId: userId } });
-        await this.revokeAccessTokens(entity);
-        await this._repo.remove(entity);
-        await this._cacheDb.deleteActiveSessions(userId);
+        const entities = await this._repo.find({ where: { userId: userId } });
+        if (entities.length === 0) {
+            return false;
+        }
+        await this.revokeAccessTokens(entities);
+        await this.removeAllSessions(entities);
+
         return true;
     }
 
@@ -87,6 +90,12 @@ export class SessionManager {
         }
     }
 
+    private async removeAllSessions(sessions: SessionEntity[]) {
+        const userId = sessions[0].userId;
+        await this._repo.remove(sessions);
+        await this._cacheDb.deleteActiveSessions(userId);
+    }
+
     private async removeSession(session: SessionEntity) {
         await this._repo.remove(session);
         this._cacheDb.decrementActiveSessions(session.userId);
@@ -104,8 +113,8 @@ export class SessionManager {
     }
 
     private getSecondsToExpire(session: SessionEntity): number {
-        const expiresAt = moment(session.lastUseAt).unix() + this._tokenTTL.seconds;
-        return expiresAt - moment().unix();
+        const expiresAt = moment(session.lastUseAt).add(this._tokenTTL.seconds, "seconds");
+        return expiresAt.diff(moment(), "seconds");
     }
 
     private async manageActiveSessions(userId: string) {
