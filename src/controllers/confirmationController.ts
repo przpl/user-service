@@ -22,6 +22,7 @@ export default class ConfirmationController {
         const subjectType = this.getPrimaryLoginType(req.body);
         if (subjectType === PrimaryLoginType.email) {
             // TODO if user has a phone, generate and push code
+            // TODO if user has to confirm a phone, send information to frontend
         }
 
         res.json({ result: success });
