@@ -15,8 +15,9 @@ export class UserManager {
         return entity.id;
     }
 
+    // TO-DO: test if works, select:[] returns null
     public async exists(id: string): Promise<boolean> {
-        const user = await this._repo.findOne({ where: { id: id }, select: [] });
+        const user = await this._repo.findOne({ where: { id: id }, select: ["id"] });
         return Boolean(user);
     }
 
