@@ -1,6 +1,7 @@
 import { getRepository, FindConditions } from "typeorm";
 import { singleton } from "tsyringe";
 import moment from "moment";
+import cryptoRandomString from "crypto-random-string";
 
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
 import { Credentials, PrimaryLoginType } from "../models/credentials";
@@ -8,7 +9,6 @@ import { PasswordService } from "../services/passwordService";
 import { NotFoundException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { Config } from "../utils/config/config";
 import { TimeSpan } from "../utils/timeSpan";
-import cryptoRandomString from "crypto-random-string";
 import { CONFIRMATION_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
 import { ConfirmationEntity, ConfirmationType } from "../dal/entities/confirmationEntity";
 import { ResendCodeLimitException, ResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
@@ -16,7 +16,6 @@ import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwo
 import { LocalLogin } from "../models/localLogin";
 import { Phone } from "../models/phone";
 import { PasswordReset } from "../models/passwordReset";
-import { UserEntity } from "../dal/entities/userEntity";
 
 export enum LoginDuplicateType {
     none,
@@ -245,11 +244,15 @@ export class LocalLoginManager {
     }
 
     private isEmailNotConfirmed(login: LocalLoginEntity) {
-        return this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !login.emailConfirmed;
+        return (
+            this._config.localLogin.email.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedEmail && !login.emailConfirmed
+        );
     }
 
     private isPhoneNotConfirmed(login: LocalLoginEntity) {
-        return this._config.localLogin.phone.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedPhone && !login.phoneConfirmed;
+        return (
+            this._config.localLogin.phone.allowLogin && !this._config.localLogin.allowLoginWithoutConfirmedPhone && !login.phoneConfirmed
+        );
     }
 
     private getPasswordResetMethod(credentials: Credentials): PasswordResetMethod {

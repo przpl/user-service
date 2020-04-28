@@ -89,7 +89,7 @@ async function start() {
         app.use(morgan("dev"));
     }
     if (env.isCorsEnabled()) {
-        app.use(cors());
+        app.use(cors()); // TO-DO origin URL configuration
     }
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
