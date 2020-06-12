@@ -11,7 +11,7 @@ export class SessionEntity extends BaseEntity {
 
     @ManyToOne(type => UserEntity)
     @JoinColumn({ name: "userId" })
-    user: UserEntity;
+    user: UserEntity; // TODO Promise<UserEntity> to enable lazy loading?
 
     @Column()
     createIp: string;

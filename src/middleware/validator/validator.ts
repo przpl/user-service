@@ -100,7 +100,7 @@ export default class Validator {
                 .withMessage(FIELD_ERROR_MSG.isLength)
                 .isAlphanumeric()
                 .withMessage(FIELD_ERROR_MSG.isAlphanumeric)
-                .customSanitizer((value: string) => value.toLowerCase())
+                .customSanitizer((value: string) => value.toLowerCase());
             return rule;
         };
 
