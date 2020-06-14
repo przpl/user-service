@@ -27,7 +27,7 @@ export class JwtService {
         }
     }
 
-    public issueAccessToken<PayloadType>(refreshToken: string, userId: string, roles: string[], payload?: PayloadType): string {
+    public issueAccessToken(refreshToken: string, userId: string, roles: string[]): string {
         const now = moment().unix();
         const dataToSign = {
             sub: userId,
@@ -35,13 +35,12 @@ export class JwtService {
             rol: roles.length > 0 ? roles : undefined,
             iat: now,
             exp: now + this._tokenTTL.seconds,
-            ...payload,
         };
         return jwt.sign(dataToSign, this._jwtPrivateKey);
     }
 
-    public decodeAccessToken<PayloadType>(token: string): AccessTokenDto & PayloadType {
-        return jwt.verify(token, this._jwtPrivateKey) as AccessTokenDto & PayloadType;
+    public decodeAccessToken(token: string): AccessTokenDto {
+        return jwt.verify(token, this._jwtPrivateKey) as AccessTokenDto;
     }
 
     public getTokenRef(refreshToken: string) {
