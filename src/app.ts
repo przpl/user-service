@@ -115,7 +115,7 @@ async function start() {
     app.listen(env.port, () => {
         console.log(`App is running at http://localhost:${env.port} in ${app.get("env")} mode`);
     })
-        .on("error", async e => {
+        .on("error", async (e) => {
             console.log(`Cannot run app: ${e.message}`);
             await dbConnection.close();
             process.exit(1);
