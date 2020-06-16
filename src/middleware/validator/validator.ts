@@ -32,7 +32,7 @@ export default class Validator {
 
     constructor(config: Config) {
         const cfg = config.commonFields;
-        fieldValidators.email = isRequired => {
+        fieldValidators.email = (isRequired) => {
             const rule = body("email");
             if (!isRequired) {
                 rule.optional();
@@ -69,11 +69,11 @@ export default class Validator {
             passwordSchema.has().lowercase();
             passwordErrorMsg += ", one lowercase";
         }
-        fieldValidators.password = name =>
+        fieldValidators.password = (name) =>
             body(name)
                 .isString()
                 .withMessage(FIELD_ERROR_MSG.isString)
-                .custom(value => passwordSchema.validate(value))
+                .custom((value) => passwordSchema.validate(value))
                 .withMessage(passwordErrorMsg);
 
         fieldValidators.weakPassword = body("password")
@@ -88,7 +88,7 @@ export default class Validator {
             .isLength({ min: 1, max: cfg.password.isLength.max })
             .withMessage(FIELD_ERROR_MSG.isLength);
 
-        fieldValidators.username = isRequired => {
+        fieldValidators.username = (isRequired) => {
             const rule = body("username");
             if (!isRequired) {
                 rule.optional();
@@ -104,7 +104,7 @@ export default class Validator {
             return rule;
         };
 
-        fieldValidators.phone = isRequired => {
+        fieldValidators.phone = (isRequired) => {
             const codeRule = body("phone.code");
             if (!isRequired) {
                 codeRule.optional();
@@ -146,6 +146,9 @@ export default class Validator {
             }
             if (field.isLength) {
                 validation.isLength({ min: field.isLength.min, max: field.isLength.max }).withMessage(FIELD_ERROR_MSG.isLength);
+            }
+            if (field.isAlpha) {
+                validation.isAlpha();
             }
 
             fieldValidators.register = validation;

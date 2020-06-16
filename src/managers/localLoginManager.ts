@@ -92,8 +92,8 @@ export class LocalLoginManager {
         entity.userId = userId;
         entity.email = credentials.email;
         entity.username = credentials.username;
-        entity.phoneCode = credentials.phone.code;
-        entity.phoneNumber = credentials.phone.number;
+        entity.phoneCode = credentials.phone?.code || null;
+        entity.phoneNumber = credentials.phone?.number || null;
         entity.passwordHash = await this._passService.hash(password);
         await entity.save();
 
@@ -272,7 +272,7 @@ export class LocalLoginManager {
     }
 
     private toLocalLoginModel(entity: LocalLoginEntity): LocalLogin {
-        const phone = new Phone(entity.phoneCode, entity.phoneNumber);
+        const phone = entity.phoneNumber && new Phone(entity.phoneCode, entity.phoneNumber);
         return new LocalLogin(entity.userId, entity.email, entity.emailConfirmed, entity.username, phone);
     }
 

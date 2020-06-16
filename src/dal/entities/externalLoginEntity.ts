@@ -26,7 +26,7 @@ export class ExternalLoginEntity extends BaseEntity {
     @Column()
     userId: string;
 
-    @ManyToOne(type => UserEntity)
+    @ManyToOne(() => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

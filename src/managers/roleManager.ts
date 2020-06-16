@@ -29,6 +29,6 @@ export class RoleManager {
 
     public async getRoles(userId: string): Promise<string[]> {
         const roles = await this._repo.find({ where: { userId: userId } });
-        return roles.map(i => i.role);
+        return roles.map((i) => i.role);
     }
 }

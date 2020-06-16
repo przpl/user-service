@@ -3,12 +3,13 @@ import { singleton } from "tsyringe";
 
 import { UserManager } from "../../managers/userManger";
 import UserController from "./userController";
-import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
+import { LocalLoginManager, LoginDuplicateType, LoginResult, LoginOperationResult } from "../../managers/localLoginManager";
 import { Credentials } from "../../models/credentials";
 import { extractCredentials } from "../../models/utils/toModelMappers";
 import { Phone } from "../../models/phone";
 import { ConfirmationType } from "../../dal/entities/confirmationEntity";
 import * as errors from "../commonErrors";
+import { forwardInternalError } from "../../utils/expressUtils";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -39,7 +40,14 @@ export default class LocalUserController extends UserController {
     public async login(req: Request, res: Response, next: NextFunction) {
         const credentials = extractCredentials(req.body);
 
-        const result = await this._loginManager.authenticate(credentials, req.body.password);
+        let result: LoginOperationResult = null;
+
+        try {
+            result = await this._loginManager.authenticate(credentials, req.body.password);
+        } catch (error) {
+            return forwardInternalError(next, error);
+        }
+
         if (result.result === LoginResult.userNotFound || result.result === LoginResult.invalidPassword) {
             return errors.invalidCredentials(next);
         }

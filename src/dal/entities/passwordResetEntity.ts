@@ -12,7 +12,7 @@ export class PasswordResetEntity extends BaseEntity {
     @PrimaryColumn()
     userId: string;
 
-    @OneToOne(type => UserEntity)
+    @OneToOne(() => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

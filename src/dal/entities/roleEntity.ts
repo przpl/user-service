@@ -6,7 +6,7 @@ export class RoleEntity extends BaseEntity {
     @PrimaryColumn()
     userId: string;
 
-    @ManyToOne(type => UserEntity)
+    @ManyToOne(() => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

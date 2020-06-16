@@ -15,7 +15,7 @@ export class ConfirmationEntity extends BaseEntity {
     @Column()
     userId: string;
 
-    @ManyToOne(type => UserEntity)
+    @ManyToOne(() => UserEntity)
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 
