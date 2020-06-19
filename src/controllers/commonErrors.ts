@@ -27,7 +27,7 @@ export function phoneNotConfirmed(next: NF, phone: Phone) {
 
 export const userAlreadyExists = (next: NF) => forwardError(next, "userAlreadyExists", Status.BAD_REQUEST);
 
-export const usernameAlreadyUsed = (next: NF) => forwardError(next, "usernameAlreadyUsed", Status.BAD_REQUEST);
+export const usernameTaken = (next: NF) => forwardError(next, "usernameTaken", Status.BAD_REQUEST);
 
 export const notLocalUser = (next: NF) => forwardError(next, "notLocalUser", Status.FORBIDDEN);
 

@@ -77,7 +77,7 @@ export default class LocalUserController extends UserController {
             return false;
         }
         if (duplicate === LoginDuplicateType.username) {
-            errors.usernameAlreadyUsed(next);
+            errors.usernameTaken(next);
             return false;
         }
         return true;
