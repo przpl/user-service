@@ -9,7 +9,7 @@ import { Config } from "../utils/config/config";
 import Env from "../utils/config/env";
 
 @singleton()
-export default class RecaptchaMiddleware {
+export default class ReCaptchaMiddleware {
     private _reCaptcha: Recaptcha2;
 
     constructor(env: Env, config: Config) {
@@ -18,19 +18,21 @@ export default class RecaptchaMiddleware {
         }
 
         this._reCaptcha = new Recaptcha2({
-            siteKey: env.recaptchaSiteKey,
-            secretKey: env.recaptchaSecretKey,
+            siteKey: env.reCaptchaSiteKey,
+            secretKey: env.reCaptchaSecretKey,
             ssl: config.security.reCaptcha.ssl,
         });
     }
 
     public async verify(req: Request, res: Response, next: NextFunction, enabledOnEndpoint: boolean) {
+        console.log("here");
+
         if (!this._reCaptcha || !enabledOnEndpoint) {
             return next();
         }
 
         try {
-            await this._reCaptcha.validate(req.body.recaptchaKey);
+            await this._reCaptcha.validate(req.body.reCaptchaKey);
         } catch (error) {
             if (isArray(error)) {
                 const captchaError = error[0];

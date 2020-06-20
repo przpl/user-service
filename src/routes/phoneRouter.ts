@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
 
 import Validator from "../middleware/validator/validator";
-import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
+import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
 import { Config } from "../utils/config/config";
 import ConfirmationController from "../controllers/confirmationController";
 
@@ -11,9 +11,9 @@ export default class PhoneRouter {
         const router = express.Router();
         const ctrl = container.resolve(ConfirmationController);
         const validator = container.resolve(Validator);
-        const captcha = container.resolve(RecaptchaMiddleware);
+        const captcha = container.resolve(ReCaptchaMiddleware);
         const config = container.resolve(Config);
-        const recaptchaCfg = config.security.reCaptcha.protectedEndpoints;
+        const reCaptchaCfg = config.security.reCaptcha.protectedEndpoints;
 
         if (!config.localLogin.phone.required) {
             return router;
@@ -22,14 +22,14 @@ export default class PhoneRouter {
         router.post(
             "/confirm",
             validator.confirmPhone,
-            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.confirmPhone),
+            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaCfg.confirmPhone),
             (req: Request, res: Response, next: NextFunction) => ctrl.confirm(req, res, next)
         );
 
         router.post(
             "/resend",
             validator.resendPhone,
-            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaCfg.resendPhone),
+            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaCfg.resendPhone),
             (req: Request, res: Response, next: NextFunction) => ctrl.resend(req, res, next)
         );
 

@@ -48,7 +48,7 @@ export const fieldValidators = {
         .isLength({ min: REFRESH_TOKEN_LENGTH, max: REFRESH_TOKEN_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength)
         // eslint-disable-next-line prettier/prettier
-        .matches("^[0-9a-zA-Z\+\/\=]+$")
+        .matches("^[0-9a-zA-Z+/=]+$")
         .withMessage(FIELD_ERROR_MSG.isBase64),
     register: {} as ValidationChain,
     weakPassword: {} as ValidationChain,
@@ -91,7 +91,7 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isNumeric()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
-    recaptcha: body("recaptchaKey")
+    reCaptcha: body("reCaptchaKey")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()

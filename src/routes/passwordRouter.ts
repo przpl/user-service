@@ -3,7 +3,7 @@ import { container } from "tsyringe";
 
 import Validator from "../middleware/validator/validator";
 import AuthMiddleware from "../middleware/authMiddleware";
-import RecaptchaMiddleware from "../middleware/recaptchaMiddleware";
+import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
 import PasswordController from "../controllers/passwordController";
 import { Config } from "../utils/config/config";
 
@@ -13,8 +13,8 @@ export default class PasswordRouter {
         const ctrl = container.resolve(PasswordController);
         const auth = container.resolve(AuthMiddleware);
         const validator = container.resolve(Validator);
-        const captcha = container.resolve(RecaptchaMiddleware);
-        const recaptchaEnabled = container.resolve(Config).security.reCaptcha.protectedEndpoints;
+        const captcha = container.resolve(ReCaptchaMiddleware);
+        const reCaptchaEnabled = container.resolve(Config).security.reCaptcha.protectedEndpoints;
 
         router.post(
             "/change",
@@ -26,14 +26,14 @@ export default class PasswordRouter {
         router.post(
             "/forgot",
             validator.forgotPassword,
-            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.forgotPassword),
+            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaEnabled.forgotPassword),
             (req: Request, res: Response, next: NextFunction) => ctrl.forgotPassword(req, res, next)
         );
 
         router.post(
             "/reset",
             validator.resetPassword,
-            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, recaptchaEnabled.resetPassword),
+            (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaEnabled.resetPassword),
             (req: Request, res: Response, next: NextFunction) => ctrl.resetPassword(req, res, next)
         );
 

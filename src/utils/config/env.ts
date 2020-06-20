@@ -57,11 +57,11 @@ export default class Env {
         return process.env.JWT_PRIVATE_KEY;
     }
 
-    public get recaptchaSiteKey(): string {
+    public get reCaptchaSiteKey(): string {
         return process.env.RECAPTCHA_SITE_KEY;
     }
 
-    public get recaptchaSecretKey(): string {
+    public get reCaptchaSecretKey(): string {
         return process.env.RECAPTCHA_SECRET_KEY;
     }
 

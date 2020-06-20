@@ -188,21 +188,21 @@ export default class Validator {
     }
 
     private addReCaptchaValidators(config: Config) {
-        const recaptchaEnabled = config.security.reCaptcha.protectedEndpoints;
-        if (recaptchaEnabled.login) {
-            this.login.unshift(fieldValidators.recaptcha);
+        const reCaptchaEnabled = config.security.reCaptcha.protectedEndpoints;
+        if (reCaptchaEnabled.login) {
+            this.login.unshift(fieldValidators.reCaptcha);
         }
-        if (recaptchaEnabled.register) {
-            this.register.unshift(fieldValidators.recaptcha);
+        if (reCaptchaEnabled.register) {
+            this.register.unshift(fieldValidators.reCaptcha);
         }
-        if (recaptchaEnabled.confirmEmail) {
-            this.confirmEmail.unshift(fieldValidators.recaptcha);
+        if (reCaptchaEnabled.confirmEmail) {
+            this.confirmEmail.unshift(fieldValidators.reCaptcha);
         }
-        if (recaptchaEnabled.forgotPassword) {
-            this.forgotPassword.unshift(fieldValidators.recaptcha);
+        if (reCaptchaEnabled.forgotPassword) {
+            this.forgotPassword.unshift(fieldValidators.reCaptcha);
         }
-        if (recaptchaEnabled.resetPassword) {
-            this.resetPassword.unshift(fieldValidators.recaptcha);
+        if (reCaptchaEnabled.resetPassword) {
+            this.resetPassword.unshift(fieldValidators.reCaptcha);
         }
     }
 
