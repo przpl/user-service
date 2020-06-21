@@ -25,14 +25,12 @@ export default class ReCaptchaMiddleware {
     }
 
     public async verify(req: Request, res: Response, next: NextFunction, enabledOnEndpoint: boolean) {
-        console.log("here");
-
         if (!this._reCaptcha || !enabledOnEndpoint) {
             return next();
         }
 
         try {
-            await this._reCaptcha.validate(req.body.reCaptchaKey);
+            await this._reCaptcha.validate(req.body.reCaptchaToken);
         } catch (error) {
             if (isArray(error)) {
                 const captchaError = error[0];

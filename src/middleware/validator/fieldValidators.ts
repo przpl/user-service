@@ -91,7 +91,7 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isNumeric()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
-    reCaptcha: body("reCaptchaKey")
+    reCaptcha: body("reCaptchaToken")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()

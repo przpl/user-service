@@ -17,7 +17,7 @@ export interface RequestBody {
     access_token?: string; // eslint-disable-line camelcase
 
     // ReCaptcha
-    reCaptchaKey?: string;
+    reCaptchaToken?: string;
 
     // Lock
     lock?: LockDto;
