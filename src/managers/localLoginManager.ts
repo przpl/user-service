@@ -204,8 +204,7 @@ export class LocalLoginManager {
     }
 
     public async resetPassword(code: string, password: string) {
-        code = code.toUpperCase();
-        const passReset = await this._passResetRepo.findOne({ where: { code: code } });
+        const passReset = await this._passResetRepo.findOne({ where: { code: code.toUpperCase() } });
         if (!passReset) {
             throw new NotFoundException();
         }
@@ -215,9 +214,9 @@ export class LocalLoginManager {
             throw new ExpiredResetCodeException();
         }
 
-        await this._loginRepo.update({ userId: passReset.userId }, { passwordHash: await this._passService.hash(password) });
-
         await passReset.remove();
+
+        await this._loginRepo.update({ userId: passReset.userId }, { passwordHash: await this._passService.hash(password) });
     }
 
     public async generatePasswordResetCode(login: LocalLogin): Promise<string> {
