@@ -27,11 +27,11 @@ export default class UserController {
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
         const { mfaLoginToken, oneTimePassword, userId } = req.body;
 
-        if (!(await this._mfaManager.verifyLoginToken(userId, mfaLoginToken, req.ip))) {
+        if ((await this._mfaManager.verifyLoginToken(userId, mfaLoginToken, req.ip)) === false) {
             return errors.invalidMfaToken(next);
         }
 
-        if (!(await this._mfaManager.verifyTotp(userId, oneTimePassword))) {
+        if ((await this._mfaManager.verifyTotp(userId, oneTimePassword)) === false) {
             return errors.invalidOneTimePassword(next);
         }
 
@@ -88,12 +88,19 @@ export default class UserController {
         return res.json({ user: { id: userId }, mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
     }
 
-    private mapUserAgent(userAgent: IUAParser.IResult) {
-        const ua: UserAgent = {
+    private mapUserAgent(userAgent: IUAParser.IResult): UserAgent {
+        if (!userAgent) {
+            return {
+                browser: "",
+                os: "",
+                osVersion: "",
+            };
+        }
+
+        return {
             browser: userAgent.browser.name,
             os: userAgent.os.name,
             osVersion: userAgent.os.version,
         };
-        return ua;
     }
 }

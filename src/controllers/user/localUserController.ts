@@ -20,7 +20,7 @@ export default class LocalUserController extends UserController {
     public async register(req: Request, res: Response, next: NextFunction) {
         const credentials = extractCredentials(req.body);
 
-        if (!(await this.handleLoginDuplicate(next, credentials))) {
+        if ((await this.handleLoginDuplicate(next, credentials)) === false) {
             return;
         }
 
@@ -59,11 +59,11 @@ export default class LocalUserController extends UserController {
         }
 
         const userId = result.login.userId;
-        if (!(await this.handleUserLock(next, userId))) {
+        if ((await this.handleUserLock(next, userId)) === false) {
             return;
         }
 
-        if (!(await this.handleMfa(req, res, userId))) {
+        if ((await this.handleMfa(req, res, userId)) === false) {
             return;
         }
 

@@ -11,10 +11,8 @@ export function extractCredentialsWithoutUsername(body: RequestBody): Credential
 }
 
 function extractPhone(body: RequestBody): Phone {
-    const phoneDto = body.phone;
-    let phone: Phone = null;
-    if (phoneDto && phoneDto.code && phoneDto.number) {
-        phone = new Phone(body.phone.code, body.phone.number);
+    if (body.phone && body.phone.code && body.phone.number) {
+        return new Phone(body.phone.code, body.phone.number);
     }
-    return phone;
+    return null;
 }

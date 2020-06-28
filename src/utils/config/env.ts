@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { singleton } from "tsyringe";
 
 import { ConfigValidationResult } from "./configValidationResult";
+import { LoggerLevel } from "../logger";
 
 @singleton()
 export default class Env {
@@ -15,6 +16,14 @@ export default class Env {
             nodeEnv = "development";
         }
         process.env.NODE_ENV = nodeEnv;
+    }
+
+    public get loggerLevel(): LoggerLevel {
+        return process.env.LOGGER_LEVEL as LoggerLevel;
+    }
+
+    public get loggerDisabled(): boolean {
+        return Boolean(process.env.LOGGER_DISABLED);
     }
 
     public get serviceId(): string {

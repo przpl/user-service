@@ -42,6 +42,8 @@ export function handleError(err: any, res: Response, isDev: boolean) {
 
     res.status(err.responseStatusCode || HttpStatus.INTERNAL_SERVER_ERROR);
 
+    // TODO if error is INTERNAL_SERVER_ERROR, send it to sentry
+
     const response: any = { errors: [] };
     if (err.responseErrorsList && isArray(err.responseErrorsList)) {
         response.errors = err.responseErrorsList;

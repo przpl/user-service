@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
+import asyncHandler from "express-async-handler";
 
 import LocalUserController from "../../controllers/user/localUserController";
 import Validator from "../../middleware/validator/validator";
@@ -29,7 +30,7 @@ export default class LocalUserRouter {
             validator.login,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaEnabled.login),
             (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-            (req: Request, res: Response, next: NextFunction) => ctrl.login(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.login(req, res, next))
         );
 
         return router;

@@ -15,15 +15,16 @@ export class UserManager {
         return entity.id;
     }
 
-    // TO-DO: test if works, select:[] returns null
+    public async delete(id: string) {
+        await this._repo.delete(id);
+    }
+
     public async exists(id: string): Promise<boolean> {
-        const user = await this._repo.findOne({ where: { id: id }, select: ["id"] });
+        const user = await this._repo.findOne(id, { select: ["id"] }); // select [] always returns null
         return Boolean(user);
     }
 
     private generateUserId(): string {
-        return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" })
-            .replace("+", "0")
-            .replace("/", "1");
+        return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }).replace("+", "0").replace("/", "1"); // TODO, fix, replace all + and / chars
     }
 }

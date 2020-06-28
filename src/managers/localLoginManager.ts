@@ -107,7 +107,7 @@ export class LocalLoginManager {
             return { result: LoginResult.userNotFound, login: null };
         }
 
-        if (!(await this._passService.verify(password, entity.passwordHash))) {
+        if ((await this._passService.verify(password, entity.passwordHash)) === false) {
             return { result: LoginResult.invalidPassword, login: this.toLocalLoginModel(entity) };
         }
 
@@ -195,7 +195,7 @@ export class LocalLoginManager {
             throw new UserNotLocalException();
         }
 
-        if (!(await this._passService.verify(oldPassword, entity.passwordHash))) {
+        if ((await this._passService.verify(oldPassword, entity.passwordHash)) === false) {
             throw new InvalidPasswordException("Cannot change password because old password doesn't match.");
         }
 

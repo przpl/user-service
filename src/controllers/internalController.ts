@@ -19,7 +19,7 @@ export default class InternalController {
     public async addRoleToUser(req: Request, res: Response, next: NextFunction) {
         const { userId, userRole } = req.body;
 
-        if (!(await this.assertUserExists(next, userId))) {
+        if ((await this.assertUserExists(next, userId)) === false) {
             return;
         }
 
@@ -30,7 +30,7 @@ export default class InternalController {
     public async removeRoleFromUser(req: Request, res: Response, next: NextFunction) {
         const { userId, userRole } = req.body;
 
-        if (!(await this.assertUserExists(next, userId))) {
+        if ((await this.assertUserExists(next, userId)) === false) {
             return;
         }
 
@@ -44,7 +44,7 @@ export default class InternalController {
     public async revokeAllUserSessions(req: Request, res: Response, next: NextFunction) {
         const { userId } = req.params;
 
-        if (!(await this.assertUserExists(next, userId))) {
+        if ((await this.assertUserExists(next, userId)) === false) {
             return;
         }
 
@@ -55,7 +55,7 @@ export default class InternalController {
     public async lockOutUser(req: Request, res: Response, next: NextFunction) {
         const { userId } = req.params;
 
-        if (!(await this.assertUserExists(next, userId))) {
+        if ((await this.assertUserExists(next, userId)) === false) {
             return;
         }
 
@@ -70,7 +70,7 @@ export default class InternalController {
     public async unlockUser(req: Request, res: Response, next: NextFunction) {
         const { userId } = req.params;
 
-        if (!(await this.assertUserExists(next, userId))) {
+        if ((await this.assertUserExists(next, userId)) === false) {
             return;
         }
 
@@ -80,7 +80,7 @@ export default class InternalController {
     }
 
     private async assertUserExists(next: NextFunction, userId: string): Promise<boolean> {
-        if (!(await this._userManager.exists(userId))) {
+        if ((await this._userManager.exists(userId)) === false) {
             errors.userNotExists(next);
             return false;
         }

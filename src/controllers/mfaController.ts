@@ -16,7 +16,7 @@ export default class MfaController {
     public async requestMfa(req: Request, res: Response, next: NextFunction) {
         const userId = req.authenticatedUser.sub;
 
-        if (!(await this._loginManager.isLocal(userId))) {
+        if ((await this._loginManager.isLocal(userId)) === false) {
             return errors.notLocalUser(next);
         }
 
@@ -48,7 +48,7 @@ export default class MfaController {
         const userId = req.authenticatedUser.sub;
         const { password, oneTimePassword } = req.body;
 
-        if (!(await this._loginManager.verifyPassword(userId, password))) {
+        if ((await this._loginManager.verifyPassword(userId, password)) === false) {
             return errors.invalidPassword(next);
         }
 

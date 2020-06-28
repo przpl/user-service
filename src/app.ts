@@ -21,6 +21,7 @@ import Env from "./utils/config/env";
 import { handleNotFoundError, handleError } from "./utils/expressUtils";
 import { configurePassport } from "./middleware/passport";
 import { ConfigLoader, Config } from "./utils/config/config";
+import Logger from "./utils/logger";
 
 function loadEnv() {
     const envPath = `${__dirname}/.env`;
@@ -79,6 +80,9 @@ async function start() {
     const env = loadEnv();
     const config = loadConfig();
 
+    const logger = new Logger(env.loggerDisabled, env.loggerLevel);
+    container.register<Logger>(Logger, { useValue: logger });
+
     const dbConnection = await connectToDb();
 
     container.register<Env>(Env, { useValue: env });
@@ -123,6 +127,14 @@ async function start() {
         .on("close", async () => {
             await dbConnection.close();
         });
+
+    process.on("unhandledRejection", (err: any) => {
+        if (env.isDev()) {
+            console.log("Unhandled promise rejection: " + err.message);
+            console.log(err.stack);
+        }
+        // TODO send error to sentry
+    });
 }
 
 start();
