@@ -7,7 +7,7 @@ import { MfaLoginToken } from "../models/mfaLoginToken";
 
 enum KeyFlag {
     expireSeconds = "EX",
-    expireMiliseconds = "PX",
+    expireMilliseconds = "PX",
     onlySetIfNotExist = "NX",
     onlySetIfExist = "XX",
 }
@@ -31,7 +31,7 @@ export class CacheDb {
     public async setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getMfaLoginTokenKey(userId);
         const tokenObj: MfaLoginToken = { token: token, ip: ip };
-        return this.setWithExpiration(key, JSON.stringify(tokenObj), KeyFlag.expireSeconds, expireTime.seconds);
+        return this.setWithExpiration(key, JSON.stringify(tokenObj), KeyFlag.expireSeconds, expireTime);
     }
 
     public async getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
@@ -55,7 +55,7 @@ export class CacheDb {
 
     public async revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getRevokeAccessTokenKey(userId, ref);
-        return this.setWithExpiration(key, "", KeyFlag.expireSeconds, expireTime.seconds);
+        return this.setWithExpiration(key, "", KeyFlag.expireSeconds, expireTime);
     }
 
     public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void): void {
@@ -123,9 +123,9 @@ export class CacheDb {
         });
     }
 
-    private setWithExpiration(key: string, value: string, mode: string, duration: number): Promise<boolean> {
+    private setWithExpiration(key: string, value: string, mode: string, duration: TimeSpan): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            this._client.SET(key, value, mode, duration, (err, reply) => {
+            this._client.SET(key, value, mode, duration.seconds, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
