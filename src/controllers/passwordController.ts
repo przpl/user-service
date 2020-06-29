@@ -37,7 +37,7 @@ export default class PasswordController {
             return res.json({ result: true });
         }
 
-        if (!(await this._lockManager.getActive(login.userId))) {
+        if (await this._lockManager.getActive(login.userId)) {
             return res.json({ result: true });
         }
 

@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { UAParser } from "ua-parser-js";
+import { singleton } from "tsyringe";
 
 import Logger from "../utils/logger";
 
+@singleton()
 export default class UserAgentMiddleware {
     constructor(private _logger: Logger) {}
 
