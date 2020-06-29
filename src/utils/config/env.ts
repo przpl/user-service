@@ -74,6 +74,10 @@ export default class Env {
         return process.env.RECAPTCHA_SECRET_KEY;
     }
 
+    public get sentryKey(): string {
+        return process.env.SENTRY_KEY;
+    }
+
     public validate(): ConfigValidationResult[] {
         const result: ConfigValidationResult[] = [];
         if (!this.administrationKey) {

@@ -1,6 +1,7 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { isArray, isString } from "util";
 import HttpStatus from "http-status-codes";
+import * as Sentry from "@sentry/node";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
 
@@ -31,7 +32,7 @@ export function forwardError(
     next(error);
 }
 
-export function handleError(err: any, res: Response, isDev: boolean) {
+export function handleError(err: any, req: Request, res: Response, isDev: boolean, sentryKey: string) {
     if (!err) {
         return res.send();
     }
@@ -40,9 +41,14 @@ export function handleError(err: any, res: Response, isDev: boolean) {
         return handleNotFoundError(res);
     }
 
-    res.status(err.responseStatusCode || HttpStatus.INTERNAL_SERVER_ERROR);
+    err.responseStatusCode = err.responseStatusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+    res.status(err.responseStatusCode);
 
-    // TODO if error is INTERNAL_SERVER_ERROR, send it to sentry
+    if (err.responseStatusCode === HttpStatus.INTERNAL_SERVER_ERROR && sentryKey) {
+        const errorToLog = new Error(err.message);
+        errorToLog.stack = err.stack;
+        Sentry.captureException(errorToLog, { user: { id: req.authenticatedUser?.sub } });
+    }
 
     const response: any = { errors: [] };
     if (err.responseErrorsList && isArray(err.responseErrorsList)) {

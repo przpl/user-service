@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { createConnection, Connection } from "typeorm";
 import { container } from "tsyringe";
+import * as Sentry from "@sentry/node";
 
 import UserRouter from "./routes/user/userRouter";
 import LocalUserRouter from "./routes/user/localUserRouter";
@@ -78,6 +79,11 @@ async function connectToDb() {
 
 async function start() {
     const env = loadEnv();
+
+    if (env.sentryKey) {
+        Sentry.init({ dsn: env.sentryKey });
+    }
+
     const config = loadConfig();
 
     const logger = new Logger(env.loggerDisabled, env.loggerLevel);
@@ -114,7 +120,7 @@ async function start() {
     app.use("/api/user/mfa", MfaRouter.getExpressRouter());
 
     app.use((req, res, next) => handleNotFoundError(res));
-    app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, res, env.isDev()));
+    app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, req, res, env.isDev(), env.sentryKey));
 
     app.listen(env.port, () => {
         console.log(`App is running at http://localhost:${env.port} in ${app.get("env")} mode`);
@@ -133,7 +139,9 @@ async function start() {
             console.log("Unhandled promise rejection: " + err.message);
             console.log(err.stack);
         }
-        // TODO send error to sentry
+        if (env.sentryKey) {
+            Sentry.captureException(err);
+        }
     });
 }
 
