@@ -3,8 +3,8 @@ import { ValidationChain, body, cookie } from "express-validator";
 import {
     USER_ID_LENGTH,
     PASSWORD_RESET_CODE_LENGTH,
-    MFA_LOGIN_TOKEN_LENGHT,
-    ONE_TIME_PASS_LENGHT,
+    MFA_LOGIN_TOKEN_LENGTH,
+    ONE_TIME_PASS_LENGTH,
     CONFIRMATION_CODE_LENGTH,
     REFRESH_TOKEN_LENGTH,
 } from "../../utils/globalConsts";
@@ -79,7 +79,7 @@ export const fieldValidators = {
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: MFA_LOGIN_TOKEN_LENGHT, max: MFA_LOGIN_TOKEN_LENGHT })
+        .isLength({ min: MFA_LOGIN_TOKEN_LENGTH, max: MFA_LOGIN_TOKEN_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
@@ -87,7 +87,7 @@ export const fieldValidators = {
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: ONE_TIME_PASS_LENGHT, max: ONE_TIME_PASS_LENGHT })
+        .isLength({ min: ONE_TIME_PASS_LENGTH, max: ONE_TIME_PASS_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength)
         .isNumeric()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),

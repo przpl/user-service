@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
+import asyncHandler from "express-async-handler";
 
 import Validator from "../middleware/validator/validator";
 import AuthMiddleware from "../middleware/authMiddleware";
@@ -20,21 +21,21 @@ export default class PasswordRouter {
             "/change",
             (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
             validator.changePassword,
-            (req: Request, res: Response, next: NextFunction) => ctrl.changePassword(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.changePassword(req, res, next))
         );
 
         router.post(
             "/forgot",
             validator.forgotPassword,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaEnabled.forgotPassword),
-            (req: Request, res: Response, next: NextFunction) => ctrl.forgotPassword(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.forgotPassword(req, res, next))
         );
 
         router.post(
             "/reset",
             validator.resetPassword,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaEnabled.resetPassword),
-            (req: Request, res: Response, next: NextFunction) => ctrl.resetPassword(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.resetPassword(req, res, next))
         );
 
         return router;

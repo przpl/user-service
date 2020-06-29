@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
+import asyncHandler from "express-async-handler";
 
 import UserController from "../../controllers/user/userController";
 import Validator from "../../middleware/validator/validator";
@@ -21,7 +22,7 @@ export default class UserRouter {
                 "/login/mfa",
                 validator.loginWithMfa,
                 (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => ctrl.loginWithMfa(req, res, next)
+                asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.loginWithMfa(req, res, next))
             );
         }
 

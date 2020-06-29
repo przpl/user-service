@@ -59,7 +59,7 @@ export function userLockedOut(next: NF, reason: string) {
     forwardError(next, errors, Status.FORBIDDEN);
 }
 
-export const userNotExists = (next: NF) => forwardError(next, "userNotExists", Status.BAD_REQUEST);
+export const userNotExists = (next: NF) => forwardError(next, "userNotExists", Status.NOT_FOUND);
 // #endregion
 
 export const limitExceeded = (next: NF) => forwardError(next, "limitExceeded", Status.BAD_REQUEST);

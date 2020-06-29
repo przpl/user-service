@@ -7,7 +7,7 @@ import { MfaEntity, MfaMethod } from "../dal/entities/mfaEntity";
 import { MfaException } from "../exceptions/exceptions";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
 import cryptoRandomString from "crypto-random-string";
-import { MFA_LOGIN_TOKEN_LENGHT } from "../utils/globalConsts";
+import { MFA_LOGIN_TOKEN_LENGTH } from "../utils/globalConsts";
 import { CacheDb } from "../dal/cacheDb";
 import { Config } from "../utils/config/config";
 import { TimeSpan } from "../utils/timeSpan";
@@ -98,11 +98,9 @@ export class MfaManager {
     }
 
     public async issueLoginToken(userId: string, ip: string): Promise<{ token: string; expiresAt: number }> {
-        const token = cryptoRandomString({ length: MFA_LOGIN_TOKEN_LENGHT, type: "hex" });
+        const token = cryptoRandomString({ length: MFA_LOGIN_TOKEN_LENGTH, type: "hex" });
         await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTL);
-        const expiresAt = moment()
-            .add(this._mfaLoginTTL.seconds, "seconds")
-            .unix();
+        const expiresAt = moment().add(this._mfaLoginTTL.seconds, "seconds").unix();
 
         return { token: token, expiresAt: expiresAt };
     }

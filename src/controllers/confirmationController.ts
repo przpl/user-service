@@ -38,7 +38,7 @@ export default class ConfirmationController {
             if (error instanceof ResendCodeLimitException) {
                 return errors.limitExceeded(next);
             } else if (error instanceof ResendCodeTimeLimitException) {
-                return res.json({ result: true, tooOffen: true });
+                return res.json({ result: true, tooOften: true });
             }
             return forwardInternalError(next, error);
         }
@@ -46,21 +46,19 @@ export default class ConfirmationController {
         if (subject.type === ConfirmationType.email) {
             this._queueService.pushEmailCode(subject.value, code);
         } else if (subject.type === ConfirmationType.phone) {
-            const phone = this.extractPhone(req.body);
-            this._queueService.pushPhoneCode(phone, code);
+            this._queueService.pushPhoneCode(this.extractPhone(req.body), code);
         }
 
         res.json({ result: true });
     }
 
     private getPrimaryLoginType(body: RequestBody): PrimaryLoginType {
-        const credentials = extractCredentialsWithoutUsername(body);
-        return credentials.getPrimary();
+        return extractCredentialsWithoutUsername(body).getPrimary();
     }
 
     private extractSubject(body: RequestBody): { value: string; type: ConfirmationType } {
         const credentials = extractCredentialsWithoutUsername(body);
-        const primary = credentials.getPrimary();
+        const primary = this.getPrimaryLoginType(body);
 
         if (primary === PrimaryLoginType.email) {
             return { value: credentials.email, type: ConfirmationType.email };
@@ -75,7 +73,6 @@ export default class ConfirmationController {
     }
 
     private extractPhone(body: RequestBody): Phone {
-        const credentials = extractCredentialsWithoutUsername(body);
-        return credentials.phone;
+        return extractCredentialsWithoutUsername(body).phone;
     }
 }

@@ -28,7 +28,7 @@ export default class Validator {
     public loginWithFacebook: ValidatorArray = [];
     public loginWithMfa: ValidatorArray = [];
     public enableMfa: ValidatorArray = [];
-    public disbleMfa: ValidatorArray = [];
+    public disableMfa: ValidatorArray = [];
 
     constructor(config: Config) {
         const cfg = config.commonFields;
@@ -180,7 +180,7 @@ export default class Validator {
         this.loginWithFacebook = [fieldValidators.facebookAccessToken, this.validate];
         this.loginWithMfa = [fieldValidators.mfaLoginToken, fieldValidators.oneTimePassword, fieldValidators.userId, this.validate];
         this.enableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
-        this.disbleMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
+        this.disableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
 
         if (config.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(config);

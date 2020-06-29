@@ -22,7 +22,7 @@ export default class LocalUserRouter {
             "/register",
             validator.register,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaEnabled.register),
-            (req: Request, res: Response, next: NextFunction) => ctrl.register(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.register(req, res, next))
         );
 
         router.post(

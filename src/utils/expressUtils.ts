@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { isArray, isString } from "util";
 import HttpStatus from "http-status-codes";
-import * as Sentry from "@sentry/node";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
+import { captureExceptionWithSentry } from "./sentryUtils";
 
 export function forwardInternalError(next: NextFunction, originalError: object) {
     forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, originalError);
@@ -47,7 +47,7 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
     if (err.responseStatusCode === HttpStatus.INTERNAL_SERVER_ERROR && sentryKey) {
         const errorToLog = new Error(err.message);
         errorToLog.stack = err.stack;
-        Sentry.captureException(errorToLog, { user: { id: req.authenticatedUser?.sub } });
+        captureExceptionWithSentry(errorToLog, req.authenticatedUser);
     }
 
     const response: any = { errors: [] };

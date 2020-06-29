@@ -3,13 +3,13 @@ import { singleton } from "tsyringe";
 
 import { UserManager } from "../../managers/userManger";
 import UserController from "./userController";
-import { LocalLoginManager, LoginDuplicateType, LoginResult, LoginOperationResult } from "../../managers/localLoginManager";
+import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
 import { Credentials } from "../../models/credentials";
 import { extractCredentials } from "../../models/utils/toModelMappers";
 import { Phone } from "../../models/phone";
 import { ConfirmationType } from "../../dal/entities/confirmationEntity";
 import * as errors from "../commonErrors";
-import { forwardInternalError } from "../../utils/expressUtils";
+import { LocalLogin } from "../../models/localLogin";
 
 @singleton()
 export default class LocalUserController extends UserController {
@@ -25,9 +25,16 @@ export default class LocalUserController extends UserController {
         }
 
         const userId = await this._userManager.create();
-        const login = await this._loginManager.create(credentials, userId, req.body.password);
+        let login: LocalLogin = null;
+        try {
+            login = await this._loginManager.create(credentials, userId, req.body.password);
+        } catch (error) {
+            await this._userManager.delete(userId);
+            throw error;
+        }
 
         await this.pushNewUser(req.body, credentials);
+
         if (login.email) {
             await this.pushEmailCode(userId, credentials.email);
         } else if (login.phone) {
@@ -40,13 +47,7 @@ export default class LocalUserController extends UserController {
     public async login(req: Request, res: Response, next: NextFunction) {
         const credentials = extractCredentials(req.body);
 
-        let result: LoginOperationResult = null;
-
-        try {
-            result = await this._loginManager.authenticate(credentials, req.body.password);
-        } catch (error) {
-            return forwardInternalError(next, error);
-        }
+        const result = await this._loginManager.authenticate(credentials, req.body.password);
 
         if (result.result === LoginResult.userNotFound || result.result === LoginResult.invalidPassword) {
             return errors.invalidCredentials(next);

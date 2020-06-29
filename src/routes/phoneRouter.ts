@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
+import asyncHandler from "express-async-handler";
 
 import Validator from "../middleware/validator/validator";
 import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
@@ -23,14 +24,14 @@ export default class PhoneRouter {
             "/confirm",
             validator.confirmPhone,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaCfg.confirmPhone),
-            (req: Request, res: Response, next: NextFunction) => ctrl.confirm(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.confirm(req, res, next))
         );
 
         router.post(
             "/resend",
             validator.resendPhone,
             (req: Request, res: Response, next: NextFunction) => captcha.verify(req, res, next, reCaptchaCfg.resendPhone),
-            (req: Request, res: Response, next: NextFunction) => ctrl.resend(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.resend(req, res, next))
         );
 
         return router;

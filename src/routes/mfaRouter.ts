@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
+import asyncHandler from "express-async-handler";
 
 import Validator from "../middleware/validator/validator";
 import AuthMiddleware from "../middleware/authMiddleware";
@@ -21,21 +22,21 @@ export default class MfaRouter {
         router.get(
             "/",
             (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
-            (req: Request, res: Response, next: NextFunction) => ctrl.requestMfa(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.requestMfa(req, res, next))
         );
 
         router.put(
             "/",
             validator.enableMfa,
             (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
-            (req: Request, res: Response, next: NextFunction) => ctrl.enableMfa(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.enableMfa(req, res, next))
         );
 
         router.delete(
             "/",
-            validator.disbleMfa,
+            validator.disableMfa,
             (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
-            (req: Request, res: Response, next: NextFunction) => ctrl.disableMfa(req, res, next)
+            asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.disableMfa(req, res, next))
         );
 
         return router;

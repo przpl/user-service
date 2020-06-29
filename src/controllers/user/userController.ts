@@ -13,6 +13,7 @@ import { Credentials } from "../../models/credentials";
 import { Config } from "../../utils/config/config";
 import { QueueService } from "../../services/queueService";
 import * as errors from "../commonErrors";
+import { captureExceptionWithSentry } from "../../utils/sentryUtils";
 
 @singleton()
 export default class UserController {
@@ -41,8 +42,11 @@ export default class UserController {
     }
 
     public async logout(req: Request, res: Response, next: NextFunction) {
-        const { refreshToken } = req.cookies;
-        await this._sessionManager.revokeSession(refreshToken);
+        try {
+            await this._sessionManager.revokeSession(req.cookies.refreshToken);
+        } catch (error) {
+            captureExceptionWithSentry(error, req.authenticatedUser);
+        }
         res.send({ result: true });
     }
 

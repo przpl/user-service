@@ -17,64 +17,55 @@ export default class InternalController {
     ) {}
 
     public async addRoleToUser(req: Request, res: Response, next: NextFunction) {
-        const { userId, userRole } = req.body;
-
-        if ((await this.assertUserExists(next, userId)) === false) {
+        if ((await this.assertUserExists(next, req.body.userId)) === false) {
             return;
         }
 
-        await this._roleManager.addRole(userId, userRole);
+        await this._roleManager.addRole(req.body.userId, req.body.userRole);
+
         res.json({ result: true });
     }
 
     public async removeRoleFromUser(req: Request, res: Response, next: NextFunction) {
-        const { userId, userRole } = req.body;
-
-        if ((await this.assertUserExists(next, userId)) === false) {
+        if ((await this.assertUserExists(next, req.body.userId)) === false) {
             return;
         }
 
-        const roleExisted = await this._roleManager.removeRole(userId, userRole);
+        const roleExisted = await this._roleManager.removeRole(req.body.userId, req.body.userRole);
         if (roleExisted) {
-            await this._sessionManager.revokeAllSessions(userId);
+            await this._sessionManager.revokeAllSessions(req.body.userId);
         }
         res.json({ result: true });
     }
 
     public async revokeAllUserSessions(req: Request, res: Response, next: NextFunction) {
-        const { userId } = req.params;
-
-        if ((await this.assertUserExists(next, userId)) === false) {
+        if ((await this.assertUserExists(next, req.params.userId)) === false) {
             return;
         }
 
-        await this._sessionManager.revokeAllSessions(userId);
+        await this._sessionManager.revokeAllSessions(req.params.userId);
         res.json({ result: true });
     }
 
     public async lockOutUser(req: Request, res: Response, next: NextFunction) {
-        const { userId } = req.params;
-
-        if ((await this.assertUserExists(next, userId)) === false) {
+        if ((await this.assertUserExists(next, req.params.userId)) === false) {
             return;
         }
 
         const { until, reason, by } = req.body.lock;
         const untilDate = new Date(until);
-        await this._lockManager.lock(userId, untilDate, reason, by);
-        await this._sessionManager.revokeAllSessions(userId);
+        await this._lockManager.lock(req.params.userId, untilDate, reason, by);
+        await this._sessionManager.revokeAllSessions(req.params.userId);
 
         res.json({ result: true });
     }
 
     public async unlockUser(req: Request, res: Response, next: NextFunction) {
-        const { userId } = req.params;
-
-        if ((await this.assertUserExists(next, userId)) === false) {
+        if ((await this.assertUserExists(next, req.params.userId)) === false) {
             return;
         }
 
-        const result = await this._lockManager.unlock(userId);
+        const result = await this._lockManager.unlock(req.params.userId);
 
         res.json({ result: result });
     }

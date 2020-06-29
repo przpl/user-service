@@ -7,8 +7,6 @@ export abstract class Expirable {
 
     public isExpired(expiresAfter: TimeSpan): boolean {
         const date = (this as any)[this.fieldName];
-        return moment(date)
-            .add(expiresAfter.seconds, "seconds")
-            .isBefore(moment());
+        return moment(date).add(expiresAfter.seconds, "seconds").isBefore(moment());
     }
 }

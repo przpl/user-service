@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction, Router } from "express";
 import { container } from "tsyringe";
+import asyncHandler from "express-async-handler";
 
 import Validator from "../../middleware/validator/validator";
 import AuthMiddleware from "../../middleware/authMiddleware";
@@ -23,7 +24,9 @@ export default class ExternalUserRouter {
                 validator.loginWithGoogle,
                 (req: Request, res: Response, next: NextFunction) => auth.authGoogle(req, res, next),
                 (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.google)
+                asyncHandler((req: Request, res: Response, next: NextFunction) =>
+                    ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.google)
+                )
             );
         }
 
@@ -33,7 +36,9 @@ export default class ExternalUserRouter {
                 validator.loginWithFacebook,
                 (req: Request, res: Response, next: NextFunction) => auth.authFacebook(req, res, next),
                 (req: Request, res: Response, next: NextFunction) => uaMiddleware.parse(req, res, next),
-                (req: Request, res: Response, next: NextFunction) => ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.facebook)
+                asyncHandler((req: Request, res: Response, next: NextFunction) =>
+                    ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.facebook)
+                )
             );
         }
 
