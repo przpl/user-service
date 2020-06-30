@@ -13,8 +13,6 @@ export class RoleEntity extends BaseEntity {
     @PrimaryColumn()
     role: string;
 
-    // TODO - who granted role to the user
-
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 }
