@@ -11,7 +11,7 @@ export class LockManager {
 
     public async getActive(userId: string): Promise<Lock> {
         const entity = await this.getByUserId(userId);
-        if (!entity || moment().isAfter(entity.until)) {
+        if (!entity || this.isLockExpired(entity)) {
             return null;
         }
 
@@ -35,6 +35,10 @@ export class LockManager {
     public async unlock(userId: string): Promise<boolean> {
         const result = await this._repo.delete({ userId: userId });
         return result.affected > 0;
+    }
+
+    private isLockExpired(lock: LockEntity) {
+        return moment().isAfter(lock.until);
     }
 
     private getByUserId(userId: string): Promise<LockEntity> {

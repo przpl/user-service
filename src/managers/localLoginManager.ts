@@ -81,7 +81,7 @@ export class LocalLoginManager {
         if (entity.username === credentials.username) {
             return LoginDuplicateType.username;
         }
-        if (entity.email === credentials.email) {
+        if (entity.phoneCode === credentials.phone.code && entity.phoneNumber === credentials.phone.number) {
             return LoginDuplicateType.phone;
         }
         throw new Error("Unable to find local login duplicate.");
@@ -107,19 +107,16 @@ export class LocalLoginManager {
             return { result: LoginResult.userNotFound, login: null };
         }
 
+        let result = LoginResult.success;
         if ((await this._passService.verify(password, entity.passwordHash)) === false) {
-            return { result: LoginResult.invalidPassword, login: this.toLocalLoginModel(entity) };
+            result = LoginResult.invalidPassword;
+        } else if (this.isEmailNotConfirmed(entity)) {
+            result = LoginResult.emailNotConfirmed;
+        } else if (this.isPhoneNotConfirmed(entity)) {
+            result = LoginResult.phoneNotConfirmed;
         }
 
-        if (this.isEmailNotConfirmed(entity)) {
-            return { result: LoginResult.emailNotConfirmed, login: this.toLocalLoginModel(entity) };
-        }
-
-        if (this.isPhoneNotConfirmed(entity)) {
-            return { result: LoginResult.phoneNotConfirmed, login: this.toLocalLoginModel(entity) };
-        }
-
-        return { result: LoginResult.success, login: this.toLocalLoginModel(entity) };
+        return { result, login: this.toLocalLoginModel(entity) };
     }
 
     // TO-DO: test if works, select:[] returns null
@@ -175,7 +172,7 @@ export class LocalLoginManager {
         if (!confirm) {
             return false;
         }
-        const userId = confirm.userId;
+        const userId = confirm.userId; // confirm reference will be null after remove()
         await this._confirmRepo.remove(confirm);
 
         const update: Partial<LocalLoginEntity> = {};
@@ -184,7 +181,7 @@ export class LocalLoginManager {
         } else {
             update.phoneConfirmed = true;
         }
-        await this._loginRepo.update({ userId: userId }, { emailConfirmed: true });
+        await this._loginRepo.update({ userId: userId }, update);
 
         return true;
     }

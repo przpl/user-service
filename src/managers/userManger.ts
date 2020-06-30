@@ -25,6 +25,6 @@ export class UserManager {
     }
 
     private generateUserId(): string {
-        return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }).replace("+", "0").replace("/", "1"); // TODO, fix, replace all + and / chars
+        return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }).replace(/\+/g, "0").replace(/\//g, "1"); // replace all + and / chars
     }
 }
