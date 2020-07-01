@@ -1,7 +1,6 @@
 import { getRepository, FindConditions } from "typeorm";
 import { singleton } from "tsyringe";
 import moment from "moment";
-import cryptoRandomString from "crypto-random-string";
 
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
 import { Credentials, PrimaryLoginType } from "../models/credentials";
@@ -9,13 +8,13 @@ import { PasswordService } from "../services/passwordService";
 import { NotFoundException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { Config } from "../utils/config/config";
 import { TimeSpan } from "../utils/timeSpan";
-import { CONFIRMATION_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../utils/globalConsts";
 import { ConfirmationEntity, ConfirmationType } from "../dal/entities/confirmationEntity";
 import { ResendCodeLimitException, ResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
 import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
 import { LocalLogin } from "../models/localLogin";
 import { Phone } from "../models/phone";
 import { PasswordReset } from "../models/passwordReset";
+import { generateConfirmationCode, generatePasswordResetCode } from "../services/generator";
 
 export enum LoginDuplicateType {
     none,
@@ -72,6 +71,7 @@ export class LocalLoginManager {
 
     public async isDuplicate(credentials: Credentials): Promise<LoginDuplicateType> {
         const entity = await this._loginRepo.findOne({ where: this.findByConditions(credentials) });
+        const user = entity.user;
         if (!entity) {
             return LoginDuplicateType.none;
         }
@@ -137,7 +137,7 @@ export class LocalLoginManager {
         const entity = new ConfirmationEntity();
         entity.userId = userId;
         entity.subject = subject;
-        entity.code = cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "numeric" });
+        entity.code = generateConfirmationCode();
         entity.type = type;
         entity.sentCount = 1;
         entity.lastSendRequestAt = new Date();
@@ -217,7 +217,6 @@ export class LocalLoginManager {
     }
 
     public async generatePasswordResetCode(login: LocalLogin): Promise<string> {
-        const code = cryptoRandomString({ length: PASSWORD_RESET_CODE_LENGTH, type: "hex" }).toUpperCase();
         let entity = await this._passResetRepo.findOne({ where: { userId: login.userId } });
         if (entity) {
             entity.createdAt = new Date();
@@ -226,10 +225,10 @@ export class LocalLoginManager {
             entity.userId = login.userId;
         }
         entity.method = this.getPasswordResetMethod(login);
-        entity.code = code;
+        entity.code = generatePasswordResetCode();
         await entity.save();
 
-        return code;
+        return entity.code;
     }
 
     public async verifyPassword(userId: string, password: string): Promise<boolean> {

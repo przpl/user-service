@@ -1,18 +1,17 @@
 import { getRepository } from "typeorm";
-import cryptoRandomString from "crypto-random-string";
 import { singleton } from "tsyringe";
 import moment from "moment";
 
 import { SessionEntity } from "../dal/entities/sessionEntity";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { TimeSpan } from "../utils/timeSpan";
-import { REFRESH_TOKEN_LENGTH } from "../utils/globalConsts";
 import { UserAgent } from "../interfaces/userAgent";
 import { CacheDb } from "../dal/cacheDb";
 import { JwtService } from "../services/jwtService";
 import Env from "../utils/config/env";
 import { Config } from "../utils/config/config";
 import { Session } from "../models/session";
+import { generateRefreshToken } from "../services/generator";
 
 const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
 
@@ -30,9 +29,8 @@ export class SessionManager {
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
         await this.manageActiveSessions(userId);
 
-        const token = cryptoRandomString({ length: REFRESH_TOKEN_LENGTH, type: "base64" });
         const entity = new SessionEntity();
-        entity.token = token;
+        entity.token = generateRefreshToken();
         entity.userId = userId;
         entity.createIp = ip;
         entity.lastRefreshIp = ip;
@@ -42,7 +40,7 @@ export class SessionManager {
         entity.lastUseAt = new Date();
         await entity.save();
 
-        return token;
+        return entity.token;
     }
 
     public async refreshSession(refreshToken: string, ip: string): Promise<Session> {

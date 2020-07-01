@@ -6,11 +6,10 @@ import moment from "moment";
 import { MfaEntity, MfaMethod } from "../dal/entities/mfaEntity";
 import { MfaException } from "../exceptions/exceptions";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
-import cryptoRandomString from "crypto-random-string";
-import { MFA_LOGIN_TOKEN_LENGTH } from "../utils/globalConsts";
 import { CacheDb } from "../dal/cacheDb";
 import { Config } from "../utils/config/config";
 import { TimeSpan } from "../utils/timeSpan";
+import { generateMfaLoginToken } from "../services/generator";
 
 const SECRET_ENCODING = "base32";
 
@@ -98,7 +97,7 @@ export class MfaManager {
     }
 
     public async issueLoginToken(userId: string, ip: string): Promise<{ token: string; expiresAt: number }> {
-        const token = cryptoRandomString({ length: MFA_LOGIN_TOKEN_LENGTH, type: "hex" });
+        const token = generateMfaLoginToken();
         await this._cache.setMfaLoginToken(userId, token, ip, this._mfaLoginTTL);
         const expiresAt = moment().add(this._mfaLoginTTL.seconds, "seconds").unix();
 

@@ -1,16 +1,15 @@
-import cryptoRandomString from "crypto-random-string";
 import { singleton } from "tsyringe";
 import { getRepository } from "typeorm";
 
-import { USER_ID_LENGTH } from "../utils/globalConsts";
 import { UserEntity } from "../dal/entities/userEntity";
+import { generateUserId } from "../services/generator";
 
 @singleton()
 export class UserManager {
     private _repo = getRepository(UserEntity);
 
     public async create(): Promise<string> {
-        const entity = new UserEntity(this.generateUserId());
+        const entity = new UserEntity(generateUserId());
         await entity.save();
         return entity.id;
     }
@@ -22,9 +21,5 @@ export class UserManager {
     public async exists(id: string): Promise<boolean> {
         const user = await this._repo.findOne(id, { select: ["id"] }); // select [] always returns null
         return Boolean(user);
-    }
-
-    private generateUserId(): string {
-        return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }).replace(/\+/g, "0").replace(/\//g, "1"); // replace all + and / chars
     }
 }
