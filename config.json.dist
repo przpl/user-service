@@ -61,7 +61,8 @@
         }
     },
     "passwordReset": {
-        "codeTTLMinutes": 1440
+        "codeExpirationTimeInMinutes": 1440,
+        "method": "email" // "email" or 
     },
     "commonFields": {
         "email": {

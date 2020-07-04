@@ -63,7 +63,7 @@ export class LocalLoginManager {
                 time: TimeSpan.fromSeconds(_config.localLogin.phone.resendTimeLimitSeconds),
             },
         };
-        this._passResetCodeTTL = TimeSpan.fromMinutes(_config.passwordReset.codeTTLMinutes);
+        this._passResetCodeTTL = TimeSpan.fromMinutes(_config.passwordReset.codeExpirationTimeInMinutes);
         if (this._passResetCodeTTL.seconds < TimeSpan.fromMinutes(5).seconds) {
             throw new Error("Password reset code expiration time has to be greater than 5 minutes.");
         }
@@ -210,22 +210,23 @@ export class LocalLoginManager {
             throw new ExpiredResetCodeException();
         }
 
+        const userIdBeforeRemoval = passReset.userId;
         await passReset.remove();
 
-        await this._loginRepo.update({ userId: passReset.userId }, { passwordHash: await this._passService.hash(password) });
+        await this._loginRepo.update({ userId: userIdBeforeRemoval }, { passwordHash: await this._passService.hash(password) });
 
-        return passReset.userId;
+        return userIdBeforeRemoval;
     }
 
-    public async generatePasswordResetCode(login: LocalLogin): Promise<string> {
-        let entity = await this._passResetRepo.findOne({ where: { userId: login.userId } });
+    public async generatePasswordResetCode(userId: string, method: "email" | "phone"): Promise<string> {
+        let entity = await this._passResetRepo.findOne({ where: { userId: userId } });
         if (entity) {
             entity.createdAt = new Date();
         } else {
             entity = new PasswordResetEntity();
-            entity.userId = login.userId;
+            entity.userId = userId;
         }
-        entity.method = this.getPasswordResetMethod(login);
+        entity.method = this.getPasswordResetMethod(method);
         entity.code = generatePasswordResetCode();
         await entity.save();
 
@@ -252,12 +253,11 @@ export class LocalLoginManager {
         );
     }
 
-    private getPasswordResetMethod(credentials: Credentials): PasswordResetMethod {
-        const primary = credentials.getPrimary();
-        if (primary === PrimaryLoginType.email) {
+    private getPasswordResetMethod(method: "email" | "phone"): PasswordResetMethod {
+        if (method === "email") {
             return PasswordResetMethod.email;
         }
-        if (primary === PrimaryLoginType.phone) {
+        if (method === "phone") {
             return PasswordResetMethod.phone;
         }
         throw new Error("Invalid password reset method.");

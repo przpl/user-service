@@ -66,7 +66,8 @@ export class Config {
         };
     };
     passwordReset: {
-        codeTTLMinutes: number;
+        codeExpirationTimeInMinutes: number;
+        method: "email" | "phone";
     };
     commonFields: {
         email: FieldConfig;

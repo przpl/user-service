@@ -8,9 +8,9 @@ import { LocalLoginManager } from "../managers/localLoginManager";
 import { LockManager } from "../managers/lockManager";
 import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
 import { QueueService } from "../services/queueService";
-import { PrimaryLoginType } from "../models/credentials";
 import * as errors from "./commonErrors";
 import SecurityLogger from "../utils/securityLogger";
+import { Config } from "../utils/config/config";
 
 @singleton()
 export default class PasswordController {
@@ -18,7 +18,8 @@ export default class PasswordController {
         private _lockManager: LockManager,
         private _loginManager: LocalLoginManager,
         private _queueService: QueueService,
-        private _securityLogger: SecurityLogger
+        private _securityLogger: SecurityLogger,
+        private _config: Config
     ) {}
 
     public async changePassword(req: Request, res: Response, next: NextFunction) {
@@ -49,12 +50,12 @@ export default class PasswordController {
             return res.json({ result: true });
         }
 
-        const code = await this._loginManager.generatePasswordResetCode(login);
+        const method = this._config.passwordReset.method;
+        const code = await this._loginManager.generatePasswordResetCode(login.userId, method);
 
-        const primary = credentials.getPrimary();
-        if (primary === PrimaryLoginType.email) {
+        if (method === "email") {
             this._queueService.pushEmailCode(credentials.email, code);
-        } else if (primary === PrimaryLoginType.phone) {
+        } else if (method === "phone") {
             this._queueService.pushPhoneCode(credentials.phone, code);
         }
 
