@@ -17,7 +17,7 @@ export enum LoggerLevel {
 export default class Logger {
     private _logger: winston.Logger;
 
-    constructor(disabled: boolean, level?: LoggerLevel) {
+    constructor(disabled: boolean, level?: LoggerLevel, fileName = "./logfile.log") {
         if (disabled) {
             return;
         }
@@ -27,7 +27,7 @@ export default class Logger {
             format: winston.format(jsonFormatter)(),
             transports: [
                 new winston.transports.File({
-                    filename: "./logfile.log",
+                    filename: fileName,
                     maxsize: 262144000, // 250MB
                     maxFiles: 10,
                 }),

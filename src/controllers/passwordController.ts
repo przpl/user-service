@@ -10,10 +10,16 @@ import { extractCredentialsWithoutUsername } from "../models/utils/toModelMapper
 import { QueueService } from "../services/queueService";
 import { PrimaryLoginType } from "../models/credentials";
 import * as errors from "./commonErrors";
+import SecurityLogger from "../utils/securityLogger";
 
 @singleton()
 export default class PasswordController {
-    constructor(private _lockManager: LockManager, private _loginManager: LocalLoginManager, private _queueService: QueueService) {}
+    constructor(
+        private _lockManager: LockManager,
+        private _loginManager: LocalLoginManager,
+        private _queueService: QueueService,
+        private _securityLogger: SecurityLogger
+    ) {}
 
     public async changePassword(req: Request, res: Response, next: NextFunction) {
         try {
@@ -26,6 +32,8 @@ export default class PasswordController {
             }
             return forwardInternalError(next, error);
         }
+
+        this._securityLogger.info(`Password changed for user ${req.authenticatedUser.sub} by ${req.ip}`);
 
         res.json({ result: true });
     }
@@ -50,12 +58,15 @@ export default class PasswordController {
             this._queueService.pushPhoneCode(credentials.phone, code);
         }
 
+        this._securityLogger.info(`Forgot password called for user ${login.userId} by ${req.ip}`);
+
         res.json({ result: true });
     }
 
     public async resetPassword(req: Request, res: Response, next: NextFunction) {
+        let userId: string;
         try {
-            await this._loginManager.resetPassword(req.body.token, req.body.password);
+            userId = await this._loginManager.resetPassword(req.body.token, req.body.password);
         } catch (error) {
             if (error instanceof NotFoundException) {
                 return errors.invalidToken(next);
@@ -64,6 +75,8 @@ export default class PasswordController {
             }
             return forwardInternalError(next, error);
         }
+
+        this._securityLogger.info(`Password reset for user ${userId} by ${req.ip}`);
 
         res.json({ result: true });
     }

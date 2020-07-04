@@ -23,6 +23,7 @@ import { handleNotFoundError, handleError } from "./utils/expressUtils";
 import { configurePassport } from "./middleware/passport";
 import { ConfigLoader, Config } from "./utils/config/config";
 import Logger from "./utils/logger";
+import SecurityLogger from "./utils/securityLogger";
 
 function loadEnv() {
     const envPath = `${__dirname}/.env`;
@@ -88,6 +89,7 @@ async function start() {
 
     const logger = new Logger(env.loggerDisabled, env.loggerLevel);
     container.register<Logger>(Logger, { useValue: logger });
+    container.register<SecurityLogger>(SecurityLogger, { useValue: new SecurityLogger(false) });
 
     const dbConnection = await connectToDb();
 

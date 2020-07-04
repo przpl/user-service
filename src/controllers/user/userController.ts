@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { container, singleton } from "tsyringe";
+import moment from "moment";
 
 import { JwtService } from "../../services/jwtService";
 import { SessionManager } from "../../managers/sessionManager";
@@ -14,6 +15,8 @@ import { Config } from "../../utils/config/config";
 import { QueueService } from "../../services/queueService";
 import * as errors from "../commonErrors";
 import { captureExceptionWithSentry } from "../../utils/sentryUtils";
+import SecurityLogger from "../../utils/securityLogger";
+import { Session } from "../../models/session";
 
 @singleton()
 export default class UserController {
@@ -24,6 +27,7 @@ export default class UserController {
     protected _jwtService = container.resolve(JwtService);
     protected _queueService = container.resolve(QueueService);
     protected _config = container.resolve(Config);
+    protected _securityLogger = container.resolve(SecurityLogger);
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
         const { mfaLoginToken, oneTimePassword, userId } = req.body;
@@ -42,11 +46,21 @@ export default class UserController {
     }
 
     public async logout(req: Request, res: Response, next: NextFunction) {
+        let removedSession: Session;
         try {
-            await this._sessionManager.revokeSession(req.cookies.refreshToken);
+            removedSession = await this._sessionManager.revokeSession(req.cookies.refreshToken);
         } catch (error) {
             captureExceptionWithSentry(error, req.authenticatedUser);
         }
+
+        if (removedSession) {
+            this._securityLogger.info(
+                `User ${removedSession.userId} session revoked by ${req.ip}. Created by: ${removedSession.createIp} at ${moment(
+                    removedSession.lastUseAt
+                ).unix()}, last refresh by ${removedSession.lastRefreshIp}`
+            );
+        }
+
         res.send({ result: true });
     }
 

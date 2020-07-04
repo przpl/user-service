@@ -71,7 +71,6 @@ export class LocalLoginManager {
 
     public async isDuplicate(credentials: Credentials): Promise<LoginDuplicateType> {
         const entity = await this._loginRepo.findOne({ where: this.findByConditions(credentials) });
-        const user = entity.user;
         if (!entity) {
             return LoginDuplicateType.none;
         }
@@ -200,7 +199,7 @@ export class LocalLoginManager {
         await entity.save();
     }
 
-    public async resetPassword(code: string, password: string) {
+    public async resetPassword(code: string, password: string): Promise<string> {
         const passReset = await this._passResetRepo.findOne({ where: { code: code.toUpperCase() } });
         if (!passReset) {
             throw new NotFoundException();
@@ -214,6 +213,8 @@ export class LocalLoginManager {
         await passReset.remove();
 
         await this._loginRepo.update({ userId: passReset.userId }, { passwordHash: await this._passService.hash(password) });
+
+        return passReset.userId;
     }
 
     public async generatePasswordResetCode(login: LocalLogin): Promise<string> {

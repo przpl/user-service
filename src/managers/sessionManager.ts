@@ -12,6 +12,7 @@ import Env from "../utils/config/env";
 import { Config } from "../utils/config/config";
 import { Session } from "../models/session";
 import { generateRefreshToken } from "../services/generator";
+import { session } from "passport";
 
 const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
 
@@ -69,15 +70,16 @@ export class SessionManager {
         return true;
     }
 
-    public async revokeSession(refreshToken: string): Promise<boolean> {
+    public async revokeSession(refreshToken: string): Promise<Session> {
         const entity = await this._repo.findOne({ where: { token: refreshToken } });
         if (!entity) {
-            return false;
+            return null;
         }
+
         await this.revokeAccessTokens([entity]);
         await this.removeSession(entity);
 
-        return true;
+        return this.toSessionModel(entity);
     }
 
     private async assertRefreshTokenNotStale(session: SessionEntity) {
@@ -139,6 +141,6 @@ export class SessionManager {
     }
 
     private toSessionModel(entity: SessionEntity): Session {
-        return new Session(entity.token, entity.userId, entity.lastUseAt);
+        return new Session(entity.token, entity.userId, entity.lastUseAt, entity.createIp, entity.lastRefreshIp, entity.createdAt);
     }
 }
