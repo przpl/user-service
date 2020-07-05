@@ -8,7 +8,7 @@ import { UserAgent } from "../../interfaces/userAgent";
 import { RoleManager } from "../../managers/roleManager";
 import { LockManager } from "../../managers/lockManager";
 import { MfaMethod } from "../../dal/entities/mfaEntity";
-import { MfaManager } from "../../managers/mfaManager";
+import { MfaManager, MfaVerificationResult } from "../../managers/mfaManager";
 import { RequestBody } from "../../types/express/requestBody";
 import { Credentials } from "../../models/credentials";
 import { Config } from "../../utils/config/config";
@@ -37,7 +37,12 @@ export default class UserController {
             return errors.invalidMfaToken(next);
         }
 
-        if ((await this._mfaManager.verifyTotp(userId, oneTimePassword)) === false) {
+        const verificationResult = await this._mfaManager.verifyTotp(userId, oneTimePassword);
+        if (verificationResult === MfaVerificationResult.limitExceeded) {
+            this._securityLogger.warn(`MFA invalid limit exceeded for user ${userId}`);
+            return errors.mfaLimitExceeded(next);
+        }
+        if (verificationResult === MfaVerificationResult.invalidPassword) {
             this._securityLogger.warn(`Invalid OTP for user ${userId}`);
             return errors.invalidOneTimePassword(next);
         }

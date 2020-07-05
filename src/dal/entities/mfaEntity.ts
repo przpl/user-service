@@ -38,6 +38,9 @@ export class MfaEntity extends BaseEntity {
     @Column()
     ip: string;
 
+    @Column({ default: 0 })
+    invalidAttempts: number;
+
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 }

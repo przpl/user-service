@@ -41,6 +41,8 @@ export const invalidMfaToken = (next: NF) => forwardError(next, "invalidMfaToken
 
 export const invalidOneTimePassword = (next: NF) => forwardError(next, "invalidOneTimePassword", Status.UNAUTHORIZED);
 
+export const mfaLimitExceeded = (next: NF) => forwardError(next, "mfaLimitExceeded", Status.UNAUTHORIZED);
+
 export const mfaAlreadyActivated = (next: NF) => forwardError(next, "mfaAlreadyActivated", Status.FORBIDDEN);
 // #endregion
 

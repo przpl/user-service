@@ -7,7 +7,8 @@
         "mfa": {
             "enabled": true,
             "appName": "App Name for Google Authenticator",
-            "loginTokenTTLSeconds": 300
+            "loginTokenTTLSeconds": 300,
+            "maxInvalidAttempts": 3
         },
         "bcryptRounds": 12,
         "reCaptcha": {

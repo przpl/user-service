@@ -13,6 +13,7 @@ export class Config {
             enabled: boolean;
             appName: string;
             loginTokenTTLSeconds: number;
+            maxInvalidAttempts: number;
         };
         bcryptRounds: number;
         reCaptcha: {

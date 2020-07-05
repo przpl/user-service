@@ -13,10 +13,17 @@ import { generateMfaLoginToken } from "../services/generator";
 
 const SECRET_ENCODING = "base32";
 
+export enum MfaVerificationResult {
+    success,
+    invalidPassword,
+    limitExceeded,
+}
+
 @singleton()
 export class MfaManager {
     private _repo = getRepository(MfaEntity);
     private _mfaLoginTTL: TimeSpan;
+    private _attemptsLimit: number;
 
     constructor(private _cache: CacheDb, config: Config) {
         if (!_cache) {
@@ -26,6 +33,7 @@ export class MfaManager {
         if (this._mfaLoginTTL.seconds <= 0) {
             throw new Error("MFA Login Token TTL has to be greater than 0 seconds.");
         }
+        this._attemptsLimit = config.security.mfa.maxInvalidAttempts;
     }
 
     public async getActiveMethod(userId: string): Promise<MfaMethod> {
@@ -74,13 +82,29 @@ export class MfaManager {
         await entity.save();
     }
 
-    public async verifyTotp(userId: string, oneTimePass: string): Promise<boolean> {
+    public async verifyTotp(userId: string, oneTimePass: string): Promise<MfaVerificationResult> {
         const entity = await this.getByUserId(userId);
         if (!entity || !entity.enabled) {
-            return false;
+            return MfaVerificationResult.invalidPassword;
         }
 
-        return this.verifyTotpToken(entity.secret, oneTimePass);
+        if (entity.invalidAttempts >= this._attemptsLimit) {
+            return MfaVerificationResult.limitExceeded;
+        }
+
+        const result = this.verifyTotpToken(entity.secret, oneTimePass);
+        if (result) {
+            if (entity.invalidAttempts > 0) {
+                entity.invalidAttempts = 0;
+                await entity.save();
+            }
+            return MfaVerificationResult.success;
+        }
+
+        entity.invalidAttempts++;
+        await entity.save();
+
+        return MfaVerificationResult.invalidPassword;
     }
 
     public async disableTotp(userId: string, oneTimePass: string) {
