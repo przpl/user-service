@@ -3,6 +3,7 @@ import { getRepository } from "typeorm";
 
 import { UserEntity } from "../dal/entities/userEntity";
 import { generateUserId } from "../services/generator";
+import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class UserManager {
@@ -19,6 +20,7 @@ export class UserManager {
     }
 
     public async exists(id: string): Promise<boolean> {
+        guardNotUndefinedOrNull(id);
         const user = await this._repo.findOne(id, { select: ["id"] }); // select [] always returns null
         return Boolean(user);
     }

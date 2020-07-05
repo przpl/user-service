@@ -12,7 +12,7 @@ import Env from "../utils/config/env";
 import { Config } from "../utils/config/config";
 import { Session } from "../models/session";
 import { generateRefreshToken } from "../services/generator";
-import { session } from "passport";
+import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
 
@@ -45,7 +45,9 @@ export class SessionManager {
     }
 
     public async refreshSession(refreshToken: string, ip: string): Promise<Session> {
-        const entity = await this._repo.findOne({ where: { token: refreshToken } });
+        guardNotUndefinedOrNull(refreshToken);
+
+        const entity = await this._repo.findOne(refreshToken);
         if (!entity) {
             return null;
         }
@@ -60,6 +62,8 @@ export class SessionManager {
     }
 
     public async revokeAllSessions(userId: string): Promise<boolean> {
+        guardNotUndefinedOrNull(userId);
+
         const entities = await this._repo.find({ where: { userId: userId } });
         if (entities.length === 0) {
             return false;
@@ -71,7 +75,9 @@ export class SessionManager {
     }
 
     public async revokeSession(refreshToken: string): Promise<Session> {
-        const entity = await this._repo.findOne({ where: { token: refreshToken } });
+        guardNotUndefinedOrNull(refreshToken);
+
+        const entity = await this._repo.findOne(refreshToken);
         if (!entity) {
             return null;
         }
@@ -127,6 +133,8 @@ export class SessionManager {
     }
 
     private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {
+        guardNotUndefinedOrNull(userId);
+
         const sessions = await this._repo.find({ where: { userId: userId } });
         if (sessions.length < maxSessionsPerUser) {
             return sessions.length;

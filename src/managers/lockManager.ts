@@ -4,6 +4,7 @@ import moment from "moment";
 
 import { LockEntity } from "../dal/entities/lockEntity";
 import { Lock } from "../models/lock";
+import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class LockManager {
@@ -42,7 +43,8 @@ export class LockManager {
     }
 
     private getByUserId(userId: string): Promise<LockEntity> {
-        return this._repo.findOne({ where: { userId: userId } });
+        guardNotUndefinedOrNull(userId);
+        return this._repo.findOne(userId);
     }
 
     private toLockModel(entity: LockEntity): Lock {

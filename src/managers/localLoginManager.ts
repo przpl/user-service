@@ -15,6 +15,7 @@ import { LocalLogin } from "../models/localLogin";
 import { Phone } from "../models/phone";
 import { PasswordReset } from "../models/passwordReset";
 import { generateConfirmationCode, generatePasswordResetCode } from "../services/generator";
+import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 export enum LoginDuplicateType {
     none,
@@ -145,6 +146,9 @@ export class LocalLoginManager {
     }
 
     public async getConfirmationCode(subject: string, type: ConfirmationType): Promise<string> {
+        guardNotUndefinedOrNull(subject);
+        guardNotUndefinedOrNull(type);
+
         const entity = await this._confirmRepo.findOne({ subject: subject, type: type });
         if (!entity) {
             return null;
@@ -167,6 +171,9 @@ export class LocalLoginManager {
     }
 
     public async confirm(subject: string, code: string, type: ConfirmationType): Promise<boolean> {
+        guardNotUndefinedOrNull(subject);
+        guardNotUndefinedOrNull(code);
+
         const confirm = await this._confirmRepo.findOne({ subject: subject, code: code });
         if (!confirm) {
             return false;
@@ -186,7 +193,9 @@ export class LocalLoginManager {
     }
 
     public async changePassword(userId: string, oldPassword: string, newPassword: string) {
-        const entity = await this._loginRepo.findOne({ where: { userId: userId } });
+        guardNotUndefinedOrNull(userId);
+
+        const entity = await this._loginRepo.findOne(userId);
         if (!entity) {
             throw new UserNotLocalException();
         }
@@ -200,6 +209,8 @@ export class LocalLoginManager {
     }
 
     public async resetPassword(code: string, password: string): Promise<string> {
+        guardNotUndefinedOrNull(code);
+
         const passReset = await this._passResetRepo.findOne({ where: { code: code.toUpperCase() } });
         if (!passReset) {
             throw new NotFoundException();
@@ -219,7 +230,9 @@ export class LocalLoginManager {
     }
 
     public async generatePasswordResetCode(userId: string, method: "email" | "phone"): Promise<string> {
-        let entity = await this._passResetRepo.findOne({ where: { userId: userId } });
+        guardNotUndefinedOrNull(userId);
+
+        let entity = await this._passResetRepo.findOne(userId);
         if (entity) {
             if (!moment(entity.createdAt).add(60, "seconds").isBefore()) {
                 return null;
@@ -237,7 +250,9 @@ export class LocalLoginManager {
     }
 
     public async verifyPassword(userId: string, password: string): Promise<boolean> {
-        const entity = await this._loginRepo.findOne({ userId: userId });
+        guardNotUndefinedOrNull(userId);
+
+        const entity = await this._loginRepo.findOne(userId);
         if (!entity) {
             return false;
         }

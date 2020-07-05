@@ -10,6 +10,7 @@ import { CacheDb } from "../dal/cacheDb";
 import { Config } from "../utils/config/config";
 import { TimeSpan } from "../utils/timeSpan";
 import { generateMfaLoginToken } from "../services/generator";
+import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 const SECRET_ENCODING = "base32";
 
@@ -142,7 +143,8 @@ export class MfaManager {
     }
 
     private getByUserId(userId: string): Promise<MfaEntity> {
-        return this._repo.findOne({ where: { userId: userId } });
+        guardNotUndefinedOrNull(userId);
+        return this._repo.findOne(userId);
     }
 
     private verifyTotpToken(secret: string, otp: string): boolean {
