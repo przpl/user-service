@@ -52,6 +52,9 @@ export default class PasswordController {
 
         const method = this._config.passwordReset.method;
         const code = await this._loginManager.generatePasswordResetCode(login.userId, method);
+        if (!code) {
+            return res.json({ result: true });
+        }
 
         if (method === "email") {
             this._queueService.pushEmailCode(credentials.email, code, "forgotPassword");

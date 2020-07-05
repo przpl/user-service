@@ -221,6 +221,9 @@ export class LocalLoginManager {
     public async generatePasswordResetCode(userId: string, method: "email" | "phone"): Promise<string> {
         let entity = await this._passResetRepo.findOne({ where: { userId: userId } });
         if (entity) {
+            if (!moment(entity.createdAt).add(60, "seconds").isBefore()) {
+                return null;
+            }
             entity.createdAt = new Date();
         } else {
             entity = new PasswordResetEntity();
