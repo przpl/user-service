@@ -12,7 +12,7 @@ import { MfaManager } from "../../managers/mfaManager";
 import { RequestBody } from "../../types/express/requestBody";
 import { Credentials } from "../../models/credentials";
 import { Config } from "../../utils/config/config";
-import { QueueService } from "../../services/queueService";
+import { MessageBroker } from "../../services/messageBroker";
 import * as errors from "../commonErrors";
 import { captureExceptionWithSentry } from "../../utils/sentryUtils";
 import SecurityLogger from "../../utils/securityLogger";
@@ -25,7 +25,7 @@ export default class UserController {
     protected _lockManager = container.resolve(LockManager);
     protected _mfaManager = container.resolve(MfaManager);
     protected _jwtService = container.resolve(JwtService);
-    protected _queueService = container.resolve(QueueService);
+    protected _queueService = container.resolve(MessageBroker);
     protected _config = container.resolve(Config);
     protected _securityLogger = container.resolve(SecurityLogger);
 
@@ -96,9 +96,9 @@ export default class UserController {
             user[fieldName] = (body as any)[fieldName];
         }
         if (credentials) {
-            Object.assign(user, credentials);
+            Object.assign(user, credentials.getAll());
         }
-        this._queueService.pushNewUser(user);
+        this._queueService.publishNewUser(user);
     }
 
     private async sendMfaLoginToken(req: Request, res: Response, userId: string) {

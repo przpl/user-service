@@ -3,7 +3,7 @@ import { singleton } from "tsyringe";
 
 import { forwardInternalError } from "../utils/expressUtils";
 import { ResendCodeLimitException, ResendCodeTimeLimitException } from "../exceptions/exceptions";
-import { QueueService } from "../services/queueService";
+import { MessageBroker } from "../services/messageBroker";
 import { LocalLoginManager } from "../managers/localLoginManager";
 import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
 import { PrimaryLoginType } from "../models/credentials";
@@ -14,7 +14,7 @@ import * as errors from "./commonErrors";
 
 @singleton()
 export default class ConfirmationController {
-    constructor(private _loginManager: LocalLoginManager, private _queueService: QueueService) {}
+    constructor(private _loginManager: LocalLoginManager, private _queueService: MessageBroker) {}
 
     public async confirm(req: Request, res: Response, next: NextFunction) {
         const subject = this.extractSubject(req.body);
@@ -44,9 +44,9 @@ export default class ConfirmationController {
         }
 
         if (subject.type === ConfirmationType.email) {
-            this._queueService.pushEmailCode(subject.value, code);
+            this._queueService.pushEmailCode(subject.value, code, "confirmAccount");
         } else if (subject.type === ConfirmationType.phone) {
-            this._queueService.pushPhoneCode(this.extractPhone(req.body), code);
+            this._queueService.pushPhoneCode(this.extractPhone(req.body), code, "confirmAccount");
         }
 
         res.json({ result: true });

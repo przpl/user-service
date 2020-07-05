@@ -24,6 +24,9 @@ import { configurePassport } from "./middleware/passport";
 import { ConfigLoader, Config } from "./utils/config/config";
 import Logger from "./utils/logger";
 import SecurityLogger from "./utils/securityLogger";
+import { MessageBroker } from "./services/messageBroker";
+
+let logger: Logger;
 
 function loadEnv() {
     const envPath = `${__dirname}/.env`;
@@ -72,10 +75,30 @@ async function connectToDb() {
     try {
         conn = await createConnection();
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
+        logger.error(error.message);
         process.exit(1);
     }
     return conn;
+}
+
+async function connectToMessageBroker(env: Env) {
+    const messageBroker = new MessageBroker(
+        env.messageBroker.host,
+        env.messageBroker.port,
+        env.messageBroker.username,
+        env.messageBroker.password
+    );
+    try {
+        await messageBroker.connectAndSubscribe();
+        console.log("Connected with message broker");
+    } catch (error) {
+        const msg = `Error with message broker: ${error}`;
+        console.log(msg);
+        logger.error(msg);
+        process.exit(1);
+    }
+    return messageBroker;
 }
 
 async function start() {
@@ -87,14 +110,16 @@ async function start() {
 
     const config = loadConfig();
 
-    const logger = new Logger(env.loggerDisabled, env.loggerLevel);
+    logger = new Logger(env.loggerDisabled, env.loggerLevel);
     container.register<Logger>(Logger, { useValue: logger });
     container.register<SecurityLogger>(SecurityLogger, { useValue: new SecurityLogger(false) });
 
     const dbConnection = await connectToDb();
+    const messageBroker = await connectToMessageBroker(env);
 
     container.register<Env>(Env, { useValue: env });
     container.register<Config>(Config, { useValue: config });
+    container.register<MessageBroker>(MessageBroker, { useValue: messageBroker });
 
     const app = express();
     if (env.isDev()) {

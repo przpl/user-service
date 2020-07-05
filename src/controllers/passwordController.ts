@@ -7,7 +7,7 @@ import { ExpiredResetCodeException } from "../exceptions/exceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
 import { LockManager } from "../managers/lockManager";
 import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
-import { QueueService } from "../services/queueService";
+import { MessageBroker } from "../services/messageBroker";
 import * as errors from "./commonErrors";
 import SecurityLogger from "../utils/securityLogger";
 import { Config } from "../utils/config/config";
@@ -17,7 +17,7 @@ export default class PasswordController {
     constructor(
         private _lockManager: LockManager,
         private _loginManager: LocalLoginManager,
-        private _queueService: QueueService,
+        private _queueService: MessageBroker,
         private _securityLogger: SecurityLogger,
         private _config: Config
     ) {}
@@ -54,9 +54,9 @@ export default class PasswordController {
         const code = await this._loginManager.generatePasswordResetCode(login.userId, method);
 
         if (method === "email") {
-            this._queueService.pushEmailCode(credentials.email, code);
+            this._queueService.pushEmailCode(credentials.email, code, "forgotPassword");
         } else if (method === "phone") {
-            this._queueService.pushPhoneCode(credentials.phone, code);
+            this._queueService.pushPhoneCode(credentials.phone, code, "forgotPassword");
         }
 
         this._securityLogger.info(`Forgot password called for user ${login.userId} by ${req.ip}`);

@@ -29,6 +29,14 @@ export class Credentials {
         return this._phone;
     }
 
+    public getAll() {
+        return {
+            email: this._email,
+            username: this._username,
+            phone: this._phone,
+        };
+    }
+
     public getPrimary(): PrimaryLoginType {
         let type: PrimaryLoginType = null;
         let notEmpty = 0;

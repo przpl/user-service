@@ -78,6 +78,15 @@ export default class Env {
         return process.env.SENTRY_KEY;
     }
 
+    public get messageBroker(): { host: string; port: number; username: string; password: string } {
+        return {
+            host: process.env.MESSAGE_BROKER_HOST || "localhost",
+            port: process.env.MESSAGE_BROKER_PORT ? Number(process.env.MESSAGE_BROKER_PORT) : 5672,
+            username: process.env.MESSAGE_BROKER_USER,
+            password: process.env.MESSAGE_BROKER_PASSWORD,
+        };
+    }
+
     public validate(): ConfigValidationResult[] {
         const result: ConfigValidationResult[] = [];
         if (!this.administrationKey) {
