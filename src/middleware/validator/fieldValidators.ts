@@ -1,4 +1,4 @@
-import { ValidationChain, body, cookie } from "express-validator";
+import { ValidationChain, body, cookie, param } from "express-validator";
 
 import {
     USER_ID_LENGTH,
@@ -25,6 +25,12 @@ export const FIELD_ERROR_MSG = {
 
 export const fieldValidators = {
     userId: body("userId")
+        .isString()
+        .withMessage(FIELD_ERROR_MSG.isString)
+        .trim()
+        .isLength({ min: USER_ID_LENGTH, max: USER_ID_LENGTH })
+        .withMessage(FIELD_ERROR_MSG.isLength),
+    userIdParam: param("userId")
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()

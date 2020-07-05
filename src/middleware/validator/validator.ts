@@ -1,18 +1,14 @@
-import { Request, Response, NextFunction } from "express";
-import { validationResult, body, ValidationChain, oneOf } from "express-validator";
-import HttpStatus from "http-status-codes";
+import { body, oneOf } from "express-validator";
 import PasswordValidator from "password-validator";
 import { singleton } from "tsyringe";
 
-import { forwardError } from "../../utils/expressUtils";
-import { ErrorResponse } from "../../interfaces/errorResponse";
 import { FIELD_ERROR_MSG, fieldValidators } from "./fieldValidators";
 import { Config } from "../../utils/config/config";
-
-type ValidatorArray = (ValidationChain | ((req: Request, res: Response<any>, next: NextFunction) => void))[];
+import { ValidatorArray } from "./validatorArray";
+import { AbstractValidator } from "./abstractValidator";
 
 @singleton()
-export default class Validator {
+export default class Validator extends AbstractValidator {
     public login: ValidatorArray = [];
     public register: ValidatorArray = [];
     public changePassword: ValidatorArray = [];
@@ -31,6 +27,7 @@ export default class Validator {
     public disableMfa: ValidatorArray = [];
 
     constructor(config: Config) {
+        super();
         const cfg = config.commonFields;
         fieldValidators.email = (isRequired) => {
             const rule = body("email");
@@ -204,24 +201,5 @@ export default class Validator {
         if (reCaptchaEnabled.resetPassword) {
             this.resetPassword.unshift(fieldValidators.reCaptcha);
         }
-    }
-
-    private validate(req: Request, res: Response, next: NextFunction) {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            const data = errors.array();
-            for (const d of data) {
-                delete d.nestedErrors;
-            }
-            const errorsList: ErrorResponse[] = [
-                {
-                    id: "dataValidationFailed",
-                    data: data,
-                },
-            ];
-            return forwardError(next, errorsList, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-
-        next();
     }
 }
