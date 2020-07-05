@@ -33,10 +33,12 @@ export default class UserController {
         const { mfaLoginToken, oneTimePassword, userId } = req.body;
 
         if ((await this._mfaManager.verifyLoginToken(userId, mfaLoginToken, req.ip)) === false) {
+            this._securityLogger.error(`Invalid login token for user ${userId}`);
             return errors.invalidMfaToken(next);
         }
 
         if ((await this._mfaManager.verifyTotp(userId, oneTimePassword)) === false) {
+            this._securityLogger.warn(`Invalid OTP for user ${userId}`);
             return errors.invalidOneTimePassword(next);
         }
 
