@@ -25,6 +25,7 @@ export default class Validator extends AbstractValidator {
     public loginWithMfa: ValidatorArray = [];
     public enableMfa: ValidatorArray = [];
     public disableMfa: ValidatorArray = [];
+    public finishExternalUserRegistration: ValidatorArray = [];
 
     constructor(config: Config) {
         super();
@@ -148,7 +149,7 @@ export default class Validator extends AbstractValidator {
                 validation.isAlpha();
             }
 
-            fieldValidators.register = validation;
+            fieldValidators.additionalRegisterField.push(validation);
         }
 
         this.login = [
@@ -161,7 +162,7 @@ export default class Validator extends AbstractValidator {
             fieldValidators.username(config.localLogin.username.required),
             ...fieldValidators.phone(config.localLogin.phone.required),
             fieldValidators.password("password"),
-            fieldValidators.register,
+            ...fieldValidators.additionalRegisterField,
             this.validate,
         ];
         this.changePassword = [fieldValidators.oldPassword, fieldValidators.password("new"), this.validate];
@@ -178,6 +179,14 @@ export default class Validator extends AbstractValidator {
         this.loginWithMfa = [fieldValidators.mfaLoginToken, fieldValidators.oneTimePassword, fieldValidators.userId, this.validate];
         this.enableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
         this.disableMfa = [fieldValidators.password("password"), fieldValidators.oneTimePassword, this.validate];
+
+        this.finishExternalUserRegistration = [
+            fieldValidators.externalUserRegistrationJwt,
+            fieldValidators.username(config.localLogin.username.required),
+            ...fieldValidators.phone(config.localLogin.phone.required),
+            ...fieldValidators.additionalRegisterField,
+            this.validate,
+        ];
 
         if (config.security.reCaptcha.enabled) {
             this.addReCaptchaValidators(config);

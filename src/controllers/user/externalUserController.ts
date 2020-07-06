@@ -2,15 +2,20 @@ import { Request, Response, NextFunction } from "express";
 import { singleton } from "tsyringe";
 
 import { UserManager } from "../../managers/userManger";
-import { ExternalUser } from "../../middleware/passport";
 import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
 import UserController from "./userController";
 import { ExternalLoginManager } from "../../managers/externalLoginManager";
 import { RequestBody } from "../../types/express/requestBody";
+import { ExternalUserJwtService } from "../../services/externalUserJwtService";
+import { ExternalUser } from "../../middleware/passport";
 
 @singleton()
 export default class ExternalUserController extends UserController {
-    constructor(private _userManager: UserManager, private _loginManager: ExternalLoginManager) {
+    constructor(
+        private _userManager: UserManager,
+        private _loginManager: ExternalLoginManager,
+        private _externalJwtService: ExternalUserJwtService
+    ) {
         super();
     }
 
@@ -18,14 +23,24 @@ export default class ExternalUserController extends UserController {
         const externalUser = req.user as ExternalUser;
         let userId = await this._loginManager.getUserId(externalUser.id, provider);
         if (!userId) {
-            // TODO if other info is required, send registration token
-
+            if (
+                this._config.localLogin.username.required ||
+                this._config.localLogin.phone.required ||
+                Object.keys(this._config.additionalFields.registerEndpoint).length > 0
+            ) {
+                return res.json({ registrationToken: this._externalJwtService.issueToken(externalUser, provider) });
+            }
             userId = await this.register(req.body, externalUser.id, externalUser.email, provider);
-        }
-
-        if ((await this.handleUserLock(next, userId)) === false) {
+        } else if ((await this.handleUserLock(next, userId)) === false) {
             return;
         }
+
+        this.sendTokens(req, res, userId);
+    }
+
+    public async finishRegistration(req: Request, res: Response, next: NextFunction) {
+        const tokenData = this._externalJwtService.decodeToken(req.body.token);
+        const userId = await this.register(req.body, tokenData.id, tokenData.email, tokenData.provider);
 
         this.sendTokens(req, res, userId);
     }

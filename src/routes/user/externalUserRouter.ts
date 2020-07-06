@@ -15,10 +15,10 @@ export default class ExternalUserRouter {
         const ctrl = container.resolve(ExternalUserController);
         const auth = container.resolve(AuthMiddleware);
         const validator = container.resolve(Validator);
-        const config = container.resolve(Config);
+        const config = container.resolve(Config).externalLogin;
         const uaMiddleware = container.resolve(UserAgentMiddleware);
 
-        if (config.externalLogin.google.enabled) {
+        if (config.google.enabled) {
             router.post(
                 "/google",
                 validator.loginWithGoogle,
@@ -30,7 +30,7 @@ export default class ExternalUserRouter {
             );
         }
 
-        if (config.externalLogin.facebook.enabled) {
+        if (config.facebook.enabled) {
             router.post(
                 "/facebook",
                 validator.loginWithFacebook,
@@ -39,6 +39,14 @@ export default class ExternalUserRouter {
                 asyncHandler((req: Request, res: Response, next: NextFunction) =>
                     ctrl.registerOrLogin(req, res, next, ExternalLoginProvider.facebook)
                 )
+            );
+        }
+
+        if (config.google.enabled || config.facebook.enabled) {
+            router.post(
+                "/",
+                validator.finishExternalUserRegistration,
+                asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.finishRegistration(req, res, next))
             );
         }
 

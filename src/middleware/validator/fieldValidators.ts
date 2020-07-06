@@ -56,7 +56,7 @@ export const fieldValidators = {
         // eslint-disable-next-line prettier/prettier
         .matches("^[0-9a-zA-Z+/=]+$")
         .withMessage(FIELD_ERROR_MSG.isBase64),
-    register: {} as ValidationChain,
+    additionalRegisterField: [] as ValidationChain[],
     weakPassword: {} as ValidationChain,
     oldPassword: {} as ValidationChain,
     resetPassword: body("token")
@@ -102,6 +102,12 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
         .isLength({ min: 10, max: 500 })
+        .withMessage(FIELD_ERROR_MSG.isLength),
+    externalUserRegistrationJwt: body("token")
+        .isString()
+        .withMessage(FIELD_ERROR_MSG.isString)
+        .trim()
+        .isLength({ min: 1, max: 500 })
         .withMessage(FIELD_ERROR_MSG.isLength),
     phone: null as (isRequired: boolean) => ValidationChain[],
 };
