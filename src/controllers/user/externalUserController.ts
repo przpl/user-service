@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { singleton } from "tsyringe";
+import HttpStatus from "http-status-codes";
 
 import { UserManager } from "../../managers/userManger";
 import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
@@ -8,6 +9,7 @@ import { ExternalLoginManager } from "../../managers/externalLoginManager";
 import { RequestBody } from "../../types/express/requestBody";
 import { ExternalUserJwtService } from "../../services/externalUserJwtService";
 import { ExternalUser } from "../../middleware/passport";
+import { forwardError } from "../../utils/expressUtils";
 
 @singleton()
 export default class ExternalUserController extends UserController {
@@ -40,7 +42,12 @@ export default class ExternalUserController extends UserController {
 
     public async finishRegistration(req: Request, res: Response, next: NextFunction) {
         const tokenData = this._externalJwtService.decodeToken(req.body.token);
-        const userId = await this.register(req.body, tokenData.id, tokenData.email, tokenData.provider);
+        let userId = await this._loginManager.getUserId(tokenData.id, tokenData.provider);
+        if (userId) {
+            return forwardError(next, "userAlreadyRegistered", HttpStatus.BAD_REQUEST);
+        }
+
+        userId = await this.register(req.body, tokenData.id, tokenData.email, tokenData.provider);
 
         this.sendTokens(req, res, userId);
     }
