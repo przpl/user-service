@@ -33,6 +33,7 @@ describe("issueToken()", () => {
         expect(data.lastName).toBe(user.lastName);
         expect(data.provider).toBe(ExternalLoginProvider.google);
         expect(data.type).toBe("externalUserRegistration");
+        expect(data.exp - data.iat).toBe(30 * 60);
     });
 });
 
@@ -59,7 +60,7 @@ describe("decodeToken()", () => {
         expect(() => sut.decodeToken(token)).toThrowError("Invalid token type.");
     });
 
-    it("should throw exception if token is older than 30 minutes", async () => {
+    it("should throw exception if token expired", async () => {
         const dataToSign = {
             id: user.id,
             email: user.email,
@@ -68,10 +69,19 @@ describe("decodeToken()", () => {
             provider: ExternalLoginProvider.google,
             type: "externalUserRegistration",
             iat: moment().subtract(31, "minutes").unix(),
+            exp: moment().subtract(1, "minutes").unix(),
         } as ExternalUserRegistrationJwt;
         const token = jwt.sign(dataToSign, key);
+        let thrown = false;
 
-        expect(() => sut.decodeToken(token)).toThrowError("Token expired.");
+        try {
+            sut.decodeToken(token);
+        } catch (error) {
+            thrown = true;
+            expect(error.name).toBe("TokenExpiredError");
+        }
+
+        expect(thrown).toBe(true);
     });
 
     it("should decode token", async () => {

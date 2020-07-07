@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import { singleton } from "tsyringe";
-import moment from "moment";
 
 import Env from "../utils/config/env";
 import { ExternalUser } from "../middleware/passport";
@@ -14,6 +13,7 @@ export interface ExternalUserRegistrationJwt {
     provider: ExternalLoginProvider;
     type: "externalUserRegistration";
     iat: number;
+    exp: number;
 }
 
 @singleton()
@@ -40,16 +40,13 @@ export class ExternalUserJwtService {
             provider: provider,
             type: "externalUserRegistration",
         } as ExternalUserRegistrationJwt;
-        return jwt.sign(dataToSign, this._jwtPrivateKey);
+        return jwt.sign(dataToSign, this._jwtPrivateKey, { expiresIn: "30m" });
     }
 
     public decodeToken(token: string): ExternalUserRegistrationJwt {
         const data = jwt.verify(token, this._jwtPrivateKey) as ExternalUserRegistrationJwt;
         if (data.type !== "externalUserRegistration") {
             throw new Error("Invalid token type.");
-        }
-        if (moment().unix() - data.iat > 30 * 60) {
-            throw new Error("Token expired.");
         }
 
         return data;

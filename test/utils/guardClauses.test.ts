@@ -2,7 +2,7 @@ import "reflect-metadata";
 
 import { guardNotUndefinedOrNull } from "../../src/utils/guardClauses";
 
-describe("guardNotUndefinedOrNull(()", () => {
+describe("guardNotUndefinedOrNull()", () => {
     it("should throw error if argument is null", async () => {
         expect(() => guardNotUndefinedOrNull(null)).toThrowError();
     });

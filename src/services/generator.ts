@@ -7,9 +7,10 @@ import {
     MFA_LOGIN_TOKEN_LENGTH,
     REFRESH_TOKEN_LENGTH,
 } from "../utils/globalConsts";
+import { base64ToHttpFriendly } from "../utils/base64";
 
 export function generateUserId(): string {
-    return cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }).replace(/\+/g, "0").replace(/\//g, "1"); // replace all + and / chars
+    return base64ToHttpFriendly(cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }));
 }
 
 export function generateConfirmationCode(): string {
@@ -25,5 +26,5 @@ export function generateMfaLoginToken(): string {
 }
 
 export function generateRefreshToken(): string {
-    return cryptoRandomString({ length: REFRESH_TOKEN_LENGTH, type: "base64" });
+    return base64ToHttpFriendly(cryptoRandomString({ length: REFRESH_TOKEN_LENGTH, type: "base64" }));
 }

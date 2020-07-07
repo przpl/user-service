@@ -2,7 +2,7 @@ import "reflect-metadata";
 
 import { TimeSpan } from "../../src/utils/timeSpan";
 
-describe("fromSeconds(()", () => {
+describe("fromSeconds()", () => {
     const sut = TimeSpan.fromSeconds;
     it("should throw error if argument is incorrect", async () => {
         expect(() => sut(NaN)).toThrowError();
@@ -17,7 +17,7 @@ describe("fromSeconds(()", () => {
     });
 });
 
-describe("fromMinutes(()", () => {
+describe("fromMinutes()", () => {
     const sut = TimeSpan.fromMinutes;
     it("should throw error if argument is incorrect", async () => {
         expect(() => sut(NaN)).toThrowError();
@@ -32,7 +32,7 @@ describe("fromMinutes(()", () => {
     });
 });
 
-describe("fromHours(()", () => {
+describe("fromHours()", () => {
     const sut = TimeSpan.fromHours;
     it("should throw error if argument is incorrect", async () => {
         expect(() => sut(NaN)).toThrowError();
