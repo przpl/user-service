@@ -32,7 +32,7 @@ describe("issueToken()", () => {
         expect(data.firstName).toBe(user.firstName);
         expect(data.lastName).toBe(user.lastName);
         expect(data.provider).toBe(ExternalLoginProvider.google);
-        expect(data.type).toBe("externalUserRegistration");
+        expect(data.typ).toBe("externalUserRegistration");
         expect(data.exp - data.iat).toBe(30 * 60);
     });
 });
@@ -67,7 +67,7 @@ describe("decodeToken()", () => {
             firstName: user.firstName,
             lastName: user.lastName,
             provider: ExternalLoginProvider.google,
-            type: "externalUserRegistration",
+            typ: "externalUserRegistration",
             iat: moment().subtract(31, "minutes").unix(),
             exp: moment().subtract(1, "minutes").unix(),
         } as ExternalUserRegistrationJwt;
@@ -94,6 +94,6 @@ describe("decodeToken()", () => {
         expect(result.firstName).toBe(user.firstName);
         expect(result.lastName).toBe(user.lastName);
         expect(result.provider).toBe(ExternalLoginProvider.google);
-        expect(result.type).toBe("externalUserRegistration");
+        expect(result.typ).toBe("externalUserRegistration");
     });
 });

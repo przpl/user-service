@@ -11,7 +11,7 @@ export interface ExternalUserRegistrationJwt {
     firstName: string;
     lastName: string;
     provider: ExternalLoginProvider;
-    type: "externalUserRegistration";
+    typ: "externalUserRegistration";
     iat: number;
     exp: number;
 }
@@ -38,14 +38,14 @@ export class ExternalUserJwtService {
             firstName: user.firstName,
             lastName: user.lastName,
             provider: provider,
-            type: "externalUserRegistration",
+            typ: "externalUserRegistration",
         } as ExternalUserRegistrationJwt;
         return jwt.sign(dataToSign, this._jwtPrivateKey, { expiresIn: "30m" });
     }
 
     public decodeToken(token: string): ExternalUserRegistrationJwt {
         const data = jwt.verify(token, this._jwtPrivateKey) as ExternalUserRegistrationJwt;
-        if (data.type !== "externalUserRegistration") {
+        if (data.typ !== "externalUserRegistration") {
             throw new Error("Invalid token type.");
         }
 

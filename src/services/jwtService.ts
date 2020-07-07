@@ -1,8 +1,6 @@
 import jwt from "jsonwebtoken";
 import { singleton } from "tsyringe";
-import moment from "moment";
 
-import { TimeSpan } from "../utils/timeSpan";
 import { JWT_ID_LENGTH } from "../utils/globalConsts";
 import Env from "../utils/config/env";
 import { AccessTokenDto } from "../models/dtos/accessTokenDto";
@@ -10,7 +8,7 @@ import { AccessTokenDto } from "../models/dtos/accessTokenDto";
 @singleton()
 export class JwtService {
     private _jwtPrivateKey: string;
-    private _tokenTTL: TimeSpan;
+    private _tokenTTLSeconds: number;
 
     constructor(env: Env) {
         this._jwtPrivateKey = env.jwtPrivateKey;
@@ -21,26 +19,27 @@ export class JwtService {
         if (this._jwtPrivateKey.length < 44) {
             throw new Error("Minimum required JWT key length is 44 characters!");
         }
-        this._tokenTTL = TimeSpan.fromMinutes(env.tokenTTLMinutes);
-        if (this._tokenTTL.seconds <= TimeSpan.fromMinutes(1).seconds) {
+        this._tokenTTLSeconds = env.tokenTTLMinutes * 60;
+        if (this._tokenTTLSeconds <= 60) {
             throw new Error("Token TTL has to be number greater than 1 minute.");
         }
     }
 
     public issueAccessToken(refreshToken: string, userId: string, roles: string[]): string {
-        const now = moment().unix();
         const dataToSign = {
             sub: userId,
             ref: this.getTokenRef(refreshToken),
             rol: roles.length > 0 ? roles : undefined,
-            iat: now,
-            exp: now + this._tokenTTL.seconds,
         };
-        return jwt.sign(dataToSign, this._jwtPrivateKey);
+        return jwt.sign(dataToSign, this._jwtPrivateKey, { expiresIn: this._tokenTTLSeconds });
     }
 
     public decodeAccessToken(token: string): AccessTokenDto {
-        return jwt.verify(token, this._jwtPrivateKey) as AccessTokenDto;
+        const data = jwt.verify(token, this._jwtPrivateKey) as AccessTokenDto;
+        if ((data as any).typ) {
+            throw new Error("Invalid token type.");
+        }
+        return data;
     }
 
     public getTokenRef(refreshToken: string) {
