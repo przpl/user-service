@@ -7,13 +7,9 @@ import { JwtService } from "../../src/services/jwtService";
 import Env from "../../src/utils/config/env";
 import { AccessTokenDto } from "../../src/models/dtos/accessTokenDto";
 
-let sut: JwtService;
 const key = "12345678901234567890123456789012345678901234567890";
-
-beforeEach(() => {
-    const env = { jwtPrivateKey: key, tokenTTLMinutes: 10 } as Env;
-    sut = new JwtService(env);
-});
+const env = { jwtPrivateKey: key, tokenTTLMinutes: 10 } as Env;
+const sut = new JwtService(env);
 
 describe("issueAccessToken()", () => {
     it("should issue token", async () => {

@@ -8,7 +8,6 @@ import Env from "../../src/utils/config/env";
 import { ExternalUser } from "../../src/middleware/passport";
 import { ExternalLoginProvider } from "../../src/dal/entities/externalLoginEntity";
 
-let sut: ExternalUserJwtService;
 const user: ExternalUser = {
     id: "1",
     firstName: "first",
@@ -16,11 +15,8 @@ const user: ExternalUser = {
     email: "email",
 };
 const key = "12345678901234567890123456789012345678901234567890";
-
-beforeEach(() => {
-    const env = { jwtPrivateKey: key } as Env;
-    sut = new ExternalUserJwtService(env);
-});
+const env = { jwtPrivateKey: key } as Env;
+const sut = new ExternalUserJwtService(env);
 
 describe("issueToken()", () => {
     it("should issue token", async () => {
