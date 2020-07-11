@@ -1,7 +1,5 @@
 import "reflect-metadata";
 
-import jwt from "jsonwebtoken";
-
 import { PasswordService } from "../../src/services/passwordService";
 import { Config } from "../../src/utils/config/config";
 
