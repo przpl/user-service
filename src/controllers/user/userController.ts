@@ -17,6 +17,7 @@ import * as errors from "../commonErrors";
 import { captureExceptionWithSentry } from "../../utils/sentryUtils";
 import SecurityLogger from "../../utils/securityLogger";
 import { Session } from "../../models/session";
+import { isNullOrUndefined } from "util";
 
 @singleton()
 export default class UserController {
@@ -97,13 +98,18 @@ export default class UserController {
         return true;
     }
 
-    protected async pushNewUser(body: RequestBody, credentials?: Credentials) {
-        const user: any = {};
+    protected async pushNewUser(id: string, body: RequestBody, credentials?: Credentials) {
+        const user: any = { id };
         for (const fieldName of Object.keys(this._config.additionalFields.registerEndpoint)) {
             user[fieldName] = (body as any)[fieldName];
         }
         if (credentials) {
             Object.assign(user, credentials.getAll());
+        }
+        for (const fieldName of Object.keys(user)) {
+            if (isNullOrUndefined(user[fieldName])) {
+                delete user[fieldName];
+            }
         }
         this._queueService.publishNewUser(user);
     }

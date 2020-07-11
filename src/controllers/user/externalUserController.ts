@@ -61,7 +61,7 @@ export default class ExternalUserController extends UserController {
             throw error;
         }
 
-        await this.pushNewUser(body);
+        await this.pushNewUser(userId, body);
 
         return userId;
     }
