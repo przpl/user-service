@@ -64,13 +64,13 @@ export class MessageBroker extends EventEmitter {
 
     private publish(exchange: string, routingKey: string, dataObj: object) {
         const buffer = Buffer.from(JSON.stringify(dataObj));
-        this._channel.publish(exchange, routingKey, buffer);
+        this._channel.publish(exchange, routingKey, buffer, { persistent: true });
     }
 
     private async createUserQueues() {
         const exchange = this.EXCHANGE.USER;
         const createUserQueue = "user.createUser";
-        await this._channel.assertQueue(createUserQueue);
+        await this._channel.assertQueue(createUserQueue, { durable: true });
         await this._channel.assertExchange(exchange, "direct", { durable: true });
         await this._channel.bindQueue(createUserQueue, exchange, this.EVENT.USER_CREATED);
     }
@@ -78,7 +78,7 @@ export class MessageBroker extends EventEmitter {
     private async createCodeQueues() {
         const exchange = this.EXCHANGE.CODE;
         const sendCodeQueue = "code.sendCode";
-        await this._channel.assertQueue(sendCodeQueue);
+        await this._channel.assertQueue(sendCodeQueue, { durable: true });
         await this._channel.assertExchange(exchange, "direct", { durable: true });
         await this._channel.bindQueue(sendCodeQueue, exchange, this.EVENT.CODE_GENERATED);
     }
