@@ -47,7 +47,7 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
     if (err.responseStatusCode === HttpStatus.INTERNAL_SERVER_ERROR && sentryKey) {
         const errorToLog = new Error(err.message);
         errorToLog.stack = err.stack;
-        captureExceptionWithSentry(errorToLog, req.authenticatedUser);
+        captureExceptionWithSentry(errorToLog, req.authenticatedUser, true);
     }
 
     const response: any = { errors: [] };
