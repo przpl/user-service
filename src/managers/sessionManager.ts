@@ -13,6 +13,7 @@ import { Config } from "../utils/config/config";
 import { Session } from "../models/session";
 import { generateRefreshToken } from "../services/generator";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
+import { isExpired } from "../models/expirable";
 
 const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
 
@@ -28,7 +29,7 @@ export class SessionManager {
     }
 
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
-        const { outOfLimit, active } = await this.filterOutOfLimitAndGetActive(userId); // TODO automatically set all stale tokens as out of limit
+        const { outOfLimit, active } = await this.filterOutOfLimitAndGetActive(userId);
 
         const now = moment();
         const entity = new SessionEntity();
@@ -153,6 +154,12 @@ export class SessionManager {
     }
 
     private getOutOfLimit(sessions: CachedSessions[]): CachedSessions[] {
+        const now = moment();
+        const expired = sessions.filter((i) => isExpired(moment.unix(i.ts), this._refreshStaleAfter, now));
+        if (expired.length > 0) {
+            return expired;
+        }
+
         const fromOldestToNewest = sessions.sort((a, b) => a.ts - b.ts);
         let redundantSessionsCount = sessions.length - this._config.session.maxPerUser;
         redundantSessionsCount++; // we will create one session so we need to remove one more to make a place
