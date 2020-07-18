@@ -6,7 +6,7 @@ import { SessionEntity } from "../dal/entities/sessionEntity";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { TimeSpan } from "../utils/timeSpan";
 import { UserAgent } from "../interfaces/userAgent";
-import { CacheDb } from "../dal/cacheDb";
+import { CacheDb, CachedSessions } from "../dal/cacheDb";
 import { JwtService } from "../services/jwtService";
 import Env from "../utils/config/env";
 import { Config } from "../utils/config/config";
@@ -28,8 +28,9 @@ export class SessionManager {
     }
 
     public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
-        await this.manageActiveSessions(userId);
+        const { outOfLimit, active } = await this.filterOutOfLimitAndGetActive(userId); // TODO automatically set all stale tokens as out of limit
 
+        const now = moment();
         const entity = new SessionEntity();
         entity.token = generateRefreshToken();
         entity.userId = userId;
@@ -38,8 +39,15 @@ export class SessionManager {
         entity.browser = userAgent.browser;
         entity.os = userAgent.os;
         entity.osVersion = userAgent.osVersion;
-        entity.lastUseAt = new Date();
+        entity.lastUseAt = now.toDate();
         await entity.save();
+
+        if (outOfLimit.length > 0) {
+            await this._repo.delete(outOfLimit.map((i) => i.id));
+        }
+
+        active.push({ id: entity.token, ts: now.unix() });
+        await this._cacheDb.setCachedSessions(userId, active);
 
         return entity.token;
     }
@@ -52,11 +60,28 @@ export class SessionManager {
             return null;
         }
 
-        await this.assertRefreshTokenNotStale(entity);
+        const cached = await this._cacheDb.getCachedSessions(entity.userId);
 
+        if (this.toSessionModel(entity).isExpired(this._refreshStaleAfter)) {
+            const token = entity.token;
+            await this._repo.remove(entity);
+            await this.deleteCached(entity.userId, cached, token);
+
+            throw new StaleRefreshTokenException();
+        }
+
+        const now = moment();
         entity.lastRefreshIp = ip;
-        entity.lastUseAt = new Date();
+        entity.lastUseAt = now.toDate();
         await entity.save();
+
+        const toUpdate = cached.find((i) => i.id === entity.token);
+        if (toUpdate) {
+            toUpdate.ts = now.unix();
+        } else {
+            cached.push({ id: entity.token, ts: now.unix() });
+        }
+        await this._cacheDb.setCachedSessions(entity.userId, cached);
 
         return this.toSessionModel(entity);
     }
@@ -69,7 +94,8 @@ export class SessionManager {
             return false;
         }
         await this.revokeAccessTokens(entities);
-        await this.removeAllSessions(entities);
+        await this._repo.remove(entities);
+        await this._cacheDb.deleteCachedSessions(userId);
 
         return true;
     }
@@ -83,28 +109,21 @@ export class SessionManager {
         }
 
         await this.revokeAccessTokens([entity]);
-        await this.removeSession(entity);
+        const token = entity.token;
+        await this._repo.remove(entity);
+        const cached = await this._cacheDb.getCachedSessions(entity.userId);
+        await this.deleteCached(entity.userId, cached, token);
 
         return this.toSessionModel(entity);
     }
 
-    private async assertRefreshTokenNotStale(session: SessionEntity) {
-        const model = this.toSessionModel(session);
-        if (model.isExpired(this._refreshStaleAfter)) {
-            await this.removeSession(session);
-            throw new StaleRefreshTokenException();
+    private async deleteCached(userId: string, cached: CachedSessions[], id: string) {
+        const remaining = cached.filter((i) => i.id !== id);
+        if (remaining.length === 0) {
+            await this._cacheDb.deleteCachedSessions(userId);
+        } else {
+            await this._cacheDb.setCachedSessions(userId, remaining);
         }
-    }
-
-    private async removeAllSessions(sessions: SessionEntity[]) {
-        const userId = sessions[0].userId;
-        await this._repo.remove(sessions);
-        await this._cacheDb.deleteActiveSessions(userId);
-    }
-
-    private async removeSession(session: SessionEntity) {
-        await this._repo.remove(session);
-        this._cacheDb.decrementActiveSessions(session.userId);
     }
 
     private async revokeAccessTokens(sessions: SessionEntity[]) {
@@ -123,29 +142,21 @@ export class SessionManager {
         return expiresAt.diff(moment(), "seconds");
     }
 
-    private async manageActiveSessions(userId: string) {
-        let activeSessions = await this._cacheDb.getActiveSessions(userId);
-        if (activeSessions >= this._config.session.maxPerUser) {
-            activeSessions = await this.removeOldestSession(userId, this._config.session.maxPerUser);
+    private async filterOutOfLimitAndGetActive(userId: string): Promise<{ outOfLimit: CachedSessions[]; active: CachedSessions[] }> {
+        let outOfLimit: CachedSessions[] = [];
+        let active = await this._cacheDb.getCachedSessions(userId);
+        if (active.length >= this._config.session.maxPerUser) {
+            outOfLimit = this.getOutOfLimit(active);
+            active = active.filter((i) => outOfLimit.findIndex((j) => i.id === j.id) === -1);
         }
-        activeSessions++;
-        await this._cacheDb.setActiveSessions(userId, activeSessions);
+        return { outOfLimit, active };
     }
 
-    private async removeOldestSession(userId: string, maxSessionsPerUser: number): Promise<number> {
-        guardNotUndefinedOrNull(userId);
-
-        const sessions = await this._repo.find({ where: { userId: userId } });
-        if (sessions.length < maxSessionsPerUser) {
-            return sessions.length;
-        }
-        const fromOldestToNewest = sessions.sort((a, b) => a.lastUseAt.getTime() - b.lastUseAt.getTime());
-        let redundantSessionsCount = sessions.length - maxSessionsPerUser;
-        redundantSessionsCount++; // we will create one sesion so we need to remove one more to make a place
-        const sessionsToRemove = fromOldestToNewest.slice(0, redundantSessionsCount);
-        await this._repo.remove(sessionsToRemove);
-
-        return sessions.length - redundantSessionsCount;
+    private getOutOfLimit(sessions: CachedSessions[]): CachedSessions[] {
+        const fromOldestToNewest = sessions.sort((a, b) => a.ts - b.ts);
+        let redundantSessionsCount = sessions.length - this._config.session.maxPerUser;
+        redundantSessionsCount++; // we will create one session so we need to remove one more to make a place
+        return fromOldestToNewest.slice(0, redundantSessionsCount);
     }
 
     private toSessionModel(entity: SessionEntity): Session {

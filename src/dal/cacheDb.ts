@@ -15,7 +15,12 @@ enum KeyFlag {
 enum KeyName {
     mfaLoginToken = "mlt",
     revokeAccessToken = "rve",
-    activeSessions = "avs",
+    cachedSession = "cs",
+}
+
+export interface CachedSessions {
+    id: string;
+    ts: number;
 }
 
 @singleton()
@@ -63,39 +68,29 @@ export class CacheDb {
         this._client.EXISTS(key, cb);
     }
 
-    public async decrementActiveSessions(userId: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const keyName = this.getActiveSessionsKey(userId);
-            this._client.decr(keyName, (err, reply) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                resolve();
-            });
-        });
+    public async setCachedSessions(userId: string, sessions: CachedSessions[]) {
+        const keyName = this.getCachedSessionsKey(userId);
+        return this.set(keyName, JSON.stringify(sessions));
     }
 
-    public async getActiveSessions(userId: string): Promise<number> {
+    public async getCachedSessions(userId: string): Promise<CachedSessions[]> {
         return new Promise((resolve, reject) => {
-            const keyName = this.getActiveSessionsKey(userId);
+            const keyName = this.getCachedSessionsKey(userId);
             this._client.GET(keyName, (err, reply) => {
                 if (err) {
-                    reject(err);
-                    return;
+                    return reject(err);
                 }
-                resolve(+reply);
+                const sessions = JSON.parse(reply);
+                if (!sessions) {
+                    return resolve([]);
+                }
+                resolve(sessions);
             });
         });
     }
 
-    public async setActiveSessions(userId: string, value: number): Promise<boolean> {
-        const key = this.getActiveSessionsKey(userId);
-        return this.set(key, value.toString());
-    }
-
-    public async deleteActiveSessions(userId: string): Promise<boolean> {
-        const key = this.getActiveSessionsKey(userId);
+    public async deleteCachedSessions(userId: string): Promise<boolean> {
+        const key = this.getCachedSessionsKey(userId);
         return (await this.delete(key)) > 0;
     }
 
@@ -103,8 +98,7 @@ export class CacheDb {
         return new Promise((resolve, reject) => {
             this._client.del(key, (err, reply) => {
                 if (err) {
-                    reject(err);
-                    return;
+                    return reject(err);
                 }
                 resolve(reply);
             });
@@ -115,8 +109,7 @@ export class CacheDb {
         return new Promise((resolve, reject) => {
             this._client.SET(key, value, (err, reply) => {
                 if (err) {
-                    reject(err);
-                    return;
+                    return reject(err);
                 }
                 resolve(reply === "OK");
             });
@@ -127,16 +120,15 @@ export class CacheDb {
         return new Promise((resolve, reject) => {
             this._client.SET(key, value, mode, duration.seconds, (err, reply) => {
                 if (err) {
-                    reject(err);
-                    return;
+                    return reject(err);
                 }
                 resolve(reply === "OK");
             });
         });
     }
 
-    private getActiveSessionsKey(userId: string): string {
-        return `${KeyName.activeSessions}:${userId}`;
+    private getCachedSessionsKey(userId: string): string {
+        return `${KeyName.cachedSession}:${userId}`;
     }
 
     private getMfaLoginTokenKey(userId: string): string {
