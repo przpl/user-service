@@ -1,7 +1,6 @@
-export const USER_ID_LENGTH = 8;
-export const HMAC_256_SIG_LENGTH = 64;
+export const USER_ID_LENGTH = 14;
 export const PASSWORD_RESET_CODE_LENGTH = 32;
-export const MFA_LOGIN_TOKEN_LENGTH = 64;
+export const MFA_LOGIN_TOKEN_LENGTH = 32;
 export const ONE_TIME_PASS_LENGTH = 6;
 export const JWT_ID_LENGTH = 5;
 export const REFRESH_TOKEN_LENGTH = 22;
