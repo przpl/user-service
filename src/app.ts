@@ -149,6 +149,8 @@ async function start() {
     app.use((req, res, next) => handleNotFoundError(res));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, req, res, env.isDev(), env.sentryKey));
 
+    app.disable("x-powered-by");
+
     app.listen(env.port, () => {
         console.log(`App is running at http://localhost:${env.port} in ${app.get("env")} mode`);
     })
