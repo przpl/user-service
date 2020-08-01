@@ -52,10 +52,7 @@ export const fieldValidators = {
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
         .isLength({ min: REFRESH_TOKEN_LENGTH, max: REFRESH_TOKEN_LENGTH })
-        .withMessage(FIELD_ERROR_MSG.isLength)
-        // eslint-disable-next-line prettier/prettier
-        .matches("^[0-9a-zA-Z+/=]+$")
-        .withMessage(FIELD_ERROR_MSG.isBase64),
+        .withMessage(FIELD_ERROR_MSG.isLength),
     additionalRegisterField: [] as ValidationChain[],
     weakPassword: {} as ValidationChain,
     oldPassword: {} as ValidationChain,
