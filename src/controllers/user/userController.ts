@@ -76,6 +76,9 @@ export default class UserController {
         const roles = await this._roleManager.getRoles(userId);
         const refreshToken = await this._sessionManager.issueRefreshToken(userId, req.ip, this.mapUserAgent(req.userAgent));
         const accessToken = this._jwtService.issueAccessToken(refreshToken, userId, roles);
+        // res.cookie("test", "xddd", { sameSite: "none", secure: true });
+        // res.setHeader("Access-Control-Allow-Credentials", "true");
+        // res.setHeader("Access-Control-Allow-Origin", "http://localhost:3002");
 
         res.json({ refreshToken: refreshToken, accessToken: accessToken });
     }

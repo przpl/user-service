@@ -37,13 +37,8 @@ export default class Env {
     public isDev(): boolean {
         return process.env.NODE_ENV === "development";
     }
-
-    public isCorsEnabled(): boolean {
-        const cors = process.env.CORS;
-        if (!cors) {
-            return false;
-        }
-        return cors.toLowerCase() === "true";
+    public get cors(): string[] {
+        return process.env.CORS.split(",");
     }
 
     public get port(): string | number {

@@ -125,9 +125,7 @@ async function start() {
     if (env.isDev()) {
         app.use(morgan("dev"));
     }
-    if (env.isCorsEnabled()) {
-        app.use(cors()); // TO-DO origin URL configuration
-    }
+    app.use(cors({ credentials: true, origin: env.cors }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
