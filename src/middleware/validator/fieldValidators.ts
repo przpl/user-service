@@ -7,6 +7,7 @@ import {
     ONE_TIME_PASS_LENGTH,
     CONFIRMATION_CODE_LENGTH,
     REFRESH_TOKEN_LENGTH,
+    REFRESH_TOKEN_COOKIE_NAME,
 } from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {
@@ -47,7 +48,7 @@ export const fieldValidators = {
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
     password: null as (name: "password" | "new") => ValidationChain,
-    refreshToken: cookie("refreshToken")
+    refreshToken: cookie(REFRESH_TOKEN_COOKIE_NAME)
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()

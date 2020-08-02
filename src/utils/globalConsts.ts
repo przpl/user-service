@@ -5,3 +5,4 @@ export const ONE_TIME_PASS_LENGTH = 6;
 export const JWT_ID_LENGTH = 5;
 export const REFRESH_TOKEN_LENGTH = 22;
 export const CONFIRMATION_CODE_LENGTH = 6;
+export const REFRESH_TOKEN_COOKIE_NAME = "refresh-token";

@@ -18,6 +18,7 @@ import { captureExceptionWithSentry } from "../../utils/sentryUtils";
 import SecurityLogger from "../../utils/securityLogger";
 import { Session } from "../../models/session";
 import { isNullOrUndefined } from "util";
+import { REFRESH_TOKEN_COOKIE_NAME } from "../../utils/globalConsts";
 
 @singleton()
 export default class UserController {
@@ -68,6 +69,7 @@ export default class UserController {
                 ).unix()}, last refresh by ${removedSession.lastRefreshIp}`
             );
         }
+        res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
 
         res.send({ result: true });
     }
@@ -76,11 +78,15 @@ export default class UserController {
         const roles = await this._roleManager.getRoles(userId);
         const refreshToken = await this._sessionManager.issueRefreshToken(userId, req.ip, this.mapUserAgent(req.userAgent));
         const accessToken = this._jwtService.issueAccessToken(refreshToken, userId, roles);
-        // res.cookie("test", "xddd", { sameSite: "none", secure: true });
-        // res.setHeader("Access-Control-Allow-Credentials", "true");
-        // res.setHeader("Access-Control-Allow-Origin", "http://localhost:3002");
+        res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+            path: "/",
+            sameSite: "lax",
+            expires: moment().add(2, "years").toDate(),
+            secure: req.hostname !== "localhost",
+            httpOnly: true,
+        });
 
-        res.json({ refreshToken: refreshToken, accessToken: accessToken });
+        res.json({ accessToken });
     }
 
     protected async handleUserLock(next: NextFunction, userId: string): Promise<boolean> {
