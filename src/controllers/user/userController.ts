@@ -57,7 +57,7 @@ export default class UserController {
     public async logout(req: Request, res: Response, next: NextFunction) {
         let removedSession: Session;
         try {
-            removedSession = await this._sessionManager.revokeSession(req.cookies.refreshToken);
+            removedSession = await this._sessionManager.revokeSession(req.cookies[REFRESH_TOKEN_COOKIE_NAME]);
         } catch (error) {
             captureExceptionWithSentry(error, req.authenticatedUser);
         }

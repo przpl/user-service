@@ -1,3 +1,5 @@
+import { REFRESH_TOKEN_COOKIE_NAME } from "../../utils/globalConsts";
+
 export interface RequestCookies {
-    refreshToken?: string;
+    [REFRESH_TOKEN_COOKIE_NAME]?: string;
 }
