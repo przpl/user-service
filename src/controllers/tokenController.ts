@@ -8,13 +8,14 @@ import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { RoleManager } from "../managers/roleManager";
 import { Session } from "../models/session";
 import * as errors from "./commonErrors";
+import { REFRESH_TOKEN_COOKIE_NAME } from "../utils/globalConsts";
 
 @singleton()
 export default class TokenController {
     constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _jwtService: JwtService) {}
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
-        const { refreshToken } = req.cookies;
+        const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
 
         let session: Session;
         try {
