@@ -10,12 +10,16 @@ import { RequestBody } from "../../types/express/requestBody";
 import { ExternalUserJwtService } from "../../services/externalUserJwtService";
 import { ExternalUser } from "../../middleware/passport";
 import { forwardError } from "../../utils/expressUtils";
+import { LocalLoginManager, LoginDuplicateType } from "../../managers/localLoginManager";
+import { Credentials } from "../../models/credentials";
+import { usernameTaken } from "../commonErrors";
 
 @singleton()
 export default class ExternalUserController extends UserController {
     constructor(
         private _userManager: UserManager,
         private _loginManager: ExternalLoginManager,
+        private _localLoginManager: LocalLoginManager,
         private _externalJwtService: ExternalUserJwtService
     ) {
         super();
@@ -41,6 +45,14 @@ export default class ExternalUserController extends UserController {
     }
 
     public async finishRegistration(req: Request, res: Response, next: NextFunction) {
+        if (this._config.localLogin.username.required) {
+            if (
+                (await this._localLoginManager.isDuplicate(new Credentials(null, req.body.username, null))) === LoginDuplicateType.username
+            ) {
+                return usernameTaken(next);
+            }
+        }
+
         const tokenData = this._externalJwtService.decodeToken(req.body.token);
         let userId = await this._loginManager.getUserId(tokenData.id, tokenData.provider);
         if (userId) {
