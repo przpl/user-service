@@ -24,7 +24,8 @@ export default class LocalUserController extends UserController {
             return;
         }
 
-        const userId = await this._userManager.create();
+        const username = this._config.localLogin.username.required ? req.body.username : null;
+        const userId = await this._userManager.create(username);
         let login: LocalLogin = null;
         try {
             login = await this._loginManager.create(credentials, userId, req.body.password);
@@ -78,6 +79,10 @@ export default class LocalUserController extends UserController {
             return false;
         }
         if (duplicate === LoginDuplicateType.username) {
+            errors.usernameTaken(next);
+            return false;
+        }
+        if (this._config.localLogin.username.required && (await this._userManager.doesUsernameExist(credentials.username)) === true) {
             errors.usernameTaken(next);
             return false;
         }

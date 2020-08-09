@@ -9,8 +9,8 @@ import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 export class UserManager {
     private _repo = getRepository(UserEntity);
 
-    public async create(): Promise<string> {
-        const entity = new UserEntity(generateUserId());
+    public async create(username: string): Promise<string> {
+        const entity = new UserEntity(generateUserId(), username);
         await entity.save();
         return entity.id;
     }
@@ -22,6 +22,12 @@ export class UserManager {
     public async exists(id: string): Promise<boolean> {
         guardNotUndefinedOrNull(id);
         const user = await this._repo.findOne(id, { select: ["id"] }); // select [] always returns null
+        return Boolean(user);
+    }
+
+    public async doesUsernameExist(username: string): Promise<boolean> {
+        guardNotUndefinedOrNull(username);
+        const user = await this._repo.findOne({ where: { username: username }, select: ["id"] });
         return Boolean(user);
     }
 }

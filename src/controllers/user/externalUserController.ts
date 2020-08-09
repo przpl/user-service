@@ -10,7 +10,6 @@ import { RequestBody } from "../../types/express/requestBody";
 import { ExternalUserJwtService } from "../../services/externalUserJwtService";
 import { ExternalUser } from "../../middleware/passport";
 import { forwardError } from "../../utils/expressUtils";
-import { LocalLoginManager, LoginDuplicateType } from "../../managers/localLoginManager";
 import { Credentials } from "../../models/credentials";
 import { usernameTaken } from "../commonErrors";
 
@@ -19,7 +18,6 @@ export default class ExternalUserController extends UserController {
     constructor(
         private _userManager: UserManager,
         private _loginManager: ExternalLoginManager,
-        private _localLoginManager: LocalLoginManager,
         private _externalJwtService: ExternalUserJwtService
     ) {
         super();
@@ -45,12 +43,8 @@ export default class ExternalUserController extends UserController {
     }
 
     public async finishRegistration(req: Request, res: Response, next: NextFunction) {
-        if (this._config.localLogin.username.required) {
-            if (
-                (await this._localLoginManager.isDuplicate(new Credentials(null, req.body.username, null))) === LoginDuplicateType.username
-            ) {
-                return usernameTaken(next);
-            }
+        if (this._config.localLogin.username.required && (await this._userManager.doesUsernameExist(req.body.username)) === true) {
+            return usernameTaken(next);
         }
 
         const tokenData = this._externalJwtService.decodeToken(req.body.token);
@@ -65,7 +59,8 @@ export default class ExternalUserController extends UserController {
     }
 
     private async register(body: RequestBody, externalId: string, email: string, provider: ExternalLoginProvider): Promise<string> {
-        const userId = await this._userManager.create();
+        const username = this._config.localLogin.username.required ? body.username : null;
+        const userId = await this._userManager.create(username);
         try {
             await this._loginManager.create(userId, externalId, email, provider);
         } catch (error) {
@@ -73,7 +68,7 @@ export default class ExternalUserController extends UserController {
             throw error;
         }
 
-        await this.pushNewUser(userId, body);
+        await this.pushNewUser(userId, body, new Credentials(null, body.username, null));
 
         return userId;
     }
