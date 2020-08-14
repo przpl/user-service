@@ -9,5 +9,4 @@ export interface FieldConfig {
     hasLowercase: boolean;
     hasDigits: boolean;
     hasSymbols: boolean;
-    isAlpha: boolean;
 }

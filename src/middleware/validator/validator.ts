@@ -144,10 +144,6 @@ export default class Validator extends AbstractValidator {
             }
             if (field.isLength) {
                 validation.isLength({ min: field.isLength.min, max: field.isLength.max }).withMessage(FIELD_ERROR_MSG.isLength);
-            }
-            if (field.isAlpha) {
-                validation.isAlpha();
-            }
 
             fieldValidators.additionalRegisterField.push(validation);
         }
