@@ -4,6 +4,7 @@ import { singleton } from "tsyringe";
 import { TimeSpan } from "../utils/timeSpan";
 import { Config } from "../utils/config/config";
 import { MfaLoginToken } from "../models/mfaLoginToken";
+import nameof from "../utils/nameof";
 
 enum KeyFlag {
     expireSeconds = "EX",
@@ -23,6 +24,8 @@ export interface CachedSessions {
     ts: number;
 }
 
+const FIELD_USED_BY_ASP_NET = "data";
+
 @singleton()
 export class CacheDb {
     private _client: redis.RedisClient;
@@ -35,20 +38,21 @@ export class CacheDb {
 
     public async setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getMfaLoginTokenKey(userId);
-        const tokenObj: MfaLoginToken = { token: token, ip: ip };
-        return this.setWithExpiration(key, JSON.stringify(tokenObj), KeyFlag.expireSeconds, expireTime);
+        return this.setHashWithExpiration(key, expireTime, nameof<MfaLoginToken>("token"), token, nameof<MfaLoginToken>("ip"), ip);
     }
 
     public async getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
         return new Promise((resolve, reject) => {
             const keyName = this.getMfaLoginTokenKey(userId);
-            this._client.GET(keyName, (err, reply) => {
+            this._client.HGETALL(keyName, (err, reply) => {
                 if (err) {
                     reject(err);
                     return;
                 }
-                const token = JSON.parse(reply) as MfaLoginToken;
-                resolve(token);
+                const result = new MfaLoginToken();
+                result.token = reply[nameof<MfaLoginToken>("token")];
+                result.ip = reply[nameof<MfaLoginToken>("ip")];
+                resolve(result);
             });
         });
     }
@@ -60,7 +64,7 @@ export class CacheDb {
 
     public async revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getRevokeAccessTokenKey(userId, ref);
-        return this.setWithExpiration(key, "", KeyFlag.expireSeconds, expireTime);
+        return this.setHashWithExpiration(key, expireTime, FIELD_USED_BY_ASP_NET, "1");
     }
 
     public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void): void {
@@ -116,13 +120,32 @@ export class CacheDb {
         });
     }
 
-    private setWithExpiration(key: string, value: string, mode: string, duration: TimeSpan): Promise<boolean> {
+    private setWithExpiration(key: string, value: string, duration: TimeSpan): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            this._client.SET(key, value, mode, duration.seconds, (err, reply) => {
+            this._client.SET(key, value, KeyFlag.expireSeconds, duration.seconds, (err, reply) => {
                 if (err) {
                     return reject(err);
                 }
                 resolve(reply === "OK");
+            });
+        });
+    }
+
+    private setHashWithExpiration(key: string, duration: TimeSpan, ...args: string[]): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            this._client.HSET(key, ...args, (err, reply) => {
+                if (err) {
+                    return reject(err);
+                }
+                if (!reply) {
+                    return resolve(false);
+                }
+                this._client.EXPIRE(key, duration.seconds, (expireErr, expireReply) => {
+                    if (expireErr) {
+                        return reject(err);
+                    }
+                    resolve(expireReply > 0);
+                });
             });
         });
     }
