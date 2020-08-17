@@ -9,4 +9,6 @@ export interface FieldConfig {
     hasLowercase: boolean;
     hasDigits: boolean;
     hasSymbols: boolean;
+    isISO8601: boolean;
+    isInt: boolean;
 }

@@ -15,6 +15,7 @@ export const FIELD_ERROR_MSG = {
     isBase64: "Not a Base64 string",
     isEmail: "Not an e-mail",
     isHexadecimal: "Invalid format",
+    isISO8601: "Not an ISO date string",
     isJwt: "Not a JWT",
     isLength: "Length exceeded",
     isNumeric: "Not a number",
