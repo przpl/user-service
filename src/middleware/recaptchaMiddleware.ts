@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import Recaptcha2 from "recaptcha2";
 import { isArray } from "util";
 import { singleton } from "tsyringe";
@@ -35,13 +35,13 @@ export default class ReCaptchaMiddleware {
             if (isArray(error)) {
                 const captchaError = error[0];
                 if (captchaError === "invalid-input-response") {
-                    return forwardError(next, "invalidCaptchaResponse", HttpStatus.BAD_REQUEST);
+                    return forwardError(next, "invalidCaptchaResponse", StatusCodes.BAD_REQUEST);
                 } else if (captchaError === "timeout-or-duplicate") {
-                    return forwardError(next, "timeoutOrDuplicateCaptcha", HttpStatus.BAD_REQUEST);
+                    return forwardError(next, "timeoutOrDuplicateCaptcha", StatusCodes.BAD_REQUEST);
                 }
             }
 
-            return forwardError(next, "captchaValidationFailed", HttpStatus.INTERNAL_SERVER_ERROR, error);
+            return forwardError(next, "captchaValidationFailed", StatusCodes.INTERNAL_SERVER_ERROR, error);
         }
 
         next();

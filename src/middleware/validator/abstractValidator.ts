@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import { validationResult } from "express-validator";
 
 import { ErrorResponse } from "../../interfaces/errorResponse";
@@ -19,7 +19,7 @@ export abstract class AbstractValidator {
                     data: data,
                 },
             ];
-            return forwardError(next, errorsList, HttpStatus.UNPROCESSABLE_ENTITY);
+            return forwardError(next, errorsList, StatusCodes.UNPROCESSABLE_ENTITY);
         }
 
         next();

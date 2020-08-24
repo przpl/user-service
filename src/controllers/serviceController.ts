@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import { singleton } from "tsyringe";
 import moment from "moment";
 
@@ -11,7 +11,7 @@ export default class ServiceController {
 
     public status(req: Request, res: Response, next: NextFunction) {
         if (this._env.administrationKey && this._env.administrationKey !== req.query.administrationKey) {
-            return res.status(HttpStatus.FORBIDDEN).send();
+            return res.status(StatusCodes.FORBIDDEN).send();
         }
 
         const currentTime = moment();

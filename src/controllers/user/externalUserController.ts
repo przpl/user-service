@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { singleton } from "tsyringe";
-import HttpStatus from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 
 import { UserManager } from "../../managers/userManger";
 import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
@@ -50,7 +50,7 @@ export default class ExternalUserController extends UserController {
         const tokenData = this._externalJwtService.decodeToken(req.body.token);
         let userId = await this._loginManager.getUserId(tokenData.id, tokenData.provider);
         if (userId) {
-            return forwardError(next, "userAlreadyRegistered", HttpStatus.BAD_REQUEST);
+            return forwardError(next, "userAlreadyRegistered", StatusCodes.BAD_REQUEST);
         }
 
         userId = await this.register(req.body, tokenData.id, tokenData.email, tokenData.provider);

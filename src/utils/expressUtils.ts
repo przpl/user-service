@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { isArray, isString } from "util";
-import HttpStatus from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
 import { captureExceptionWithSentry } from "./sentryUtils";
 
 export function forwardInternalError(next: NextFunction, originalError: object) {
-    forwardError(next, [], HttpStatus.INTERNAL_SERVER_ERROR, originalError);
+    forwardError(next, [], StatusCodes.INTERNAL_SERVER_ERROR, originalError);
 }
 
 export function forwardError(
@@ -37,14 +37,14 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
         return res.send();
     }
 
-    if (err.responseStatusCode === HttpStatus.NOT_FOUND) {
+    if (err.responseStatusCode === StatusCodes.NOT_FOUND) {
         return handleNotFoundError(res);
     }
 
-    err.responseStatusCode = err.responseStatusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+    err.responseStatusCode = err.responseStatusCode || StatusCodes.INTERNAL_SERVER_ERROR;
     res.status(err.responseStatusCode);
 
-    if (err.responseStatusCode === HttpStatus.INTERNAL_SERVER_ERROR && sentryKey) {
+    if (err.responseStatusCode === StatusCodes.INTERNAL_SERVER_ERROR && sentryKey) {
         const errorToLog = new Error(err.message);
         errorToLog.stack = err.stack;
         captureExceptionWithSentry(errorToLog, req.authenticatedUser, true);
@@ -81,5 +81,5 @@ export function handleNotFoundError(res: Response) {
             },
         ],
     };
-    res.status(HttpStatus.NOT_FOUND).json(response);
+    res.status(StatusCodes.NOT_FOUND).json(response);
 }

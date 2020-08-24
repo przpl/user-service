@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import HttpStatus from "http-status-codes";
+import { StatusCodes } from "http-status-codes";
 import passport from "passport";
 import { singleton } from "tsyringe";
 
@@ -35,21 +35,21 @@ export default class AuthMiddleware {
     public authJwt(req: Request, res: Response, next: NextFunction) {
         const bearerString = req.get("Authorization");
         if (!bearerString) {
-            return forwardError(next, "missingAuthorizationHeader", HttpStatus.UNAUTHORIZED);
+            return forwardError(next, "missingAuthorizationHeader", StatusCodes.UNAUTHORIZED);
         }
 
         const tokenWithoutBearerPrefix = bearerString.split(" ")[1];
         if (!tokenWithoutBearerPrefix) {
-            return forwardError(next, "missingAccessToken", HttpStatus.UNAUTHORIZED);
+            return forwardError(next, "missingAccessToken", StatusCodes.UNAUTHORIZED);
         }
 
         try {
             req.authenticatedUser = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
         } catch (error) {
             if (error.name === "JsonWebTokenError") {
-                return forwardError(next, "invalidJwtSignature", HttpStatus.UNAUTHORIZED);
+                return forwardError(next, "invalidJwtSignature", StatusCodes.UNAUTHORIZED);
             } else if (error.name === "TokenExpiredError") {
-                return forwardError(next, "tokenExpired", HttpStatus.UNAUTHORIZED);
+                return forwardError(next, "tokenExpired", StatusCodes.UNAUTHORIZED);
             }
             return forwardInternalError(next, error);
         }
@@ -60,7 +60,7 @@ export default class AuthMiddleware {
                 return forwardInternalError(next, error);
             }
             if (reply > 0) {
-                return forwardError(next, "tokenRevoked", HttpStatus.UNAUTHORIZED);
+                return forwardError(next, "tokenRevoked", StatusCodes.UNAUTHORIZED);
             }
             next();
         });
@@ -68,7 +68,7 @@ export default class AuthMiddleware {
 
     private handleExternalLogin(next: NextFunction, error: any) {
         if (error) {
-            return forwardError(next, "externalLoginFailed", HttpStatus.INTERNAL_SERVER_ERROR, error);
+            return forwardError(next, "externalLoginFailed", StatusCodes.INTERNAL_SERVER_ERROR, error);
         }
         next();
     }
