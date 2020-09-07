@@ -34,7 +34,7 @@ export function forwardError(
 
 export function handleError(err: any, req: Request, res: Response, isDev: boolean, sentryKey: string) {
     if (!err) {
-        return res.send();
+        return !res.headersSent && res.send();
     }
 
     if (err.responseStatusCode === StatusCodes.NOT_FOUND) {
@@ -69,7 +69,7 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
         response.$devOnly = { message: message, stack: stack };
     }
 
-    res.json(response);
+    !res.headersSent && res.json(response);
 }
 
 export function handleNotFoundError(res: Response) {
@@ -81,5 +81,5 @@ export function handleNotFoundError(res: Response) {
             },
         ],
     };
-    res.status(StatusCodes.NOT_FOUND).json(response);
+    !res.headersSent && res.status(StatusCodes.NOT_FOUND).json(response);
 }
