@@ -37,6 +37,7 @@ export default class Env {
     public isDev(): boolean {
         return process.env.NODE_ENV === "development";
     }
+
     public get cors(): string[] {
         return process.env.CORS.split(",");
     }
