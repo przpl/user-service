@@ -91,7 +91,7 @@ async function connectToMessageBroker(env: Env) {
     );
     try {
         await messageBroker.connectAndSubscribe();
-        console.log("Connected with message broker");
+        console.log("Connected to message broker");
     } catch (error) {
         const msg = `Error with message broker: ${error}`;
         console.log(msg);
