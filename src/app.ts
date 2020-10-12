@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { createConnection, Connection } from "typeorm";
 import { container } from "tsyringe";
 import * as Sentry from "@sentry/node";
+import path from "path";
 
 import UserRouter from "./routes/user/userRouter";
 import LocalUserRouter from "./routes/user/localUserRouter";
@@ -29,7 +30,7 @@ import { MessageBroker } from "./services/messageBroker";
 let logger: Logger;
 
 function loadEnv() {
-    const envPath = `${__dirname}/.env`;
+    const envPath = path.resolve(__dirname, "..", ".env");
     const env = new Env();
     try {
         env.load(envPath);
@@ -58,7 +59,7 @@ function loadEnv() {
 }
 
 function loadConfig() {
-    const configPath = `${__dirname}/config.json`;
+    const configPath = path.resolve(__dirname, "..", "config.json");
     let config: Config;
     try {
         config = ConfigLoader.load(configPath);
