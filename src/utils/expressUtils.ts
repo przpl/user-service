@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { isArray, isString } from "util";
 import { StatusCodes } from "http-status-codes";
 
 import { ErrorResponse } from "../interfaces/errorResponse";
@@ -16,7 +15,7 @@ export function forwardError(
     originalError?: object
 ) {
     let errorsArray: ErrorResponse[] = [];
-    if (isString(errors)) {
+    if (typeof errors === "string") {
         errorsArray = [{ id: errors }];
     } else if (Array.isArray(errors)) {
         errorsArray = errors;
@@ -51,7 +50,7 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
     }
 
     const response: any = { errors: [] };
-    if (err.responseErrorsList && isArray(err.responseErrorsList)) {
+    if (err.responseErrorsList && Array.isArray(err.responseErrorsList)) {
         response.errors = err.responseErrorsList;
     }
 

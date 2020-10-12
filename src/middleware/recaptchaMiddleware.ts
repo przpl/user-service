@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import Recaptcha2 from "recaptcha2";
-import { isArray } from "util";
 import { singleton } from "tsyringe";
 
 import { forwardError } from "../utils/expressUtils";
@@ -32,7 +31,7 @@ export default class ReCaptchaMiddleware {
         try {
             await this._reCaptcha.validate(req.body.reCaptchaToken);
         } catch (error) {
-            if (isArray(error)) {
+            if (Array.isArray(error)) {
                 const captchaError = error[0];
                 if (captchaError === "invalid-input-response") {
                     return forwardError(next, "invalidCaptchaResponse", StatusCodes.BAD_REQUEST);
