@@ -71,7 +71,7 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
     !res.headersSent && res.json(response);
 }
 
-export function handleNotFoundError(res: Response) {
+export function handleNotFoundError(res: Response, noEndpointMatch = false) {
     const response = {
         errors: [
             {
@@ -80,5 +80,11 @@ export function handleNotFoundError(res: Response) {
             },
         ],
     };
+    if (noEndpointMatch) {
+        response.errors.push({
+            id: "noEndpointMatch",
+            message: "There is no endpoint matching requested method and url.",
+        });
+    }
     !res.headersSent && res.status(StatusCodes.NOT_FOUND).json(response);
 }

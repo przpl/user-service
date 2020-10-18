@@ -145,7 +145,7 @@ async function start() {
     app.use("/api/user/token", TokenRouter.getExpressRouter());
     app.use("/api/user/mfa", MfaRouter.getExpressRouter());
 
-    app.use((req, res, next) => handleNotFoundError(res));
+    app.use((req, res, next) => handleNotFoundError(res, env.isDev()));
     app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, req, res, env.isDev(), env.sentryKey));
 
     app.disable("x-powered-by");
