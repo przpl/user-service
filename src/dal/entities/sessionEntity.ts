@@ -9,7 +9,7 @@ export class SessionEntity extends BaseEntity {
     @Column()
     userId: string;
 
-    @ManyToOne(() => UserEntity)
+    @ManyToOne(() => UserEntity, { onDelete: "CASCADE" })
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

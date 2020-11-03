@@ -6,7 +6,7 @@ export class RoleEntity extends BaseEntity {
     @PrimaryColumn()
     userId: string;
 
-    @ManyToOne(() => UserEntity)
+    @ManyToOne(() => UserEntity, { onDelete: "CASCADE" })
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 

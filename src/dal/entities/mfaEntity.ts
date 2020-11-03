@@ -22,7 +22,7 @@ export class MfaEntity extends BaseEntity {
     @PrimaryColumn()
     userId: string;
 
-    @OneToOne(() => UserEntity)
+    @OneToOne(() => UserEntity, { onDelete: "CASCADE" })
     @JoinColumn({ name: "userId" })
     user: UserEntity;
 
