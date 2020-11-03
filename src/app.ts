@@ -76,10 +76,18 @@ async function connectToDb() {
     try {
         conn = await createConnection();
     } catch (error) {
-        console.log(error.message);
+        printError(error.message);
         logger.error(error.message);
         process.exit(1);
     }
+
+    if (await conn.showMigrations()) {
+        const msg = "There are pending migrations to be executed using `typeorm migration:run`.";
+        printError(msg);
+        logger.error(msg);
+        process.exit(1);
+    }
+
     return conn;
 }
 
@@ -95,7 +103,7 @@ async function connectToMessageBroker(env: Env) {
         console.log("Connected to message broker");
     } catch (error) {
         const msg = `Error with message broker: ${error}`;
-        console.log(msg);
+        printError(msg);
         logger.error(msg);
         process.exit(1);
     }
@@ -154,7 +162,7 @@ async function start() {
         console.log(`App is running at http://localhost:${env.port} in ${app.get("env")} mode`);
     })
         .on("error", async (e) => {
-            console.log(`Cannot run app: ${e.message}`);
+            printError(`Cannot run app: ${e.message}`);
             await dbConnection.close();
             process.exit(1);
         })
@@ -164,13 +172,17 @@ async function start() {
 
     process.on("unhandledRejection", (err: any) => {
         if (env.isDev()) {
-            console.log("Unhandled promise rejection: " + err.message);
-            console.log(err.stack);
+            printError("Unhandled promise rejection: " + err.message);
+            printError(err.stack);
         }
         if (env.sentryKey) {
             Sentry.captureException(err);
         }
     });
+}
+
+function printError(msg: string) {
+    console.error("\x1b[31m", msg, "\x1b[0m");
 }
 
 start();
