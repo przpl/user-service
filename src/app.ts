@@ -1,31 +1,33 @@
 import "reflect-metadata"; // required by IoC Container
-import express, { Request, Response, NextFunction } from "express";
-import morgan from "morgan";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import { createConnection, Connection } from "typeorm";
-import { container } from "tsyringe";
-import * as Sentry from "@sentry/node";
+
 import path from "path";
 
-import UserRouter from "./routes/user/userRouter";
-import LocalUserRouter from "./routes/user/localUserRouter";
-import ExternalUserRouter from "./routes/user/externalUserRouter";
-import ServiceRouter from "./routes/serviceRouter";
-import PasswordRouter from "./routes/passwordRouter";
-import EmailRouter from "./routes/emailRouter";
-import TokenRouter from "./routes/tokenRouter";
-import MfaRouter from "./routes/mfaRouter";
-import InternalRouter from "./routes/internalRouter";
-import PhoneRouter from "./routes/phoneRouter";
+import * as Sentry from "@sentry/node";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { NextFunction, Request, Response } from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import { container } from "tsyringe";
+import { Connection, createConnection } from "typeorm";
 
-import Env from "./utils/config/env";
-import { handleNotFoundError, handleError } from "./utils/expressUtils";
 import { configurePassport } from "./middleware/passport";
-import { ConfigLoader, Config } from "./utils/config/config";
+import EmailRouter from "./routes/emailRouter";
+import InternalRouter from "./routes/internalRouter";
+import MfaRouter from "./routes/mfaRouter";
+import PasswordRouter from "./routes/passwordRouter";
+import PhoneRouter from "./routes/phoneRouter";
+import ServiceRouter from "./routes/serviceRouter";
+import TokenRouter from "./routes/tokenRouter";
+import ExternalUserRouter from "./routes/user/externalUserRouter";
+import LocalUserRouter from "./routes/user/localUserRouter";
+import UserRouter from "./routes/user/userRouter";
+import { MessageBroker } from "./services/messageBroker";
+import { Config, ConfigLoader } from "./utils/config/config";
+import Env from "./utils/config/env";
+import { handleError, handleNotFoundError } from "./utils/expressUtils";
 import Logger from "./utils/logger";
 import SecurityLogger from "./utils/securityLogger";
-import { MessageBroker } from "./services/messageBroker";
 
 let logger: Logger;
 
@@ -138,6 +140,7 @@ async function start() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
+    app.use(helmet());
     app.set("trust proxy", true);
     configurePassport(app, config);
 
