@@ -41,7 +41,8 @@
         },
         "username": {
             "required": true,
-            "allowLogin": true
+            "allowLogin": true,
+            "hashKey": ""
         },
         "phone": {
             "required": true,

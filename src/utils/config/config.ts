@@ -47,6 +47,7 @@ export class Config {
         username: {
             required: boolean;
             allowLogin: boolean;
+            hashKey: string;
         };
         phone: {
             required: boolean;

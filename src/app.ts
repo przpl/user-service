@@ -22,6 +22,7 @@ import TokenRouter from "./routes/tokenRouter";
 import ExternalUserRouter from "./routes/user/externalUserRouter";
 import LocalUserRouter from "./routes/user/localUserRouter";
 import UserRouter from "./routes/user/userRouter";
+import { UsernameBasedIdGenerator } from "./services/generators/usernameBasedIdGenerator";
 import { MessageBroker } from "./services/messageBroker";
 import { Config, ConfigLoader } from "./utils/config/config";
 import Env from "./utils/config/env";
@@ -122,15 +123,16 @@ async function start() {
     const config = loadConfig();
 
     logger = new Logger(env.loggerDisabled, env.loggerLevel);
-    container.register<Logger>(Logger, { useValue: logger });
-    container.register<SecurityLogger>(SecurityLogger, { useValue: new SecurityLogger(false) });
+    container.register(Logger, { useValue: logger });
+    container.register(SecurityLogger, { useValue: new SecurityLogger(false) });
 
     const dbConnection = await connectToDb();
     const messageBroker = await connectToMessageBroker(env);
 
-    container.register<Env>(Env, { useValue: env });
-    container.register<Config>(Config, { useValue: config });
-    container.register<MessageBroker>(MessageBroker, { useValue: messageBroker });
+    container.register(Env, { useValue: env });
+    container.register(Config, { useValue: config });
+    container.register(MessageBroker, { useValue: messageBroker });
+    container.register("UserIdGenerator", { useClass: UsernameBasedIdGenerator });
 
     const app = express();
     if (env.isDev()) {
