@@ -7,6 +7,6 @@ declare module "express" {
         authenticatedUser?: AccessTokenDto;
         body: RequestBody;
         cookies: RequestCookies;
-        userAgent?: IUAParser.IResult;
+        userAgent?: UAParser.IResult;
     }
 }

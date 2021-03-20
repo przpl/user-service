@@ -1,8 +1,8 @@
-import core from "express";
+import core, { Request } from "express";
 import passport from "passport";
+import FacebookTokenStrategy from "passport-facebook-token";
 // @ts-ignore
 import GoogleTokenStrategy from "passport-google-id-token";
-import FacebookTokenStrategy from "passport-facebook-token";
 
 import { Config } from "../utils/config/config";
 

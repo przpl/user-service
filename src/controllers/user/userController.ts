@@ -1,24 +1,25 @@
-import { Request, Response, NextFunction } from "express";
-import { container, singleton } from "tsyringe";
-import moment from "moment";
-
-import { JwtService } from "../../services/jwtService";
-import { SessionManager } from "../../managers/sessionManager";
-import { UserAgent } from "../../interfaces/userAgent";
-import { RoleManager } from "../../managers/roleManager";
-import { LockManager } from "../../managers/lockManager";
-import { MfaMethod } from "../../dal/entities/mfaEntity";
-import { MfaManager, MfaVerificationResult } from "../../managers/mfaManager";
-import { RequestBody } from "../../types/express/requestBody";
-import { Credentials } from "../../models/credentials";
-import { Config } from "../../utils/config/config";
-import { MessageBroker } from "../../services/messageBroker";
-import * as errors from "../commonErrors";
-import { captureExceptionWithSentry } from "../../utils/sentryUtils";
-import SecurityLogger from "../../utils/securityLogger";
-import { Session } from "../../models/session";
 import { isNullOrUndefined } from "util";
+
+import { NextFunction, Request, Response } from "express";
+import moment from "moment";
+import { container, singleton } from "tsyringe";
+
+import { MfaMethod } from "../../dal/entities/mfaEntity";
+import { UserAgent } from "../../interfaces/userAgent";
+import { LockManager } from "../../managers/lockManager";
+import { MfaManager, MfaVerificationResult } from "../../managers/mfaManager";
+import { RoleManager } from "../../managers/roleManager";
+import { SessionManager } from "../../managers/sessionManager";
+import { Credentials } from "../../models/credentials";
+import { Session } from "../../models/session";
+import { JwtService } from "../../services/jwtService";
+import { MessageBroker } from "../../services/messageBroker";
+import { RequestBody } from "../../types/express/requestBody";
+import { Config } from "../../utils/config/config";
 import { REFRESH_TOKEN_COOKIE_NAME } from "../../utils/globalConsts";
+import SecurityLogger from "../../utils/securityLogger";
+import { captureExceptionWithSentry } from "../../utils/sentryUtils";
+import * as errors from "../commonErrors";
 
 @singleton()
 export default class UserController {
@@ -128,7 +129,7 @@ export default class UserController {
         return res.json({ user: { id: userId }, mfaLoginToken: { value: response.token, expiresAt: response.expiresAt } });
     }
 
-    private mapUserAgent(userAgent: IUAParser.IResult): UserAgent {
+    private mapUserAgent(userAgent: UAParser.IResult): UserAgent {
         if (!userAgent) {
             return {
                 browser: "",
