@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Recaptcha2 from "recaptcha2";
 import { singleton } from "tsyringe";
 
-import { forwardError } from "../utils/expressUtils";
 import { Config } from "../utils/config/config";
 import Env from "../utils/config/env";
+import { forwardError } from "../utils/expressUtils";
 
 @singleton()
 export default class ReCaptchaMiddleware {
