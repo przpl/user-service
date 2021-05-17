@@ -1,13 +1,13 @@
 import cryptoRandomString from "crypto-random-string";
 
-import {
-    USER_ID_LENGTH,
-    CONFIRMATION_CODE_LENGTH,
-    PASSWORD_RESET_CODE_LENGTH,
-    MFA_LOGIN_TOKEN_LENGTH,
-    REFRESH_TOKEN_LENGTH,
-} from "../utils/globalConsts";
 import { base64ToHttpFriendly } from "../utils/base64";
+import {
+    CONFIRMATION_CODE_LENGTH,
+    MFA_LOGIN_TOKEN_LENGTH,
+    PASSWORD_RESET_CODE_LENGTH,
+    REFRESH_TOKEN_LENGTH,
+    USER_ID_LENGTH,
+} from "../utils/globalConsts";
 
 export function generateUserId(): string {
     return base64ToHttpFriendly(cryptoRandomString({ length: USER_ID_LENGTH, type: "base64" }));

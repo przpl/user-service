@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { singleton } from "tsyringe";
 import moment from "moment";
+import { singleton } from "tsyringe";
 
 import Env from "../utils/config/env";
 

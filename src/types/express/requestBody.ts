@@ -1,5 +1,5 @@
-import { PhoneDto } from "../../models/dtos/phoneDto";
 import { LockDto } from "../../models/dtos/lockDto";
+import { PhoneDto } from "../../models/dtos/phoneDto";
 
 export interface RequestBody {
     // Change password

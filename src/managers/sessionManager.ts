@@ -1,19 +1,19 @@
-import { getRepository } from "typeorm";
-import { singleton } from "tsyringe";
 import moment from "moment";
+import { singleton } from "tsyringe";
+import { getRepository } from "typeorm";
 
+import { CacheDb, CachedSessions } from "../dal/cacheDb";
 import { SessionEntity } from "../dal/entities/sessionEntity";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
-import { TimeSpan } from "../utils/timeSpan";
 import { UserAgent } from "../interfaces/userAgent";
-import { CacheDb, CachedSessions } from "../dal/cacheDb";
-import { JwtService } from "../services/jwtService";
-import Env from "../utils/config/env";
-import { Config } from "../utils/config/config";
+import { isExpired } from "../models/expirable";
 import { Session } from "../models/session";
 import { generateRefreshToken } from "../services/generator";
+import { JwtService } from "../services/jwtService";
+import { Config } from "../utils/config/config";
+import Env from "../utils/config/env";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
-import { isExpired } from "../models/expirable";
+import { TimeSpan } from "../utils/timeSpan";
 
 const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
 

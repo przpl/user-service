@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { singleton } from "tsyringe";
 
-import { forwardError } from "../utils/expressUtils";
 import Env from "../utils/config/env";
+import { forwardError } from "../utils/expressUtils";
 
 @singleton()
 export default class InternalAuthMiddleware {

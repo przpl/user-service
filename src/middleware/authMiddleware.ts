@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import passport from "passport";
 import { singleton } from "tsyringe";
 
+import { CacheDb } from "../dal/cacheDb";
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
-import { CacheDb } from "../dal/cacheDb";
 
 @singleton()
 export default class AuthMiddleware {

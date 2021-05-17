@@ -1,5 +1,5 @@
-import nameof from "../utils/nameof";
 import { throwCtorArgError } from "../utils/commonErrors";
+import nameof from "../utils/nameof";
 
 export class Phone {
     constructor(private _code: string, private _number: string) {

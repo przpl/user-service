@@ -1,15 +1,15 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
 
-import { forwardInternalError } from "../utils/expressUtils";
-import { ResendCodeLimitException, ResendCodeTimeLimitException } from "../exceptions/exceptions";
-import { MessageBroker } from "../services/messageBroker";
-import { LocalLoginManager } from "../managers/localLoginManager";
-import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
-import { PrimaryLoginType } from "../models/credentials";
-import { RequestBody } from "../types/express/requestBody";
 import { ConfirmationType } from "../dal/entities/confirmationEntity";
+import { ResendCodeLimitException, ResendCodeTimeLimitException } from "../exceptions/exceptions";
+import { LocalLoginManager } from "../managers/localLoginManager";
+import { PrimaryLoginType } from "../models/credentials";
 import { Phone } from "../models/phone";
+import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
+import { MessageBroker } from "../services/messageBroker";
+import { RequestBody } from "../types/express/requestBody";
+import { forwardInternalError } from "../utils/expressUtils";
 import * as errors from "./commonErrors";
 
 @singleton()

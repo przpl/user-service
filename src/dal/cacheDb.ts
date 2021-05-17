@@ -1,10 +1,10 @@
 import redis from "redis";
 import { singleton } from "tsyringe";
 
-import { TimeSpan } from "../utils/timeSpan";
-import { Config } from "../utils/config/config";
 import { MfaLoginToken } from "../models/mfaLoginToken";
+import { Config } from "../utils/config/config";
 import nameof from "../utils/nameof";
+import { TimeSpan } from "../utils/timeSpan";
 
 enum KeyFlag {
     expireSeconds = "EX",

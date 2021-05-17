@@ -1,6 +1,6 @@
-import express, { Request, Response, NextFunction, Router } from "express";
-import { container } from "tsyringe";
+import express, { NextFunction, Request, Response, Router } from "express";
 import asyncHandler from "express-async-handler";
+import { container } from "tsyringe";
 
 import InternalController from "../controllers/internalController";
 import InternalAuthMiddleware from "../middleware/internalAuthMiddleware";

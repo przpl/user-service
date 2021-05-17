@@ -1,6 +1,6 @@
-import { getRepository } from "typeorm";
-import { singleton } from "tsyringe";
 import moment from "moment";
+import { singleton } from "tsyringe";
+import { getRepository } from "typeorm";
 
 import { LockEntity } from "../dal/entities/lockEntity";
 import { Lock } from "../models/lock";

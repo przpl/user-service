@@ -1,5 +1,6 @@
-import amqp from "amqplib";
 import { EventEmitter } from "events";
+
+import amqp from "amqplib";
 
 import { Phone } from "../models/phone";
 

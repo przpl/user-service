@@ -1,4 +1,5 @@
-import { Entity, BaseEntity, PrimaryColumn, CreateDateColumn, JoinColumn, ManyToOne } from "typeorm";
+import { BaseEntity, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
+
 import { UserEntity } from "./userEntity";
 
 @Entity({ name: "role" })

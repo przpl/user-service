@@ -1,5 +1,5 @@
-import { getRepository } from "typeorm";
 import { singleton } from "tsyringe";
+import { getRepository } from "typeorm";
 
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLoginEntity";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";

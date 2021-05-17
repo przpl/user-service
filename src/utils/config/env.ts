@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 import { singleton } from "tsyringe";
 
-import { ConfigValidationResult } from "./configValidationResult";
 import { LoggerLevel } from "../logger";
+import { ConfigValidationResult } from "./configValidationResult";
 
 @singleton()
 export default class Env {

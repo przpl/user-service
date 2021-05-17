@@ -1,9 +1,9 @@
+import { body } from "express-validator";
 import { singleton } from "tsyringe";
 
-import { fieldValidators, FIELD_ERROR_MSG } from "./fieldValidators";
-import { ValidatorArray } from "./validatorArray";
 import { AbstractValidator } from "./abstractValidator";
-import { body } from "express-validator";
+import { FIELD_ERROR_MSG, fieldValidators } from "./fieldValidators";
+import { ValidatorArray } from "./validatorArray";
 
 @singleton()
 export default class InternalValidator extends AbstractValidator {

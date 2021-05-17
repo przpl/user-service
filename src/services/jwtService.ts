@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import { singleton } from "tsyringe";
 
-import { JWT_ID_LENGTH } from "../utils/globalConsts";
-import Env from "../utils/config/env";
 import { AccessTokenDto } from "../models/dtos/accessTokenDto";
+import Env from "../utils/config/env";
+import { JWT_ID_LENGTH } from "../utils/globalConsts";
 
 @singleton()
 export class JwtService {

@@ -3,10 +3,10 @@ import "reflect-metadata";
 import jwt from "jsonwebtoken";
 import moment from "moment";
 
+import { ExternalLoginProvider } from "../../src/dal/entities/externalLoginEntity";
+import { ExternalUser } from "../../src/middleware/passport";
 import { ExternalUserJwtService, ExternalUserRegistrationJwt } from "../../src/services/externalUserJwtService";
 import Env from "../../src/utils/config/env";
-import { ExternalUser } from "../../src/middleware/passport";
-import { ExternalLoginProvider } from "../../src/dal/entities/externalLoginEntity";
 
 const user: ExternalUser = {
     id: "1",

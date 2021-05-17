@@ -1,9 +1,9 @@
 import jwt from "jsonwebtoken";
 import { singleton } from "tsyringe";
 
-import Env from "../utils/config/env";
-import { ExternalUser } from "../middleware/passport";
 import { ExternalLoginProvider } from "../dal/entities/externalLoginEntity";
+import { ExternalUser } from "../middleware/passport";
+import Env from "../utils/config/env";
 
 export interface ExternalUserRegistrationJwt {
     id: string;

@@ -1,13 +1,13 @@
 import { ValidationChain, body, cookie, param } from "express-validator";
 
 import {
-    USER_ID_LENGTH,
-    PASSWORD_RESET_CODE_LENGTH,
+    CONFIRMATION_CODE_LENGTH,
     MFA_LOGIN_TOKEN_LENGTH,
     ONE_TIME_PASS_LENGTH,
-    CONFIRMATION_CODE_LENGTH,
-    REFRESH_TOKEN_LENGTH,
+    PASSWORD_RESET_CODE_LENGTH,
     REFRESH_TOKEN_COOKIE_NAME,
+    REFRESH_TOKEN_LENGTH,
+    USER_ID_LENGTH,
 } from "../../utils/globalConsts";
 
 export const FIELD_ERROR_MSG = {

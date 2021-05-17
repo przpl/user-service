@@ -3,9 +3,9 @@ import "reflect-metadata";
 import jwt from "jsonwebtoken";
 import moment from "moment";
 
+import { AccessTokenDto } from "../../src/models/dtos/accessTokenDto";
 import { JwtService } from "../../src/services/jwtService";
 import Env from "../../src/utils/config/env";
-import { AccessTokenDto } from "../../src/models/dtos/accessTokenDto";
 
 const key = "12345678901234567890123456789012345678901234567890";
 const env = { jwtPrivateKey: key, tokenTTLMinutes: 10 } as Env;

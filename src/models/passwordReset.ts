@@ -1,6 +1,6 @@
 import { PasswordResetMethod } from "../dal/entities/passwordResetEntity";
-import { Expirable } from "./expirable";
 import nameof from "../utils/nameof";
+import { Expirable } from "./expirable";
 
 export class PasswordReset extends Expirable {
     private _userId: string;

@@ -1,12 +1,12 @@
-import express, { Request, Response, NextFunction, Router } from "express";
-import { container } from "tsyringe";
+import express, { NextFunction, Request, Response, Router } from "express";
 import asyncHandler from "express-async-handler";
+import { container } from "tsyringe";
 
-import Validator from "../../middleware/validator/validator";
-import AuthMiddleware from "../../middleware/authMiddleware";
-import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
 import ExternalUserController from "../../controllers/user/externalUserController";
+import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
+import AuthMiddleware from "../../middleware/authMiddleware";
 import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
+import Validator from "../../middleware/validator/validator";
 import { Config } from "../../utils/config/config";
 
 export default class ExternalUserRouter {

@@ -1,10 +1,10 @@
-import express, { Request, Response, NextFunction, Router } from "express";
-import { container } from "tsyringe";
+import express, { NextFunction, Request, Response, Router } from "express";
 import asyncHandler from "express-async-handler";
+import { container } from "tsyringe";
 
 import UserController from "../../controllers/user/userController";
-import Validator from "../../middleware/validator/validator";
 import UserAgentMiddleware from "../../middleware/userAgentMiddleware";
+import Validator from "../../middleware/validator/validator";
 import { Config } from "../../utils/config/config";
 
 export default class UserRouter {

@@ -1,16 +1,16 @@
-import { getRepository } from "typeorm";
-import { singleton } from "tsyringe";
-import speakeasy from "speakeasy";
 import moment from "moment";
+import speakeasy from "speakeasy";
+import { singleton } from "tsyringe";
+import { getRepository } from "typeorm";
 
+import { CacheDb } from "../dal/cacheDb";
 import { MfaEntity, MfaMethod } from "../dal/entities/mfaEntity";
 import { MfaException } from "../exceptions/exceptions";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
-import { CacheDb } from "../dal/cacheDb";
-import { Config } from "../utils/config/config";
-import { TimeSpan } from "../utils/timeSpan";
 import { generateMfaLoginToken } from "../services/generator";
+import { Config } from "../utils/config/config";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
+import { TimeSpan } from "../utils/timeSpan";
 
 const SECRET_ENCODING = "base32";
 

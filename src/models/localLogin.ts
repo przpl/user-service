@@ -1,5 +1,5 @@
-import { Phone } from "./phone";
 import { Credentials } from "./credentials";
+import { Phone } from "./phone";
 
 export class LocalLogin extends Credentials {
     protected _userId: string;

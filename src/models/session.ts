@@ -1,5 +1,5 @@
-import { Expirable } from "./expirable";
 import nameof from "../utils/nameof";
+import { Expirable } from "./expirable";
 
 export class Session extends Expirable {
     private _token: string;

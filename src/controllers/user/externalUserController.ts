@@ -1,17 +1,17 @@
-import { Request, Response, NextFunction } from "express";
-import { singleton } from "tsyringe";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { singleton } from "tsyringe";
 
-import { UserManager } from "../../managers/userManger";
 import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
-import UserController from "./userController";
 import { ExternalLoginManager } from "../../managers/externalLoginManager";
-import { RequestBody } from "../../types/express/requestBody";
-import { ExternalUserJwtService } from "../../services/externalUserJwtService";
+import { UserManager } from "../../managers/userManger";
 import { ExternalUser } from "../../middleware/passport";
-import { forwardError } from "../../utils/expressUtils";
 import { Credentials } from "../../models/credentials";
+import { ExternalUserJwtService } from "../../services/externalUserJwtService";
+import { RequestBody } from "../../types/express/requestBody";
+import { forwardError } from "../../utils/expressUtils";
 import { usernameTaken } from "../commonErrors";
+import UserController from "./userController";
 
 @singleton()
 export default class ExternalUserController extends UserController {

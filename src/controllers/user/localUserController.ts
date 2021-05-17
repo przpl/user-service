@@ -1,15 +1,15 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
 
-import { UserManager } from "../../managers/userManger";
-import UserController from "./userController";
-import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
-import { Credentials } from "../../models/credentials";
-import { extractCredentials } from "../../models/utils/toModelMappers";
-import { Phone } from "../../models/phone";
 import { ConfirmationType } from "../../dal/entities/confirmationEntity";
-import * as errors from "../commonErrors";
+import { LocalLoginManager, LoginDuplicateType, LoginResult } from "../../managers/localLoginManager";
+import { UserManager } from "../../managers/userManger";
+import { Credentials } from "../../models/credentials";
 import { LocalLogin } from "../../models/localLogin";
+import { Phone } from "../../models/phone";
+import { extractCredentials } from "../../models/utils/toModelMappers";
+import * as errors from "../commonErrors";
+import UserController from "./userController";
 
 @singleton()
 export default class LocalUserController extends UserController {

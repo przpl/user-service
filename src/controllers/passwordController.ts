@@ -1,16 +1,16 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
 
-import { forwardInternalError } from "../utils/expressUtils";
-import { NotFoundException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
 import { ExpiredResetCodeException } from "../exceptions/exceptions";
+import { InvalidPasswordException, NotFoundException, UserNotLocalException } from "../exceptions/userExceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
 import { LockManager } from "../managers/lockManager";
 import { extractCredentialsWithoutUsername } from "../models/utils/toModelMappers";
 import { MessageBroker } from "../services/messageBroker";
-import * as errors from "./commonErrors";
-import SecurityLogger from "../utils/securityLogger";
 import { Config } from "../utils/config/config";
+import { forwardInternalError } from "../utils/expressUtils";
+import SecurityLogger from "../utils/securityLogger";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class PasswordController {

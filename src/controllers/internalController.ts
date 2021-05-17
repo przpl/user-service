@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
 
+import { LockManager } from "../managers/lockManager";
 import { RoleManager } from "../managers/roleManager";
 import { SessionManager } from "../managers/sessionManager";
-import { LockManager } from "../managers/lockManager";
 import { UserManager } from "../managers/userManger";
 import * as errors from "./commonErrors";
 

@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { UAParser } from "ua-parser-js";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
+import { UAParser } from "ua-parser-js";
 
 import Logger from "../utils/logger";
 

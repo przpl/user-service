@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
 
-import { forwardInternalError } from "../utils/expressUtils";
-import { Config } from "../utils/config/config";
-import { MfaManager } from "../managers/mfaManager";
+import { MfaException } from "../exceptions/exceptions";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
 import { LocalLoginManager } from "../managers/localLoginManager";
-import { MfaException } from "../exceptions/exceptions";
+import { MfaManager } from "../managers/mfaManager";
+import { Config } from "../utils/config/config";
+import { forwardInternalError } from "../utils/expressUtils";
 import * as errors from "./commonErrors";
 
 @singleton()

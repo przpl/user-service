@@ -1,11 +1,11 @@
-import express, { Request, Response, NextFunction, Router } from "express";
-import { container } from "tsyringe";
+import express, { NextFunction, Request, Response, Router } from "express";
 import asyncHandler from "express-async-handler";
+import { container } from "tsyringe";
 
-import Validator from "../middleware/validator/validator";
+import PasswordController from "../controllers/passwordController";
 import AuthMiddleware from "../middleware/authMiddleware";
 import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
-import PasswordController from "../controllers/passwordController";
+import Validator from "../middleware/validator/validator";
 import { Config } from "../utils/config/config";
 
 export default class PasswordRouter {

@@ -2,10 +2,10 @@ import { body, oneOf } from "express-validator";
 import PasswordValidator from "password-validator";
 import { singleton } from "tsyringe";
 
-import { FIELD_ERROR_MSG, fieldValidators } from "./fieldValidators";
 import { Config } from "../../utils/config/config";
-import { ValidatorArray } from "./validatorArray";
 import { AbstractValidator } from "./abstractValidator";
+import { FIELD_ERROR_MSG, fieldValidators } from "./fieldValidators";
+import { ValidatorArray } from "./validatorArray";
 
 @singleton()
 export default class Validator extends AbstractValidator {

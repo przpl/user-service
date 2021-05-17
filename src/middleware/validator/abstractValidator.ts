@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-import { StatusCodes } from "http-status-codes";
+import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
+import { StatusCodes } from "http-status-codes";
 
 import { ErrorResponse } from "../../interfaces/errorResponse";
 import { forwardError } from "../../utils/expressUtils";

@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction, Router } from "express";
+import express, { NextFunction, Request, Response, Router } from "express";
 import { container } from "tsyringe";
 
 import ServiceController from "../controllers/serviceController";

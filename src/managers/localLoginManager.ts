@@ -1,21 +1,21 @@
-import { getRepository, FindConditions } from "typeorm";
-import { singleton } from "tsyringe";
 import moment from "moment";
+import { singleton } from "tsyringe";
+import { FindConditions, getRepository } from "typeorm";
 
-import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
-import { Credentials, PrimaryLoginType } from "../models/credentials";
-import { PasswordService } from "../services/passwordService";
-import { NotFoundException, InvalidPasswordException, UserNotLocalException } from "../exceptions/userExceptions";
-import { Config } from "../utils/config/config";
-import { TimeSpan } from "../utils/timeSpan";
 import { ConfirmationEntity, ConfirmationType } from "../dal/entities/confirmationEntity";
-import { ResendCodeLimitException, ResendCodeTimeLimitException, ExpiredResetCodeException } from "../exceptions/exceptions";
+import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
 import { PasswordResetEntity, PasswordResetMethod } from "../dal/entities/passwordResetEntity";
+import { ExpiredResetCodeException, ResendCodeLimitException, ResendCodeTimeLimitException } from "../exceptions/exceptions";
+import { InvalidPasswordException, NotFoundException, UserNotLocalException } from "../exceptions/userExceptions";
+import { Credentials, PrimaryLoginType } from "../models/credentials";
 import { LocalLogin } from "../models/localLogin";
-import { Phone } from "../models/phone";
 import { PasswordReset } from "../models/passwordReset";
+import { Phone } from "../models/phone";
 import { generateConfirmationCode, generatePasswordResetCode } from "../services/generator";
+import { PasswordService } from "../services/passwordService";
+import { Config } from "../utils/config/config";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
+import { TimeSpan } from "../utils/timeSpan";
 
 export enum LoginDuplicateType {
     none,

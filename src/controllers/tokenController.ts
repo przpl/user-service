@@ -1,14 +1,14 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { singleton } from "tsyringe";
 
-import { JwtService } from "../services/jwtService";
-import { SessionManager } from "../managers/sessionManager";
-import { forwardInternalError } from "../utils/expressUtils";
 import { StaleRefreshTokenException } from "../exceptions/exceptions";
 import { RoleManager } from "../managers/roleManager";
+import { SessionManager } from "../managers/sessionManager";
 import { Session } from "../models/session";
-import * as errors from "./commonErrors";
+import { JwtService } from "../services/jwtService";
+import { forwardInternalError } from "../utils/expressUtils";
 import { REFRESH_TOKEN_COOKIE_NAME } from "../utils/globalConsts";
+import * as errors from "./commonErrors";
 
 @singleton()
 export default class TokenController {

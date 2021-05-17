@@ -1,10 +1,10 @@
-import express, { Request, Response, NextFunction, Router } from "express";
-import { container } from "tsyringe";
+import express, { NextFunction, Request, Response, Router } from "express";
 import asyncHandler from "express-async-handler";
+import { container } from "tsyringe";
 
-import Validator from "../middleware/validator/validator";
-import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
 import EmailController from "../controllers/confirmationController";
+import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
+import Validator from "../middleware/validator/validator";
 import { Config } from "../utils/config/config";
 
 export default class EmailRouter {

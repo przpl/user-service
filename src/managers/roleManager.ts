@@ -1,5 +1,5 @@
-import { getRepository } from "typeorm";
 import { singleton } from "tsyringe";
+import { getRepository } from "typeorm";
 
 import { RoleEntity } from "../dal/entities/roleEntity";
 import { NotFoundException } from "../exceptions/userExceptions";

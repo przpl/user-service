@@ -1,5 +1,6 @@
-import bcrypt from "bcrypt";
 import { isNullOrUndefined } from "util";
+
+import bcrypt from "bcrypt";
 import { singleton } from "tsyringe";
 
 import { Config } from "../utils/config/config";
