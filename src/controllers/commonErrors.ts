@@ -9,6 +9,8 @@ import { forwardError } from "../utils/expressUtils";
 // #region Local Login
 export const invalidCredentials = (next: NF) => forwardError(next, "invalidCredentials", StatusCodes.UNAUTHORIZED);
 
+export const disallowedEmailDomain = (next: NF) => forwardError(next, "disallowedEmailDomain", StatusCodes.BAD_REQUEST);
+
 export function emailNotConfirmed(next: NF, email: string) {
     const errors: ErrorResponse = {
         id: "emailNotConfirmed",
