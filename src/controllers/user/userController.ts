@@ -82,7 +82,7 @@ export default class UserController {
         res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
             path: "/",
             sameSite: "lax",
-            expires: moment().add(2, "years").toDate(),
+            maxAge: 365 * 24 * 60 * 60 * 1000, // 365 days
             secure: req.hostname !== "localhost",
             httpOnly: true,
         });
