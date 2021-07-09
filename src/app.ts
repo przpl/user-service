@@ -164,7 +164,7 @@ async function start() {
     app.disable("x-powered-by");
 
     app.listen(env.port, () => {
-        console.log(`App is running at http://localhost:${env.port} in ${app.get("env")} mode`);
+        console.log(`App is running at port ${env.port} in ${app.get("env")} mode`);
     })
         .on("error", async (e) => {
             printError(`Cannot run app: ${e.message}`);
