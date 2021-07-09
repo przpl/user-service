@@ -1,5 +1,3 @@
-import { isNullOrUndefined } from "util";
-
 import { NextFunction, Request, Response } from "express";
 import moment from "moment";
 import { container, singleton } from "tsyringe";
@@ -17,6 +15,7 @@ import { MessageBroker } from "../../services/messageBroker";
 import { RequestBody } from "../../types/express/requestBody";
 import { Config } from "../../utils/config/config";
 import { REFRESH_TOKEN_COOKIE_NAME } from "../../utils/globalConsts";
+import { isNullOrUndefined } from "../../utils/isNullOrUndefined";
 import SecurityLogger from "../../utils/securityLogger";
 import { captureExceptionWithSentry } from "../../utils/sentryUtils";
 import * as errors from "../commonErrors";

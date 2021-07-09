@@ -1,4 +1,4 @@
-import { isNullOrUndefined } from "util";
+import { isNullOrUndefined } from "./isNullOrUndefined";
 
 export function guardNotUndefinedOrNull(value: any) {
     if (isNullOrUndefined(value)) {

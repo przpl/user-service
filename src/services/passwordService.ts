@@ -1,9 +1,8 @@
-import { isNullOrUndefined } from "util";
-
 import bcrypt from "bcrypt";
 import { singleton } from "tsyringe";
 
 import { Config } from "../utils/config/config";
+import { isNullOrUndefined } from "../utils/isNullOrUndefined";
 
 @singleton()
 export class PasswordService {
