@@ -23,6 +23,7 @@ export const FIELD_ERROR_MSG = {
     isPhoneNumber: "Not a phone number code",
     isString: "Not a string",
     isUUID: "Invalid format",
+    isBoolean: "Not a boolean",
 };
 
 export const fieldValidators = {

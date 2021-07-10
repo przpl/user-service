@@ -151,6 +151,9 @@ export default class Validator extends AbstractValidator {
             if (field.isInt) {
                 validation.isInt().withMessage(FIELD_ERROR_MSG.isNumeric);
             }
+            if (field.isBoolean) {
+                validation.isBoolean().withMessage(FIELD_ERROR_MSG.isBoolean);
+            }
 
             fieldValidators.additionalRegisterField.push(validation);
         }

@@ -11,4 +11,5 @@ export interface FieldConfig {
     hasSymbols: boolean;
     isISO8601: boolean;
     isInt: boolean;
+    isBoolean: boolean;
 }
