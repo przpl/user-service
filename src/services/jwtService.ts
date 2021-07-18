@@ -25,10 +25,10 @@ export class JwtService {
         }
     }
 
-    public issueAccessToken(refreshToken: string, userId: string, roles: string[]): string {
+    public issueAccessToken(sessionCookie: string, userId: string, roles: string[]): string {
         const dataToSign = {
             sub: userId,
-            ref: this.getTokenRef(refreshToken),
+            ref: this.getSessionRef(sessionCookie),
             rol: roles.length > 0 ? roles : undefined,
         };
         return jwt.sign(dataToSign, this._jwtPrivateKey, { expiresIn: this._tokenTTLSeconds });
@@ -42,7 +42,7 @@ export class JwtService {
         return data;
     }
 
-    public getTokenRef(refreshToken: string) {
-        return refreshToken.slice(0, JWT_ID_LENGTH);
+    public getSessionRef(sessionCookie: string) {
+        return sessionCookie.slice(0, JWT_ID_LENGTH);
     }
 }

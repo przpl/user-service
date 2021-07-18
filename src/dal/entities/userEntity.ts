@@ -14,6 +14,9 @@ export class UserEntity extends BaseEntity {
     @Column()
     username: string; // helpful with finding username duplicates between external and local accounts
 
+    @Column("text", { array: true, default: "{}" })
+    sessionIds: string[];
+
     @CreateDateColumn({ type: "timestamp" })
     createdAt: Date;
 }

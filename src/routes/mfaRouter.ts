@@ -21,21 +21,21 @@ export default class MfaRouter {
 
         router.get(
             "/",
-            (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+            (req: Request, res: Response, next: NextFunction) => auth.authenticate(config.mode, req, res, next),
             asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.requestMfa(req, res, next))
         );
 
         router.put(
             "/",
             validator.enableMfa,
-            (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+            (req: Request, res: Response, next: NextFunction) => auth.authenticate(config.mode, req, res, next),
             asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.enableMfa(req, res, next))
         );
 
         router.delete(
             "/",
             validator.disableMfa,
-            (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+            (req: Request, res: Response, next: NextFunction) => auth.authenticate(config.mode, req, res, next),
             asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.disableMfa(req, res, next))
         );
 

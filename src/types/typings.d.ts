@@ -1,10 +1,10 @@
 import { RequestBody } from "./express/requestBody";
 import { RequestCookies } from "./express/requestCookies";
-import { AccessTokenDto } from "../models/dtos/accessTokenDto";
+import { AuthenticatedUser } from "../models/authenticatedUser";
 
 declare module "express" {
     export interface Request {
-        authenticatedUser?: AccessTokenDto;
+        authenticatedUser?: AuthenticatedUser;
         body: RequestBody;
         cookies: RequestCookies;
         userAgent?: UAParser.IResult;

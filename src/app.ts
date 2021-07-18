@@ -136,13 +136,13 @@ async function start() {
 
     const app = express();
     if (env.isDev()) {
-        app.use(morgan("dev"));
+        app.use(morgan("dev") as any);
     }
     app.use(cors({ credentials: true, origin: env.cors }));
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: false }));
+    app.use(express.json() as any);
+    app.use(express.urlencoded({ extended: false }) as any);
     app.use(cookieParser());
-    app.use(helmet());
+    app.use(helmet() as any);
     app.set("trust proxy", true);
     configurePassport(app, config);
 

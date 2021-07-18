@@ -13,11 +13,11 @@ const sut = new JwtService(env);
 
 describe("issueAccessToken()", () => {
     it("should issue token", async () => {
-        const token = sut.issueAccessToken("refreshToken", "user1", ["admin"]);
+        const token = sut.issueAccessToken("sessionCookie", "user1", ["admin"]);
         const data = jwt.decode(token) as any;
 
         expect(data.sub).toBe("user1");
-        expect(data.ref).toBe("refre");
+        expect(data.ref).toBe("sessio");
         expect(data.rol.length).toBe(1);
         expect(data.rol[0]).toBe("admin");
         expect(data.exp - data.iat).toBe(10 * 60);
@@ -74,12 +74,12 @@ describe("decodeToken()", () => {
     });
 
     it("should decode token", async () => {
-        const token = sut.issueAccessToken("refreshToken", "user1", ["admin"]);
+        const token = sut.issueAccessToken("sessionCookie", "user1", ["admin"]);
 
         const result = sut.decodeAccessToken(token);
 
         expect(result.sub).toBe("user1");
-        expect(result.ref).toBe("refre");
+        expect(result.ref).toBe("sessio");
         expect(result.rol.length).toBe(1);
         expect(result.rol[0]).toBe("admin");
         expect(result.exp - result.iat).toBe(10 * 60);

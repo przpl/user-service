@@ -1,7 +1,4 @@
-import nameof from "../utils/nameof";
-import { Expirable } from "./expirable";
-
-export class Session extends Expirable {
+export class Session {
     private _token: string;
     private _userId: string;
     private _lastUseAt: Date;
@@ -10,8 +7,6 @@ export class Session extends Expirable {
     private _createdAt: Date;
 
     constructor(token: string, userId: string, lastUseAt: Date, createIp: string, lastRefreshIp: string, createdAt: Date) {
-        super(nameof<Session>("lastUseAt"));
-
         this._token = token;
         this._userId = userId;
         this._lastUseAt = lastUseAt;

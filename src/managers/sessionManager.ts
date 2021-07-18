@@ -1,137 +1,169 @@
 import moment from "moment";
 import { singleton } from "tsyringe";
-import { getRepository } from "typeorm";
+import { getManager, getRepository } from "typeorm";
 
-import { CacheDb, CachedSessions } from "../dal/cacheDb";
+import { CacheDb } from "../dal/cacheDb";
 import { SessionEntity } from "../dal/entities/sessionEntity";
-import { StaleRefreshTokenException } from "../exceptions/exceptions";
+import { UserEntity } from "../dal/entities/userEntity";
 import { UserAgent } from "../interfaces/userAgent";
-import { isExpired } from "../models/expirable";
 import { Session } from "../models/session";
-import { generateRefreshToken } from "../services/generator";
+import { generateSessionId } from "../services/generator";
 import { JwtService } from "../services/jwtService";
 import { Config } from "../utils/config/config";
 import Env from "../utils/config/env";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 import { TimeSpan } from "../utils/timeSpan";
 
-const ACCESS_TOKEN_EXPIRE_OFFSET = 20; // additional offset to be 100% sure access token is expired
+const ACCESS_TOKEN_EXPIRE_OFFSET = 10; // 10 seconds of additional offset to be 100% sure access token is expired
 
 @singleton()
 export class SessionManager {
     private _repo = getRepository(SessionEntity);
+    private _userRepo = getRepository(UserEntity);
     private _tokenTTL: TimeSpan;
-    private _refreshStaleAfter: TimeSpan;
+    private _cacheExpiration: TimeSpan;
 
     constructor(private _jwtService: JwtService, private _cacheDb: CacheDb, env: Env, private _config: Config) {
         this._tokenTTL = TimeSpan.fromMinutes(env.tokenTTLMinutes);
-        this._refreshStaleAfter = TimeSpan.fromHours(this._config.session.staleRefreshTokenAfterHours);
+        this._cacheExpiration = TimeSpan.fromSeconds(_config.session.cacheExpirationSeconds);
     }
 
-    public async issueRefreshToken(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
-        const { outOfLimit, active } = await this.filterOutOfLimitAndGetActive(userId);
-
-        const now = moment();
-        const entity = new SessionEntity();
-        entity.token = generateRefreshToken();
-        entity.userId = userId;
-        entity.createIp = ip;
-        entity.lastRefreshIp = ip;
-        entity.browser = userAgent.browser;
-        entity.os = userAgent.os;
-        entity.osVersion = userAgent.osVersion;
-        entity.lastUseAt = now.toDate();
-        await entity.save();
-
-        if (outOfLimit.length > 0) {
-            await this._repo.delete(outOfLimit.map((i) => i.id));
+    public async getUserIdFromSession(sessionCookie: string, ip: string): Promise<string> {
+        if (this._config.mode !== "session") {
+            throw new Error("Only session mode is allowed.");
         }
 
-        active.push({ id: entity.token, ts: now.unix() });
-        await this._cacheDb.setCachedSessions(userId, active);
-
-        return entity.token;
+        const userId = await this._cacheDb.getSession(sessionCookie);
+        if (userId) {
+            return userId;
+        }
+        const sessionInDb = await this._repo.findOne(sessionCookie);
+        if (sessionInDb) {
+            await this._cacheDb.setSession(sessionCookie, sessionInDb.userId, this._cacheExpiration);
+            sessionInDb.lastRefreshIp = ip;
+            sessionInDb.lastUseAt = moment().toDate();
+            await sessionInDb.save();
+            return sessionInDb.userId;
+        }
+        return null;
     }
 
-    public async refreshSession(refreshToken: string, ip: string): Promise<Session> {
-        guardNotUndefinedOrNull(refreshToken);
+    public async issueSession(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
+        const session = new SessionEntity();
+        session.id = generateSessionId();
+        session.userId = userId;
+        session.createIp = ip;
+        session.lastRefreshIp = ip;
+        session.browser = userAgent.browser;
+        session.os = userAgent.os;
+        session.osVersion = userAgent.osVersion;
+        session.lastUseAt = moment().toDate();
 
-        const entity = await this._repo.findOne(refreshToken);
-        if (!entity) {
+        const user = await this._userRepo.findOneOrFail(userId);
+        let sessionsOverLimit: SessionEntity[] = null;
+        let sessionIds = user.sessionIds;
+        if (sessionIds.length >= this._config.session.maxPerUser) {
+            const tuple = await this.getSessionsOverLimit(user);
+            sessionsOverLimit = tuple.overLimit;
+            sessionIds = tuple.remaining.map((i) => i.id);
+            for (const session of sessionsOverLimit) {
+                await this._cacheDb.removeSession(session.id);
+            }
+        }
+
+        if (this._config.mode === "session") {
+            for (const id of sessionIds) {
+                await this._cacheDb.removeSession(id);
+            }
+            await this._cacheDb.setSession(session.id, userId, this._cacheExpiration);
+        }
+
+        sessionIds.push(session.id);
+        user.sessionIds = sessionIds;
+
+        await getManager().transaction(async (manager) => {
+            await manager.save(session);
+            await manager.save(user);
+            if (sessionsOverLimit) {
+                await manager.remove(sessionsOverLimit);
+            }
+        });
+
+        return session.id;
+    }
+
+    public async refreshJwt(sessionCookie: string, ip: string): Promise<Session> {
+        guardNotUndefinedOrNull(sessionCookie);
+
+        const session = await this._repo.findOne(sessionCookie);
+        if (!session) {
             return null;
         }
 
-        const cached = await this._cacheDb.getCachedSessions(entity.userId);
+        session.lastRefreshIp = ip;
+        session.lastUseAt = moment().toDate();
+        await session.save();
 
-        if (this.toSessionModel(entity).isExpired(this._refreshStaleAfter)) {
-            const token = entity.token;
-            await this._repo.remove(entity);
-            await this.deleteCached(entity.userId, cached, token);
-
-            throw new StaleRefreshTokenException();
-        }
-
-        const now = moment();
-        entity.lastRefreshIp = ip;
-        entity.lastUseAt = now.toDate();
-        await entity.save();
-
-        const toUpdate = cached.find((i) => i.id === entity.token);
-        if (toUpdate) {
-            toUpdate.ts = now.unix();
-        } else {
-            cached.push({ id: entity.token, ts: now.unix() });
-        }
-        await this._cacheDb.setCachedSessions(entity.userId, cached);
-
-        return this.toSessionModel(entity);
+        return this.toSessionModel(session);
     }
 
-    public async revokeAllSessions(userId: string): Promise<boolean> {
+    public async removeAllSessions(userId: string): Promise<boolean> {
         guardNotUndefinedOrNull(userId);
 
-        const entities = await this._repo.find({ where: { userId: userId } });
-        if (entities.length === 0) {
+        const sessions = await this._repo.find({ where: { userId } });
+        if (sessions.length === 0) {
             return false;
         }
-        await this.revokeAccessTokens(entities);
-        await this._repo.remove(entities);
-        await this._cacheDb.deleteCachedSessions(userId);
+
+        const user = await this._userRepo.findOneOrFail(userId);
+        user.sessionIds = [];
+
+        if (this._config.mode === "session") {
+            for (const session of sessions) {
+                await this._cacheDb.removeSession(session.id);
+            }
+        } else if (this._config.mode === "jwt") {
+            await this.revokeAccessTokens(sessions);
+        }
+
+        await getManager().transaction(async (manager) => {
+            await manager.remove(sessions);
+            await manager.save(user);
+        });
 
         return true;
     }
 
-    public async revokeSession(refreshToken: string): Promise<Session> {
-        guardNotUndefinedOrNull(refreshToken);
+    public async removeSession(cookie: string): Promise<Session> {
+        guardNotUndefinedOrNull(cookie);
 
-        const entity = await this._repo.findOne(refreshToken);
-        if (!entity) {
+        const session = await this._repo.findOne(cookie);
+        if (!session) {
             return null;
         }
 
-        await this.revokeAccessTokens([entity]);
-        const token = entity.token;
-        await this._repo.remove(entity);
-        const cached = await this._cacheDb.getCachedSessions(entity.userId);
-        await this.deleteCached(entity.userId, cached, token);
+        const user = await this._userRepo.findOneOrFail(session.userId);
+        user.sessionIds = user.sessionIds.filter((i) => i !== session.id);
 
-        return this.toSessionModel(entity);
-    }
-
-    private async deleteCached(userId: string, cached: CachedSessions[], id: string) {
-        const remaining = cached.filter((i) => i.id !== id);
-        if (remaining.length === 0) {
-            await this._cacheDb.deleteCachedSessions(userId);
-        } else {
-            await this._cacheDb.setCachedSessions(userId, remaining);
+        if (this._config.mode === "session") {
+            await this._cacheDb.removeSession(cookie);
+        } else if (this._config.mode === "jwt") {
+            await this.revokeAccessTokens([session]);
         }
+
+        await getManager().transaction(async (manager) => {
+            await manager.remove(session);
+            await manager.save(user);
+        });
+
+        return this.toSessionModel(session);
     }
 
     private async revokeAccessTokens(sessions: SessionEntity[]) {
         for (const session of sessions) {
             const secondsToExpire = this.getSecondsToExpire(session);
             if (secondsToExpire > ACCESS_TOKEN_EXPIRE_OFFSET * -1) {
-                const ref = this._jwtService.getTokenRef(session.token);
+                const ref = this._jwtService.getSessionRef(session.id);
                 const secondsToExpireWithOffset = TimeSpan.fromSeconds(secondsToExpire + ACCESS_TOKEN_EXPIRE_OFFSET);
                 await this._cacheDb.revokeAccessToken(session.userId, ref, secondsToExpireWithOffset);
             }
@@ -143,30 +175,18 @@ export class SessionManager {
         return expiresAt.diff(moment(), "seconds");
     }
 
-    private async filterOutOfLimitAndGetActive(userId: string): Promise<{ outOfLimit: CachedSessions[]; active: CachedSessions[] }> {
-        let outOfLimit: CachedSessions[] = [];
-        let active = await this._cacheDb.getCachedSessions(userId);
-        if (active.length >= this._config.session.maxPerUser) {
-            outOfLimit = this.getOutOfLimit(active);
-            active = active.filter((i) => outOfLimit.findIndex((j) => i.id === j.id) === -1);
-        }
-        return { outOfLimit, active };
-    }
-
-    private getOutOfLimit(sessions: CachedSessions[]): CachedSessions[] {
-        const now = moment();
-        const expired = sessions.filter((i) => isExpired(moment.unix(i.ts), this._refreshStaleAfter, now));
-        if (expired.length > 0) {
-            return expired;
-        }
-
-        const fromOldestToNewest = sessions.sort((a, b) => a.ts - b.ts);
+    private async getSessionsOverLimit(user: UserEntity): Promise<{ overLimit: SessionEntity[]; remaining: SessionEntity[] }> {
+        const sessions = await this._repo.findByIds(user.sessionIds);
+        const fromOldestToNewest = sessions.sort((a, b) => a.lastUseAt.getTime() - b.lastUseAt.getTime());
         let redundantSessionsCount = sessions.length - this._config.session.maxPerUser;
         redundantSessionsCount++; // we will create one session so we need to remove one more to make a place
-        return fromOldestToNewest.slice(0, redundantSessionsCount);
+        return {
+            overLimit: fromOldestToNewest.slice(0, redundantSessionsCount),
+            remaining: fromOldestToNewest.slice(redundantSessionsCount),
+        };
     }
 
     private toSessionModel(entity: SessionEntity): Session {
-        return new Session(entity.token, entity.userId, entity.lastUseAt, entity.createIp, entity.lastRefreshIp, entity.createdAt);
+        return new Session(entity.id, entity.userId, entity.lastUseAt, entity.createIp, entity.lastRefreshIp, entity.createdAt);
     }
 }

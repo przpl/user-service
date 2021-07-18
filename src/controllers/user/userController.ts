@@ -14,7 +14,7 @@ import { JwtService } from "../../services/jwtService";
 import { MessageBroker } from "../../services/messageBroker";
 import { RequestBody } from "../../types/express/requestBody";
 import { Config } from "../../utils/config/config";
-import { REFRESH_TOKEN_COOKIE_NAME } from "../../utils/globalConsts";
+import { SESSION_COOKIE_NAME } from "../../utils/globalConsts";
 import { isNullOrUndefined } from "../../utils/isNullOrUndefined";
 import SecurityLogger from "../../utils/securityLogger";
 import { captureExceptionWithSentry } from "../../utils/sentryUtils";
@@ -51,13 +51,13 @@ export default class UserController {
 
         this._mfaManager.revokeLoginToken(userId);
 
-        this.sendTokens(req, res, userId);
+        this.respondWithSessionOrJwt(req, res, userId);
     }
 
     public async logout(req: Request, res: Response, next: NextFunction) {
         let removedSession: Session;
         try {
-            removedSession = await this._sessionManager.revokeSession(req.cookies[REFRESH_TOKEN_COOKIE_NAME]);
+            removedSession = await this._sessionManager.removeSession(req.cookies[SESSION_COOKIE_NAME]);
         } catch (error) {
             captureExceptionWithSentry(error, req.authenticatedUser);
         }
@@ -69,24 +69,30 @@ export default class UserController {
                 ).unix()}, last refresh by ${removedSession.lastRefreshIp}`
             );
         }
-        res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+        res.clearCookie(SESSION_COOKIE_NAME);
 
         res.send({ result: true });
     }
 
-    protected async sendTokens(req: Request, res: Response, userId: string) {
-        const roles = await this._roleManager.getRoles(userId);
-        const refreshToken = await this._sessionManager.issueRefreshToken(userId, req.ip, this.mapUserAgent(req.userAgent));
-        const accessToken = this._jwtService.issueAccessToken(refreshToken, userId, roles);
-        res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+    protected async respondWithSessionOrJwt(req: Request, res: Response, userId: string) {
+        const sessionCookie = await this._sessionManager.issueSession(userId, req.ip, this.mapUserAgent(req.userAgent));
+        res.cookie(SESSION_COOKIE_NAME, sessionCookie, {
             path: "/",
-            sameSite: "lax",
-            maxAge: 365 * 24 * 60 * 60 * 1000, // 365 days
-            secure: req.hostname !== "localhost",
+            sameSite: this._config.session.cookie.sameSite,
+            maxAge: this._config.session.TTLHours * 60 * 60 * 1000,
+            secure: this._config.session.cookie.secure,
             httpOnly: true,
         });
 
-        res.json({ accessToken });
+        if (this._config.mode === "session") {
+            res.send();
+        } else if (this._config.mode === "jwt") {
+            const roles = await this._roleManager.getRoles(userId);
+            const accessToken = this._jwtService.issueAccessToken(sessionCookie, userId, roles);
+            res.json({ accessToken });
+        } else {
+            throw new Error("Unknown mode.");
+        }
     }
 
     protected async handleUserLock(next: NextFunction, userId: string): Promise<boolean> {

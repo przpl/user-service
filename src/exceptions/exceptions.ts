@@ -5,13 +5,6 @@ export class ExpiredResetCodeException extends Error {
     }
 }
 
-export class StaleRefreshTokenException extends Error {
-    constructor(message?: string) {
-        super(message);
-        Object.setPrototypeOf(this, StaleRefreshTokenException.prototype);
-    }
-}
-
 export class ResendCodeLimitException extends Error {
     constructor(message?: string) {
         super(message);

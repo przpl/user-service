@@ -16,7 +16,7 @@ enum KeyFlag {
 enum KeyName {
     mfaLoginToken = "mlt",
     revokeAccessToken = "rve",
-    cachedSession = "cs",
+    session = "sn",
 }
 
 export interface CachedSessions {
@@ -38,7 +38,7 @@ export class CacheDb {
 
     public async setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getMfaLoginTokenKey(userId);
-        return this.setHashWithExpiration(key, expireTime, nameof<MfaLoginToken>("token"), token, nameof<MfaLoginToken>("ip"), ip);
+        return await this.setHashWithExpiration(key, expireTime, nameof<MfaLoginToken>("token"), token, nameof<MfaLoginToken>("ip"), ip);
     }
 
     public async getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
@@ -59,12 +59,12 @@ export class CacheDb {
 
     public async removeMfaLoginToken(userId: string): Promise<number> {
         const key = this.getMfaLoginTokenKey(userId);
-        return this.delete(key);
+        return await this.delete(key);
     }
 
     public async revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getRevokeAccessTokenKey(userId, ref);
-        return this.setHashWithExpiration(key, expireTime, FIELD_USED_BY_ASP_NET, "1");
+        return await this.setHashWithExpiration(key, expireTime, FIELD_USED_BY_ASP_NET, "1");
     }
 
     public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void): void {
@@ -72,35 +72,35 @@ export class CacheDb {
         this._client.EXISTS(key, cb);
     }
 
-    public async setCachedSessions(userId: string, sessions: CachedSessions[]) {
-        const keyName = this.getCachedSessionsKey(userId);
-        return this.set(keyName, JSON.stringify(sessions));
+    public async setSession(cookie: string, userId: string, expireTime: TimeSpan): Promise<boolean> {
+        const key = this.getSessionKey(cookie);
+        return await this.setWithExpiration(key, userId, expireTime);
     }
 
-    public async getCachedSessions(userId: string): Promise<CachedSessions[]> {
-        return new Promise((resolve, reject) => {
-            const keyName = this.getCachedSessionsKey(userId);
-            this._client.GET(keyName, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                const sessions = JSON.parse(reply);
-                if (!sessions) {
-                    return resolve([]);
-                }
-                resolve(sessions);
-            });
-        });
+    public async getSession(cookie: string): Promise<string> {
+        const key = this.getSessionKey(cookie);
+        return await this.get(key);
     }
 
-    public async deleteCachedSessions(userId: string): Promise<boolean> {
-        const key = this.getCachedSessionsKey(userId);
-        return (await this.delete(key)) > 0;
+    public async removeSession(session: string): Promise<number> {
+        const key = this.getSessionKey(session);
+        return await this.delete(key);
     }
 
     private delete(key: string): Promise<number> {
         return new Promise((resolve, reject) => {
             this._client.del(key, (err, reply) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(reply);
+            });
+        });
+    }
+
+    private get(key: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            this._client.GET(key, (err, reply) => {
                 if (err) {
                     return reject(err);
                 }
@@ -150,8 +150,8 @@ export class CacheDb {
         });
     }
 
-    private getCachedSessionsKey(userId: string): string {
-        return `${KeyName.cachedSession}:${userId}`;
+    private getSessionKey(cookie: string): string {
+        return `${KeyName.session}:${cookie}`;
     }
 
     private getMfaLoginTokenKey(userId: string): string {

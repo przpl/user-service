@@ -1,9 +1,11 @@
 import fs from "fs";
 
+import { AuthMode } from "../../models/authMode";
 import { FieldConfig } from "./fieldConfig";
 import { PasswordFieldConfig } from "./passwordFieldConfig";
 
 export class Config {
+    mode: AuthMode;
     redis: {
         host: string;
         port: number;
@@ -33,7 +35,12 @@ export class Config {
     };
     session: {
         maxPerUser: number;
-        staleRefreshTokenAfterHours: number;
+        TTLHours: number;
+        cookie: {
+            sameSite: "none" | "lax";
+            secure: boolean;
+        };
+        cacheExpirationSeconds: number;
     };
     localLogin: {
         allowLoginWithoutConfirmedEmail: boolean;

@@ -12,7 +12,7 @@ export default class Validator extends AbstractValidator {
     public login: ValidatorArray = [];
     public register: ValidatorArray = [];
     public changePassword: ValidatorArray = [];
-    public refreshToken: ValidatorArray = [];
+    public refreshAccessToken: ValidatorArray = [];
     public logout: ValidatorArray = [];
     public confirmEmail: ValidatorArray = [];
     public resendEmail: ValidatorArray = [];
@@ -172,8 +172,8 @@ export default class Validator extends AbstractValidator {
             this.validate,
         ];
         this.changePassword = [fieldValidators.oldPassword, fieldValidators.password("new"), this.validate];
-        this.refreshToken = [fieldValidators.refreshToken, this.validate];
-        this.logout = [fieldValidators.refreshToken, this.validate];
+        this.refreshAccessToken = [fieldValidators.sessionCookie, this.validate];
+        this.logout = [fieldValidators.sessionCookie, this.validate];
         this.confirmEmail = [fieldValidators.email(true), fieldValidators.confirmationCode, this.validate];
         this.resendEmail = [fieldValidators.email(true), this.validate];
         this.confirmPhone = [...fieldValidators.phone(true), fieldValidators.confirmationCode, this.validate];
