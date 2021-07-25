@@ -2,7 +2,6 @@ import redis from "redis";
 import { singleton } from "tsyringe";
 
 import { MfaLoginToken } from "../models/mfaLoginToken";
-import { Config } from "../utils/config/config";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
 
@@ -28,13 +27,7 @@ const FIELD_USED_BY_ASP_NET = "data";
 
 @singleton()
 export class CacheDb {
-    private _client: redis.RedisClient;
-
-    constructor(config: Config) {
-        const host = config.redis.host || "127.0.0.1";
-        const port = config.redis.port || 6379;
-        this._client = redis.createClient({ host: host, port: port });
-    }
+    constructor(private _client: redis.RedisClient) {}
 
     public async setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getMfaLoginTokenKey(userId);

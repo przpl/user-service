@@ -5,10 +5,9 @@ import moment from "moment";
 
 import { AccessTokenDto } from "../../src/models/dtos/accessTokenDto";
 import { JwtService } from "../../src/services/jwtService";
-import Env from "../../src/utils/config/env";
+import { mockEnv } from "../mocks/mockEnv";
 
-const key = "12345678901234567890123456789012345678901234567890";
-const env = { jwtPrivateKey: key, tokenTTLMinutes: 10 } as Env;
+const env = mockEnv();
 const sut = new JwtService(env);
 
 describe("issueAccessToken()", () => {
@@ -48,7 +47,7 @@ describe("decodeToken()", () => {
             exp: moment().add(30, "minutes").unix(),
             typ: "otherType",
         } as any;
-        const token = jwt.sign(dataToSign, key);
+        const token = jwt.sign(dataToSign, env.jwtPrivateKey);
 
         expect(() => sut.decodeAccessToken(token)).toThrowError("Invalid token type.");
     });
@@ -60,7 +59,7 @@ describe("decodeToken()", () => {
             iat: moment().subtract(31, "minutes").unix(),
             exp: moment().subtract(1, "minutes").unix(),
         } as AccessTokenDto;
-        const token = jwt.sign(dataToSign, key);
+        const token = jwt.sign(dataToSign, env.jwtPrivateKey);
         let thrown = false;
 
         try {

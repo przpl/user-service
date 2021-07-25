@@ -1,10 +1,9 @@
 import "reflect-metadata";
 
 import { PasswordService } from "../../src/services/passwordService";
-import { Config } from "../../src/utils/config/config";
+import { mockConfig } from "../mocks/mockConfig";
 
-const config = { security: { bcryptRounds: 12 } } as Config;
-const sut = new PasswordService(config);
+const sut = new PasswordService(mockConfig());
 
 describe("hash()", () => {
     it("should throw exception if password is undefined", async () => {

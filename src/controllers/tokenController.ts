@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 import { RoleManager } from "../managers/roleManager";
-import { SessionManager } from "../managers/sessionManager";
+import { BaseSessionManager } from "../managers/session/baseSessionManager";
 import { Session } from "../models/session";
 import { JwtService } from "../services/jwtService";
 import { forwardInternalError } from "../utils/expressUtils";
@@ -11,7 +11,11 @@ import * as errors from "./commonErrors";
 
 @singleton()
 export default class TokenController {
-    constructor(private _roleManager: RoleManager, private _sessionManager: SessionManager, private _jwtService: JwtService) {}
+    constructor(
+        private _roleManager: RoleManager,
+        @inject(BaseSessionManager.name) private _sessionManager: BaseSessionManager,
+        private _jwtService: JwtService
+    ) {}
 
     public async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
         const sessionCookie = req.cookies[SESSION_COOKIE_NAME];

@@ -7,7 +7,7 @@ import { UserAgent } from "../../interfaces/userAgent";
 import { LockManager } from "../../managers/lockManager";
 import { MfaManager, MfaVerificationResult } from "../../managers/mfaManager";
 import { RoleManager } from "../../managers/roleManager";
-import { SessionManager } from "../../managers/sessionManager";
+import { BaseSessionManager } from "../../managers/session/baseSessionManager";
 import { Credentials } from "../../models/credentials";
 import { Session } from "../../models/session";
 import { JwtService } from "../../services/jwtService";
@@ -22,7 +22,7 @@ import * as errors from "../commonErrors";
 
 @singleton()
 export default class UserController {
-    protected _sessionManager = container.resolve(SessionManager);
+    protected _sessionManager = container.resolve<BaseSessionManager>(BaseSessionManager.name);
     protected _roleManager = container.resolve(RoleManager);
     protected _lockManager = container.resolve(LockManager);
     protected _mfaManager = container.resolve(MfaManager);

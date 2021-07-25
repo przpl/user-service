@@ -1,13 +1,13 @@
 export class Session {
-    private _token: string;
+    private _id: string;
     private _userId: string;
     private _lastUseAt: Date;
     private _createIp: string;
     private _lastRefreshIp: string;
     private _createdAt: Date;
 
-    constructor(token: string, userId: string, lastUseAt: Date, createIp: string, lastRefreshIp: string, createdAt: Date) {
-        this._token = token;
+    constructor(id: string, userId: string, lastUseAt: Date, createIp: string, lastRefreshIp: string, createdAt: Date) {
+        this._id = id;
         this._userId = userId;
         this._lastUseAt = lastUseAt;
         this._createIp = createIp;
@@ -15,8 +15,8 @@ export class Session {
         this._createdAt = createdAt;
     }
 
-    public get token(): string {
-        return this._token;
+    public get id(): string {
+        return this._id;
     }
 
     public get userId(): string {

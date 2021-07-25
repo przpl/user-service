@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import passport from "passport";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 import { sessionDoesNotExist } from "../controllers/commonErrors";
 import { CacheDb } from "../dal/cacheDb";
-import { SessionManager } from "../managers/sessionManager";
+import { BaseSessionManager } from "../managers/session/baseSessionManager";
 import { AuthMode } from "../models/authMode";
 import { AccessTokenDto } from "../models/dtos/accessTokenDto";
 import { JwtService } from "../services/jwtService";
@@ -17,7 +17,11 @@ export default class AuthMiddleware {
     private _googleAuthDelegate = passport.authenticate("google-id-token", { session: false });
     private _facebookAuthDelegate = passport.authenticate("facebook-token", { session: false });
 
-    constructor(private _cacheDb: CacheDb, private _sessionManager: SessionManager, private _jwtService: JwtService) {
+    constructor(
+        private _cacheDb: CacheDb,
+        @inject(BaseSessionManager.name) private _sessionManager: BaseSessionManager,
+        private _jwtService: JwtService
+    ) {
         if (!_jwtService) {
             throw new Error("JWT Service is required.");
         }

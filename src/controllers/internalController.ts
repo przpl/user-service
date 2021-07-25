@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 import { LockManager } from "../managers/lockManager";
 import { RoleManager } from "../managers/roleManager";
-import { SessionManager } from "../managers/sessionManager";
+import { BaseSessionManager } from "../managers/session/baseSessionManager";
 import { UserManager } from "../managers/userManger";
 import * as errors from "./commonErrors";
 
@@ -12,7 +12,7 @@ export default class InternalController {
     constructor(
         private _userManager: UserManager,
         private _roleManager: RoleManager,
-        private _sessionManager: SessionManager,
+        @inject(BaseSessionManager.name) private _sessionManager: BaseSessionManager,
         private _lockManager: LockManager
     ) {}
 

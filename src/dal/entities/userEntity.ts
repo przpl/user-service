@@ -2,7 +2,7 @@ import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryColumn } from "typ
 
 @Entity({ name: "user" })
 export class UserEntity extends BaseEntity {
-    constructor(id: string, username?: string) {
+    constructor(id: string, username: string) {
         super();
         this.id = id;
         this.username = username;
