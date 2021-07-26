@@ -140,9 +140,9 @@ async function start() {
     container.registerType("UserIdGenerator", UsernameBasedIdGenerator);
     container.registerInstance(redis.RedisClient, redis.createClient(config.redis.port || 6379, config.redis.host || "127.0.0.1"));
     if (config.mode === "session") {
-        container.register(BaseSessionManager.name, { useClass: CookieSessionManager });
+        container.registerType(BaseSessionManager.name, CookieSessionManager);
     } else if (config.mode === "jwt") {
-        container.register(BaseSessionManager.name, { useClass: JwtSessionManager });
+        container.registerType(BaseSessionManager.name, JwtSessionManager);
     } else {
         throw new Error("Unknown mode.");
     }
