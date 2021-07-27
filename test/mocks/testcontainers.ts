@@ -8,22 +8,37 @@ export class TestContainer {
     private _redisContainer: StartedTestContainer;
     private _redisClient: redis.RedisClient;
 
-    public async getTypeOrmConnection(): Promise<Connection> {
+    public async getTypeOrmConnection(showConnectionDetails: boolean = false): Promise<Connection> {
         if (this.isPostgresActive()) {
             throw new Error("PostgreSQL container is already running.");
         }
 
-        this._postgresContainer = await new PostgreSqlContainer("postgres:13.3-alpine3.14").start();
+        this._postgresContainer = await new PostgreSqlContainer("postgres:13.3-alpine3.14")
+            .withEnv("TZ", "Europe/Warsaw") // fix problem with clock skew in Linux container running on top of Windows // TODO won't work in different timezones
+            .withUsername("test")
+            .withPassword("test")
+            .withDatabase("test")
+            .start();
+        const connectionData = {
+            username: this._postgresContainer.getUsername(),
+            password: this._postgresContainer.getPassword(),
+            database: this._postgresContainer.getDatabase(),
+        };
         this._postgresConnection = await createConnection({
             type: "postgres",
             host: this._postgresContainer.getHost(),
             port: this._postgresContainer.getPort(),
-            username: this._postgresContainer.getUsername(),
-            password: this._postgresContainer.getPassword(),
-            database: this._postgresContainer.getDatabase(),
+            ...connectionData,
             entities: ["src/dal/entities/**/**.ts"],
             synchronize: true,
         });
+        if (showConnectionDetails) {
+            console.log("Postgres connection details", {
+                host: this._postgresContainer.getHost(),
+                port: this._postgresContainer.getPort(),
+                ...connectionData,
+            });
+        }
         return this._postgresConnection;
     }
 
@@ -41,6 +56,8 @@ export class TestContainer {
         if (this.isPostgresActive()) {
             await this._postgresConnection.close();
             await this._postgresContainer.stop();
+            this._postgresConnection = null;
+            this._postgresContainer = null;
         }
 
         if (this.isRedisActive()) {
@@ -53,6 +70,8 @@ export class TestContainer {
                 });
             });
             await this._redisContainer.stop();
+            this._redisClient = null;
+            this._redisContainer = null;
         }
     }
 

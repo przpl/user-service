@@ -1,6 +1,6 @@
 import moment from "moment";
 import { singleton } from "tsyringe";
-import { FindConditions, getRepository } from "typeorm";
+import { Connection, FindConditions } from "typeorm";
 
 import { ConfirmationEntity, ConfirmationType } from "../dal/entities/confirmationEntity";
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
@@ -44,16 +44,16 @@ interface ConfirmationLimit {
 
 @singleton()
 export class LocalLoginManager {
-    private _loginRepo = getRepository(LocalLoginEntity);
-    private _confirmRepo = getRepository(ConfirmationEntity);
-    private _passResetRepo = getRepository(PasswordResetEntity);
+    private _loginRepo = this._connection.getRepository(LocalLoginEntity);
+    private _confirmRepo = this._connection.getRepository(ConfirmationEntity);
+    private _passResetRepo = this._connection.getRepository(PasswordResetEntity);
     private _resendLimit: {
         email: ConfirmationLimit;
         phone: ConfirmationLimit;
     };
     private _passResetCodeTTL: TimeSpan;
 
-    constructor(private _passService: PasswordService, private _config: Config) {
+    constructor(private _connection: Connection, private _passService: PasswordService, private _config: Config) {
         this._resendLimit = {
             email: {
                 count: _config.localLogin.email.resendLimit,
@@ -119,7 +119,6 @@ export class LocalLoginManager {
         return { result, login: this.toLocalLoginModel(entity) };
     }
 
-    // TO-DO: test if works, select:[] returns null
     public async isLocal(userId: string): Promise<boolean> {
         const entity = await this._loginRepo.findOne({ where: { userId: userId }, select: ["userId"] });
         return Boolean(entity);
@@ -178,8 +177,6 @@ export class LocalLoginManager {
         if (!confirm) {
             return false;
         }
-        const userId = confirm.userId; // confirm reference will be null after remove()
-        await this._confirmRepo.remove(confirm);
 
         const update: Partial<LocalLoginEntity> = {};
         if (type === ConfirmationType.email) {
@@ -187,7 +184,11 @@ export class LocalLoginManager {
         } else {
             update.phoneConfirmed = true;
         }
-        await this._loginRepo.update({ userId: userId }, update);
+        await this._connection.manager.transaction(async (manager) => {
+            const userId = confirm.userId; // confirm reference will be null after remove()
+            await manager.remove(confirm);
+            await manager.update(LocalLoginEntity, { userId }, update);
+        });
 
         return true;
     }
@@ -211,7 +212,7 @@ export class LocalLoginManager {
     public async resetPassword(code: string, password: string): Promise<string> {
         guardNotUndefinedOrNull(code);
 
-        const passReset = await this._passResetRepo.findOne({ where: { code: code.toUpperCase() } });
+        const passReset = await this._passResetRepo.findOne({ code: code.toUpperCase() });
         if (!passReset) {
             throw new NotFoundException();
         }
@@ -301,6 +302,9 @@ export class LocalLoginManager {
         if (credentials.phone) {
             conditions.push({ phoneCode: credentials.phone.code, phoneNumber: credentials.phone.number });
         }
+        if (conditions.length === 0) {
+            throw new Error("No conditions.");
+        }
         return conditions;
     }
 
@@ -314,6 +318,8 @@ export class LocalLoginManager {
         } else if (primary === PrimaryLoginType.phone) {
             conditions.phoneCode = credentials.phone.code;
             conditions.phoneNumber = credentials.phone.number;
+        } else {
+            throw new Error("Unknown primary condition");
         }
         return conditions;
     }

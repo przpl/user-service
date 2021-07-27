@@ -1,12 +1,14 @@
 import { singleton } from "tsyringe";
-import { getRepository } from "typeorm";
+import { Connection } from "typeorm";
 
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLoginEntity";
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class ExternalLoginManager {
-    private _repo = getRepository(ExternalLoginEntity);
+    private _repo = this._connection.getRepository(ExternalLoginEntity);
+
+    constructor(private _connection: Connection) {}
 
     public async create(userId: string, externalUserId: string, email: string, provider: ExternalLoginProvider) {
         const entity = new ExternalLoginEntity(userId, externalUserId, email, provider);

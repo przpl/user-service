@@ -1,5 +1,5 @@
 import moment from "moment";
-import { Connection, getManager } from "typeorm";
+import { Connection } from "typeorm";
 
 import { SessionEntity } from "../../dal/entities/sessionEntity";
 import { UserEntity } from "../../dal/entities/userEntity";
@@ -45,7 +45,7 @@ export abstract class BaseSessionManager {
         sessionIds.push(session.id);
         user.sessionIds = sessionIds;
 
-        await getManager().transaction(async (manager) => {
+        await this._connection.manager.transaction(async (manager) => {
             await manager.save(session);
             await manager.save(user);
             if (sessionsOverLimit) {
@@ -84,7 +84,7 @@ export abstract class BaseSessionManager {
 
         await this._cacheStrategy.removeMany(sessions);
 
-        await getManager().transaction(async (manager) => {
+        await this._connection.manager.transaction(async (manager) => {
             await manager.remove(sessions);
             await manager.save(user);
         });
@@ -105,7 +105,7 @@ export abstract class BaseSessionManager {
 
         await this._cacheStrategy.remove(session);
 
-        await getManager().transaction(async (manager) => {
+        await this._connection.manager.transaction(async (manager) => {
             await manager.remove(session);
             await manager.save(user);
         });

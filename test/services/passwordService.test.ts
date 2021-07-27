@@ -1,5 +1,3 @@
-import "reflect-metadata";
-
 import { PasswordService } from "../../src/services/passwordService";
 import { mockConfig } from "../mocks/mockConfig";
 

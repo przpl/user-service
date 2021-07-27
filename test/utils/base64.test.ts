@@ -1,5 +1,3 @@
-import "reflect-metadata";
-
 import { base64ToHttpFriendly } from "../../src/utils/base64";
 
 describe("base64ToHttpFriendly()", () => {
