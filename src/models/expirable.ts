@@ -6,13 +6,11 @@ export abstract class Expirable {
     constructor(private fieldName: string) {}
 
     public isExpired(expiresAfter: TimeSpan): boolean {
-        const date = (this as any)[this.fieldName];
-        return isExpired(date, expiresAfter);
+        const date: Date = (this as any)[this.fieldName];
+        return this.verify(date, expiresAfter);
     }
-}
 
-export function isExpired(date: moment.MomentInput, expiresAfter: TimeSpan, now?: moment.MomentInput): boolean {
-    return moment(date)
-        .add(expiresAfter.seconds, "seconds")
-        .isBefore(now || moment());
+    private verify(date: Date, expiresAfter: TimeSpan): boolean {
+        return moment(date).add(expiresAfter.seconds, "seconds").isBefore(new Date());
+    }
 }

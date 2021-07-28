@@ -5,8 +5,8 @@ import {
     MFA_LOGIN_TOKEN_LENGTH,
     ONE_TIME_PASS_LENGTH,
     PASSWORD_RESET_CODE_LENGTH,
-    REFRESH_TOKEN_COOKIE_NAME,
-    REFRESH_TOKEN_LENGTH,
+    SESSION_COOKIE_NAME,
+    SESSION_ID_LENGTH,
     USER_ID_LENGTH,
 } from "../../utils/globalConsts";
 
@@ -50,11 +50,11 @@ export const fieldValidators = {
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
     password: null as (name: "password" | "new") => ValidationChain,
-    refreshToken: cookie(REFRESH_TOKEN_COOKIE_NAME)
+    sessionCookie: cookie(SESSION_COOKIE_NAME)
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: REFRESH_TOKEN_LENGTH, max: REFRESH_TOKEN_LENGTH })
+        .isLength({ min: SESSION_ID_LENGTH, max: SESSION_ID_LENGTH })
         .withMessage(FIELD_ERROR_MSG.isLength),
     additionalRegisterField: [] as ValidationChain[],
     weakPassword: {} as ValidationChain,

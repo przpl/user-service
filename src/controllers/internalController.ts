@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 import { LockManager } from "../managers/lockManager";
 import { RoleManager } from "../managers/roleManager";
-import { SessionManager } from "../managers/sessionManager";
+import { BaseSessionManager } from "../managers/session/baseSessionManager";
 import { UserManager } from "../managers/userManger";
 import * as errors from "./commonErrors";
 
@@ -12,7 +12,7 @@ export default class InternalController {
     constructor(
         private _userManager: UserManager,
         private _roleManager: RoleManager,
-        private _sessionManager: SessionManager,
+        @inject(BaseSessionManager.name) private _sessionManager: BaseSessionManager,
         private _lockManager: LockManager
     ) {}
 
@@ -33,7 +33,7 @@ export default class InternalController {
 
         const roleExisted = await this._roleManager.removeRole(req.body.userId, req.body.userRole);
         if (roleExisted) {
-            await this._sessionManager.revokeAllSessions(req.body.userId);
+            await this._sessionManager.removeAllSessions(req.body.userId);
         }
         res.json({ result: true });
     }
@@ -43,7 +43,7 @@ export default class InternalController {
             return;
         }
 
-        await this._sessionManager.revokeAllSessions(req.params.userId);
+        await this._sessionManager.removeAllSessions(req.params.userId);
         res.json({ result: true });
     }
 
@@ -55,7 +55,7 @@ export default class InternalController {
         const { until, reason, by } = req.body.lock;
         const untilDate = new Date(until);
         await this._lockManager.lock(req.params.userId, untilDate, reason, by);
-        await this._sessionManager.revokeAllSessions(req.params.userId);
+        await this._sessionManager.removeAllSessions(req.params.userId);
 
         res.json({ result: true });
     }

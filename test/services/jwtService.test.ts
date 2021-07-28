@@ -1,23 +1,20 @@
-import "reflect-metadata";
-
 import jwt from "jsonwebtoken";
 import moment from "moment";
 
 import { AccessTokenDto } from "../../src/models/dtos/accessTokenDto";
 import { JwtService } from "../../src/services/jwtService";
-import Env from "../../src/utils/config/env";
+import { mockEnv } from "../mocks/mockEnv";
 
-const key = "12345678901234567890123456789012345678901234567890";
-const env = { jwtPrivateKey: key, tokenTTLMinutes: 10 } as Env;
+const env = mockEnv();
 const sut = new JwtService(env);
 
 describe("issueAccessToken()", () => {
     it("should issue token", async () => {
-        const token = sut.issueAccessToken("refreshToken", "user1", ["admin"]);
+        const token = sut.issueAccessToken("sessionCookie", "user1", ["admin"]);
         const data = jwt.decode(token) as any;
 
         expect(data.sub).toBe("user1");
-        expect(data.ref).toBe("refre");
+        expect(data.ref).toBe("sessio");
         expect(data.rol.length).toBe(1);
         expect(data.rol[0]).toBe("admin");
         expect(data.exp - data.iat).toBe(10 * 60);
@@ -48,7 +45,7 @@ describe("decodeToken()", () => {
             exp: moment().add(30, "minutes").unix(),
             typ: "otherType",
         } as any;
-        const token = jwt.sign(dataToSign, key);
+        const token = jwt.sign(dataToSign, env.jwtPrivateKey);
 
         expect(() => sut.decodeAccessToken(token)).toThrowError("Invalid token type.");
     });
@@ -60,7 +57,7 @@ describe("decodeToken()", () => {
             iat: moment().subtract(31, "minutes").unix(),
             exp: moment().subtract(1, "minutes").unix(),
         } as AccessTokenDto;
-        const token = jwt.sign(dataToSign, key);
+        const token = jwt.sign(dataToSign, env.jwtPrivateKey);
         let thrown = false;
 
         try {
@@ -74,12 +71,12 @@ describe("decodeToken()", () => {
     });
 
     it("should decode token", async () => {
-        const token = sut.issueAccessToken("refreshToken", "user1", ["admin"]);
+        const token = sut.issueAccessToken("sessionCookie", "user1", ["admin"]);
 
         const result = sut.decodeAccessToken(token);
 
         expect(result.sub).toBe("user1");
-        expect(result.ref).toBe("refre");
+        expect(result.ref).toBe("sessio");
         expect(result.rol.length).toBe(1);
         expect(result.rol[0]).toBe("admin");
         expect(result.exp - result.iat).toBe(10 * 60);

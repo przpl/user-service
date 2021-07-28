@@ -1,5 +1,3 @@
-import "reflect-metadata";
-
 import { TimeSpan } from "../../src/utils/timeSpan";
 
 describe("fromSeconds()", () => {

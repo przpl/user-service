@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/node";
 
-import { AccessTokenDto } from "../models/dtos/accessTokenDto";
+import { AuthenticatedUser } from "../models/authenticatedUser";
 
-export function captureExceptionWithSentry(error: any, user?: AccessTokenDto, printErrOnConsole = false) {
+export function captureExceptionWithSentry(error: any, user?: AuthenticatedUser, printErrOnConsole = false) {
     Sentry.captureException(error, { user: { id: user?.sub } });
     if (printErrOnConsole && process.env.NODE_ENV === "development" && error.stack) {
         console.log(error.stack);

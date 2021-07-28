@@ -1,18 +1,27 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import passport from "passport";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
+import { sessionDoesNotExist } from "../controllers/commonErrors";
 import { CacheDb } from "../dal/cacheDb";
+import { BaseSessionManager } from "../managers/session/baseSessionManager";
+import { AuthMode } from "../models/authMode";
+import { AccessTokenDto } from "../models/dtos/accessTokenDto";
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
+import { SESSION_COOKIE_NAME } from "../utils/globalConsts";
 
 @singleton()
 export default class AuthMiddleware {
     private _googleAuthDelegate = passport.authenticate("google-id-token", { session: false });
     private _facebookAuthDelegate = passport.authenticate("facebook-token", { session: false });
 
-    constructor(private _cacheDb: CacheDb, private _jwtService: JwtService) {
+    constructor(
+        private _cacheDb: CacheDb,
+        @inject(BaseSessionManager.name) private _sessionManager: BaseSessionManager,
+        private _jwtService: JwtService
+    ) {
         if (!_jwtService) {
             throw new Error("JWT Service is required.");
         }
@@ -32,7 +41,7 @@ export default class AuthMiddleware {
         this._facebookAuthDelegate(req, res, (err: any) => this.handleExternalLogin(next, err));
     }
 
-    public authJwt(req: Request, res: Response, next: NextFunction) {
+    public jwt(req: Request, res: Response, next: NextFunction) {
         const bearerString = req.get("Authorization");
         if (!bearerString) {
             return forwardError(next, "missingAuthorizationHeader", StatusCodes.UNAUTHORIZED);
@@ -43,8 +52,10 @@ export default class AuthMiddleware {
             return forwardError(next, "missingAccessToken", StatusCodes.UNAUTHORIZED);
         }
 
+        let accessToken: AccessTokenDto;
         try {
-            req.authenticatedUser = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
+            accessToken = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
+            req.authenticatedUser = { sub: accessToken.sub };
         } catch (error) {
             if (error.name === "JsonWebTokenError") {
                 return forwardError(next, "invalidJwtSignature", StatusCodes.UNAUTHORIZED);
@@ -54,7 +65,7 @@ export default class AuthMiddleware {
             return forwardInternalError(next, error);
         }
 
-        const { sub, ref } = req.authenticatedUser;
+        const { sub, ref } = accessToken;
         this._cacheDb.isAccessTokenRevoked(sub, ref, (error, reply) => {
             if (error) {
                 return forwardInternalError(next, error);
@@ -64,6 +75,33 @@ export default class AuthMiddleware {
             }
             next();
         });
+    }
+
+    public async session(req: Request, res: Response, next: NextFunction) {
+        const cookie = req.cookies[SESSION_COOKIE_NAME];
+        if (!cookie) {
+            return forwardError(next, "missingSessionCookie", StatusCodes.UNAUTHORIZED);
+        }
+
+        const userId = await this._sessionManager.getUserIdFromSession(cookie, req.ip);
+        if (!userId) {
+            res.clearCookie(SESSION_COOKIE_NAME);
+            return sessionDoesNotExist(next);
+        }
+
+        req.authenticatedUser = { sub: userId };
+
+        next();
+    }
+
+    public authenticate(mode: AuthMode, req: Request, res: Response, next: NextFunction) {
+        if (mode === "session") {
+            this.session(req, res, next);
+        } else if (mode === "jwt") {
+            this.jwt(req, res, next);
+        } else {
+            throw new Error("Unknown authentication mode.");
+        }
     }
 
     private handleExternalLogin(next: NextFunction, error: any) {

@@ -14,3 +14,5 @@ Migrations
    typeorm migration:run
 
 =============================================================================================================================
+
+Session token is constructed from user id and session id: "<userId>:<sessionId>"

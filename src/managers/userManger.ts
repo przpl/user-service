@@ -1,5 +1,5 @@
 import { inject, singleton } from "tsyringe";
-import { getRepository } from "typeorm";
+import { Connection } from "typeorm";
 
 import { UserEntity } from "../dal/entities/userEntity";
 import { UserIdGenerator } from "../services/generators/userIdGenerator";
@@ -7,9 +7,9 @@ import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class UserManager {
-    private _repo = getRepository(UserEntity);
+    private _repo = this._connection.getRepository(UserEntity);
 
-    constructor(@inject("UserIdGenerator") private _idGenerator: UserIdGenerator) {}
+    constructor(@inject("UserIdGenerator") private _idGenerator: UserIdGenerator, private _connection: Connection) {}
 
     public async create(username: string): Promise<string> {
         const id = this._idGenerator.generate(username);

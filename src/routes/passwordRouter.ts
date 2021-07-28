@@ -14,12 +14,13 @@ export default class PasswordRouter {
         const ctrl = container.resolve(PasswordController);
         const auth = container.resolve(AuthMiddleware);
         const validator = container.resolve(Validator);
+        const config = container.resolve(Config);
         const captcha = container.resolve(ReCaptchaMiddleware);
         const reCaptchaEnabled = container.resolve(Config).security.reCaptcha.protectedEndpoints;
 
         router.post(
             "/change",
-            (req: Request, res: Response, next: NextFunction) => auth.authJwt(req, res, next),
+            (req: Request, res: Response, next: NextFunction) => auth.authenticate(config.mode, req, res, next),
             validator.changePassword,
             asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.changePassword(req, res, next))
         );

@@ -5,7 +5,7 @@ import {
     CONFIRMATION_CODE_LENGTH,
     MFA_LOGIN_TOKEN_LENGTH,
     PASSWORD_RESET_CODE_LENGTH,
-    REFRESH_TOKEN_LENGTH,
+    SESSION_ID_LENGTH,
     USER_ID_LENGTH,
 } from "../utils/globalConsts";
 
@@ -25,6 +25,6 @@ export function generateMfaLoginToken(): string {
     return cryptoRandomString({ length: MFA_LOGIN_TOKEN_LENGTH, type: "hex" });
 }
 
-export function generateRefreshToken(): string {
-    return base64ToHttpFriendly(cryptoRandomString({ length: REFRESH_TOKEN_LENGTH, type: "base64" }));
+export function generateSessionId(): string {
+    return base64ToHttpFriendly(cryptoRandomString({ length: SESSION_ID_LENGTH, type: "base64" }));
 }

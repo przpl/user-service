@@ -48,11 +48,7 @@ export const mfaLimitExceeded = (next: NF) => forwardError(next, "mfaLimitExceed
 export const mfaAlreadyActivated = (next: NF) => forwardError(next, "mfaAlreadyActivated", StatusCodes.FORBIDDEN);
 // #endregion
 
-// #region Session
-export const staleRefreshToken = (next: NF) => forwardError(next, "staleRefreshToken", StatusCodes.FORBIDDEN);
-
 export const sessionDoesNotExist = (next: NF) => forwardError(next, "sessionDoesNotExist", StatusCodes.UNAUTHORIZED);
-// #endregion
 
 // #region User
 export function userLockedOut(next: NF, reason: string) {

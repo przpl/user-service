@@ -8,9 +8,13 @@ import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import redis from "redis";
 import { container } from "tsyringe";
 import { Connection, createConnection } from "typeorm";
 
+import { BaseSessionManager } from "./managers/session/baseSessionManager";
+import { CookieSessionManager } from "./managers/session/cookieSessionManager";
+import { JwtSessionManager } from "./managers/session/jwtSessionManager";
 import { configurePassport } from "./middleware/passport";
 import EmailRouter from "./routes/emailRouter";
 import InternalRouter from "./routes/internalRouter";
@@ -123,26 +127,35 @@ async function start() {
     const config = loadConfig();
 
     logger = new Logger(env.loggerDisabled, env.loggerLevel);
-    container.register(Logger, { useValue: logger });
-    container.register(SecurityLogger, { useValue: new SecurityLogger(false) });
+    container.registerInstance(Logger, logger);
+    container.registerInstance(SecurityLogger, new SecurityLogger(false));
 
     const dbConnection = await connectToDb();
     const messageBroker = await connectToMessageBroker(env);
 
-    container.register(Env, { useValue: env });
-    container.register(Config, { useValue: config });
-    container.register(MessageBroker, { useValue: messageBroker });
-    container.register("UserIdGenerator", { useClass: UsernameBasedIdGenerator });
+    container.registerInstance(Connection, dbConnection);
+    container.registerInstance(Env, env);
+    container.registerInstance(Config, config);
+    container.registerInstance(MessageBroker, messageBroker);
+    container.registerType("UserIdGenerator", UsernameBasedIdGenerator);
+    container.registerInstance(redis.RedisClient, redis.createClient(config.redis.port || 6379, config.redis.host || "127.0.0.1"));
+    if (config.mode === "session") {
+        container.registerType(BaseSessionManager.name, CookieSessionManager);
+    } else if (config.mode === "jwt") {
+        container.registerType(BaseSessionManager.name, JwtSessionManager);
+    } else {
+        throw new Error("Unknown mode.");
+    }
 
     const app = express();
     if (env.isDev()) {
-        app.use(morgan("dev"));
+        app.use(morgan("dev") as any);
     }
     app.use(cors({ credentials: true, origin: env.cors }));
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: false }));
+    app.use(express.json() as any);
+    app.use(express.urlencoded({ extended: false }) as any);
     app.use(cookieParser());
-    app.use(helmet());
+    app.use(helmet() as any);
     app.set("trust proxy", true);
     configurePassport(app, config);
 

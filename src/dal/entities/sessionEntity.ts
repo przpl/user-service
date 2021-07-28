@@ -5,7 +5,7 @@ import { UserEntity } from "./userEntity";
 @Entity({ name: "session" })
 export class SessionEntity extends BaseEntity {
     @PrimaryColumn()
-    token: string;
+    id: string;
 
     @Column()
     userId: string;

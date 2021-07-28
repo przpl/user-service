@@ -76,7 +76,7 @@ export default class LocalUserController extends UserController {
             return;
         }
 
-        this.sendTokens(req, res, userId);
+        this.respondWithSessionOrJwt(req, res, userId);
     }
 
     private async handleLoginDuplicate(next: NextFunction, credentials: Credentials): Promise<boolean> {
