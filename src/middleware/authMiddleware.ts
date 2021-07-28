@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import passport from "passport";
 import { inject, singleton } from "tsyringe";
+import jwt from "jsonwebtoken";
 
 import { sessionDoesNotExist } from "../controllers/commonErrors";
 import { CacheDb } from "../dal/cacheDb";
@@ -57,9 +58,9 @@ export default class AuthMiddleware {
             accessToken = this._jwtService.decodeAccessToken(tokenWithoutBearerPrefix);
             req.authenticatedUser = { sub: accessToken.sub };
         } catch (error) {
-            if (error.name === "JsonWebTokenError") {
+            if (error instanceof jwt.JsonWebTokenError) {
                 return forwardError(next, "invalidJwtSignature", StatusCodes.UNAUTHORIZED);
-            } else if (error.name === "TokenExpiredError") {
+            } else if (error instanceof jwt.TokenExpiredError) {
                 return forwardError(next, "tokenExpired", StatusCodes.UNAUTHORIZED);
             }
             return forwardInternalError(next, error);
