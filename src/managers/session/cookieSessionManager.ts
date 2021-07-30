@@ -4,6 +4,7 @@ import { Connection } from "typeorm";
 
 import { CacheDb } from "../../dal/cacheDb";
 import { Config } from "../../utils/config/config";
+import { guardNotUndefinedOrNull } from "../../utils/guardClauses";
 import { TimeSpan } from "../../utils/timeSpan";
 import { BaseSessionManager } from "./baseSessionManager";
 import { CookieSessionCacheStrategy } from "./cookieSessionCacheStrategy";
@@ -22,6 +23,13 @@ export class CookieSessionManager extends BaseSessionManager {
         if (userId) {
             return userId;
         }
+
+        return await this.tryToRecacheSession(sessionId, ip);
+    }
+
+    public async tryToRecacheSession(sessionId: string, ip: string) {
+        guardNotUndefinedOrNull(sessionId);
+
         const sessionInDb = await this._repo.findOne(sessionId);
         if (sessionInDb) {
             await this._cacheDb.setSession(sessionId, sessionInDb.userId, this._cacheExpiration);

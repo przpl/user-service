@@ -50,12 +50,15 @@ export const fieldValidators = {
         .isHexadecimal()
         .withMessage(FIELD_ERROR_MSG.isHexadecimal),
     password: null as (name: "password" | "new") => ValidationChain,
-    sessionCookie: cookie(SESSION_COOKIE_NAME)
-        .isString()
-        .withMessage(FIELD_ERROR_MSG.isString)
-        .trim()
-        .isLength({ min: SESSION_ID_LENGTH, max: SESSION_ID_LENGTH })
-        .withMessage(FIELD_ERROR_MSG.isLength),
+    sessionCookie: (location: "param" | "cookie") =>
+        location === "param"
+            ? param("sessionId")
+            : cookie(SESSION_COOKIE_NAME)
+                  .isString()
+                  .withMessage(FIELD_ERROR_MSG.isString)
+                  .trim()
+                  .isLength({ min: SESSION_ID_LENGTH, max: SESSION_ID_LENGTH })
+                  .withMessage(FIELD_ERROR_MSG.isLength),
     additionalRegisterField: [] as ValidationChain[],
     weakPassword: {} as ValidationChain,
     oldPassword: {} as ValidationChain,

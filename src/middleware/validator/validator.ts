@@ -172,8 +172,8 @@ export default class Validator extends AbstractValidator {
             this.validate,
         ];
         this.changePassword = [fieldValidators.oldPassword, fieldValidators.password("new"), this.validate];
-        this.refreshAccessToken = [fieldValidators.sessionCookie, this.validate];
-        this.logout = [fieldValidators.sessionCookie, this.validate];
+        this.refreshAccessToken = [fieldValidators.sessionCookie("cookie"), this.validate];
+        this.logout = [fieldValidators.sessionCookie("cookie"), this.validate];
         this.confirmEmail = [fieldValidators.email(true), fieldValidators.confirmationCode, this.validate];
         this.resendEmail = [fieldValidators.email(true), this.validate];
         this.confirmPhone = [...fieldValidators.phone(true), fieldValidators.confirmationCode, this.validate];

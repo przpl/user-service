@@ -4,6 +4,7 @@ import { inject, singleton } from "tsyringe";
 import { LockManager } from "../managers/lockManager";
 import { RoleManager } from "../managers/roleManager";
 import { BaseSessionManager } from "../managers/session/baseSessionManager";
+import { CookieSessionManager } from "../managers/session/cookieSessionManager";
 import { UserManager } from "../managers/userManger";
 import * as errors from "./commonErrors";
 
@@ -13,6 +14,7 @@ export default class InternalController {
         private _userManager: UserManager,
         private _roleManager: RoleManager,
         @inject(BaseSessionManager.name) private _sessionManager: BaseSessionManager,
+        private _cookieSessionManager: CookieSessionManager,
         private _lockManager: LockManager
     ) {}
 
@@ -68,6 +70,12 @@ export default class InternalController {
         const result = await this._lockManager.unlock(req.params.userId);
 
         res.json({ result: result });
+    }
+
+    public async tryToRecacheSession(req: Request, res: Response, next: NextFunction) {
+        const sessionCookie = req.params.sessionId as string;
+        const userId = await this._cookieSessionManager.tryToRecacheSession(sessionCookie, req.ip);
+        res.send(userId);
     }
 
     private async assertUserExists(next: NextFunction, userId: string): Promise<boolean> {

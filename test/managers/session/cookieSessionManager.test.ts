@@ -4,6 +4,7 @@ import { Connection, Repository } from "typeorm";
 import { CacheDb } from "../../../src/dal/cacheDb";
 import { SessionEntity } from "../../../src/dal/entities/sessionEntity";
 import { UserEntity } from "../../../src/dal/entities/userEntity";
+import { NullOrUndefinedException } from "../../../src/exceptions/exceptions";
 import { CookieSessionCacheStrategy } from "../../../src/managers/session/cookieSessionCacheStrategy";
 import { CookieSessionManager } from "../../../src/managers/session/cookieSessionManager";
 import { SESSION_ID_LENGTH } from "../../../src/utils/globalConsts";
@@ -64,6 +65,29 @@ describe("CookieSessionManager", () => {
 
             expect(userIdFromCache).toBe("user1");
             expect(await sessionRepo.findOne()).toBeFalsy();
+        });
+    });
+
+    describe("getUserIdFromSession()", () => {
+        it("should throw error if sessionId is null", async () => {
+            expect(() => sut.tryToRecacheSession(null, "127.0.0.1")).rejects.toThrow(NullOrUndefinedException);
+        });
+
+        it("not existing session should return null", async () => {
+            const userId = await sut.tryToRecacheSession("cookie1", "127.0.0.1");
+            expect(userId).toBeNull();
+        });
+
+        it("should get session from db", async () => {
+            const sid = await sut.issueSession("user1", "127.0.0.1", mockUserAgent());
+
+            const userIdFromDb = await sut.tryToRecacheSession(sid, "127.0.0.2");
+
+            expect(userIdFromDb).toBe("user1");
+            const session = await sessionRepo.findOne();
+            expect(session.lastRefreshIp).toBe("127.0.0.2");
+            expect(session.lastUseAt).toBeTruthy();
+            expect(await cacheDb.getSession(sid)).toBe("user1");
         });
     });
 

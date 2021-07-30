@@ -8,6 +8,7 @@ import { ValidatorArray } from "./validatorArray";
 @singleton()
 export default class InternalValidator extends AbstractValidator {
     public userIdParam: ValidatorArray = [fieldValidators.userIdParam, this.validate];
+    public sessionIdParam: ValidatorArray = [fieldValidators.sessionCookie("param"), this.validate];
 
     public role: ValidatorArray = [
         fieldValidators.userId,

@@ -5,6 +5,7 @@ import { container } from "tsyringe";
 import InternalController from "../controllers/internalController";
 import InternalAuthMiddleware from "../middleware/internalAuthMiddleware";
 import InternalValidator from "../middleware/validator/internalValidator";
+import { Config } from "../utils/config/config";
 
 export default class InternalRouter {
     static getExpressRouter(): Router {
@@ -12,6 +13,7 @@ export default class InternalRouter {
         const ctrl = container.resolve(InternalController);
         const auth = container.resolve(InternalAuthMiddleware);
         const validator = container.resolve(InternalValidator);
+        const config = container.resolve(Config);
 
         router.use((req: Request, res: Response, next: NextFunction) => auth.isInternalRequest(req, res, next));
 
@@ -26,6 +28,14 @@ export default class InternalRouter {
             validator.role,
             asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.removeRoleFromUser(req, res, next))
         );
+
+        if (config.mode === "session") {
+            router.get(
+                "/sessions/:sessionId",
+                validator.sessionIdParam,
+                asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.tryToRecacheSession(req, res, next))
+            );
+        }
 
         router.delete(
             "/sessions/:userId",
