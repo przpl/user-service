@@ -12,6 +12,7 @@ import { AccessTokenDto } from "../models/dtos/accessTokenDto";
 import { JwtService } from "../services/jwtService";
 import { forwardError, forwardInternalError } from "../utils/expressUtils";
 import { SESSION_COOKIE_NAME } from "../utils/globalConsts";
+import { removeSessionCookie } from "../utils/removeSessionCookie";
 
 @singleton()
 export default class AuthMiddleware {
@@ -86,7 +87,7 @@ export default class AuthMiddleware {
 
         const userId = await this._sessionManager.getUserIdFromSession(cookie, req.ip);
         if (!userId) {
-            res.clearCookie(SESSION_COOKIE_NAME);
+            removeSessionCookie(res);
             return sessionDoesNotExist(next);
         }
 

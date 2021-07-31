@@ -7,6 +7,7 @@ import { Session } from "../models/session";
 import { JwtService } from "../services/jwtService";
 import { forwardInternalError } from "../utils/expressUtils";
 import { SESSION_COOKIE_NAME } from "../utils/globalConsts";
+import { removeSessionCookie } from "../utils/removeSessionCookie";
 import * as errors from "./commonErrors";
 
 @singleton()
@@ -28,7 +29,7 @@ export default class TokenController {
         }
 
         if (!session) {
-            res.clearCookie(SESSION_COOKIE_NAME);
+            removeSessionCookie(res);
             return errors.sessionDoesNotExist(next);
         }
 

@@ -16,6 +16,7 @@ import { RequestBody } from "../../types/express/requestBody";
 import { Config } from "../../utils/config/config";
 import { SESSION_COOKIE_NAME } from "../../utils/globalConsts";
 import { isNullOrUndefined } from "../../utils/isNullOrUndefined";
+import { removeSessionCookie } from "../../utils/removeSessionCookie";
 import SecurityLogger from "../../utils/securityLogger";
 import { captureExceptionWithSentry } from "../../utils/sentryUtils";
 import * as errors from "../commonErrors";
@@ -69,7 +70,7 @@ export default class UserController {
                 ).unix()}, last refresh by ${removedSession.lastRefreshIp}`
             );
         }
-        res.clearCookie(SESSION_COOKIE_NAME);
+        removeSessionCookie(res);
 
         res.send({ result: true });
     }
