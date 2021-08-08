@@ -14,7 +14,7 @@ import { JwtService } from "../../services/jwtService";
 import { MessageBroker } from "../../services/messageBroker";
 import { RequestBody } from "../../types/express/requestBody";
 import { Config } from "../../utils/config/config";
-import { SESSION_COOKIE_NAME } from "../../utils/globalConsts";
+import { SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME } from "../../utils/globalConsts";
 import { isNullOrUndefined } from "../../utils/isNullOrUndefined";
 import { removeSessionCookie } from "../../utils/removeSessionCookie";
 import SecurityLogger from "../../utils/securityLogger";
@@ -83,6 +83,13 @@ export default class UserController {
             maxAge: this._config.session.TTLHours * 60 * 60 * 1000,
             secure: this._config.session.cookie.secure,
             httpOnly: true,
+        });
+        res.cookie(SESSION_STATE_COOKIE_NAME, "true", {
+            path: "/",
+            sameSite: this._config.session.cookie.sameSite,
+            maxAge: this._config.session.TTLHours * 60 * 60 * 1000,
+            secure: this._config.session.cookie.secure,
+            httpOnly: false,
         });
 
         if (this._config.mode === "session") {
