@@ -93,7 +93,7 @@ export default class UserController {
         });
 
         if (this._config.mode === "session") {
-            res.send();
+            res.json({ user: { id: userId } });
         } else if (this._config.mode === "jwt") {
             const roles = await this._roleManager.getRoles(userId);
             const accessToken = this._jwtService.issueAccessToken(sessionCookie, userId, roles);
