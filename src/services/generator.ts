@@ -14,7 +14,7 @@ export function generateUserId(): string {
 }
 
 export function generateConfirmationCode(): string {
-    return cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "numeric" });
+    return cryptoRandomString({ length: CONFIRMATION_CODE_LENGTH, type: "hex" }).toUpperCase();
 }
 
 export function generatePasswordResetCode(): string {

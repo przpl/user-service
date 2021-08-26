@@ -18,7 +18,7 @@ export default class ConfirmationController {
 
     public async confirm(req: Request, res: Response, next: NextFunction) {
         const subject = this.extractSubject(req.body);
-        const success = await this._loginManager.confirm(subject.value, req.body.code, subject.type);
+        const success = await this._loginManager.confirm(subject.value, req.body.code.toUpperCase(), subject.type);
         const subjectType = this.getPrimaryLoginType(req.body);
         if (subjectType === PrimaryLoginType.email) {
             // TODO if user has a phone, generate and push code
