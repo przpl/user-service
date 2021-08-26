@@ -46,6 +46,13 @@ function loadEnv() {
         process.exit(1);
     }
 
+    process.env.TYPEORM_ENTITIES = "dist/dal/entities/*.js,dist/dal/entities/*/*.js";
+    process.env.TYPEORM_ENTITIES_DIR = "src/dal/entities";
+    process.env.TYPEORM_MIGRATIONS = "dist/dal/migrations/*.js";
+    process.env.TYPEORM_MIGRATIONS_DIR = "src/dal/migrations";
+    process.env.TYPEORM_SUBSCRIBERS = "dist/dal/subscribers/*.js";
+    process.env.TYPEORM_SUBSCRIBERS_DIR = "src/dal/subscribers";
+
     let atLeastOneError = false;
     const configValidationResult = env.validate();
     if (configValidationResult.length > 0) {
