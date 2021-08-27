@@ -5,6 +5,12 @@ Required external services:
 3. RabbitMQ
 
 =============================================================================================================================
+Configuration
+
+1. Copy config.json.dist to config.json (same directory).
+2. Copy .env.dist to .env (save directory).
+
+=============================================================================================================================
 Migrations
 
 1. Build app to make sure .js code in dist directory is up to date so TypeORM can detect all entities
