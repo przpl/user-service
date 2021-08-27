@@ -8,5 +8,6 @@ declare module "express" {
         body: RequestBody;
         cookies: RequestCookies;
         userAgent?: UAParser.IResult;
+        sessionId?: string;
     }
 }

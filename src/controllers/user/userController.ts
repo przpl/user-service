@@ -10,6 +10,7 @@ import { RoleManager } from "../../managers/roleManager";
 import { BaseSessionManager } from "../../managers/session/baseSessionManager";
 import { Credentials } from "../../models/credentials";
 import { Session } from "../../models/session";
+import { Csrf } from "../../services/csrf";
 import { JwtService } from "../../services/jwtService";
 import { MessageBroker } from "../../services/messageBroker";
 import { RequestBody } from "../../types/express/requestBody";
@@ -31,6 +32,7 @@ export default class UserController {
     protected _queueService = container.resolve(MessageBroker);
     protected _config = container.resolve(Config);
     protected _securityLogger = container.resolve(SecurityLogger);
+    protected _csrf = container.resolve(Csrf);
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
         const { mfaLoginToken, oneTimePassword, userId } = req.body;
@@ -93,7 +95,7 @@ export default class UserController {
         });
 
         if (this._config.mode === "session") {
-            res.json({ user: { id: userId } });
+            res.json({ user: { id: userId }, csrfToken: this._csrf.generate(sessionCookie) });
         } else if (this._config.mode === "jwt") {
             const roles = await this._roleManager.getRoles(userId);
             const accessToken = this._jwtService.issueAccessToken(sessionCookie, userId, roles);

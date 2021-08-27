@@ -92,6 +92,7 @@ export default class AuthMiddleware {
         }
 
         req.authenticatedUser = { sub: userId };
+        req.sessionId = cookie;
 
         next();
     }
