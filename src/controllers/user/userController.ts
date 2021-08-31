@@ -123,8 +123,8 @@ export default class UserController {
         return true;
     }
 
-    protected async pushNewUser(id: string, body: RequestBody, credentials?: Credentials) {
-        const user: any = { id };
+    protected async pushNewUser(id: string, body: RequestBody, accountType: "local" | "external", credentials?: Credentials) {
+        const user: any = { id, isLocal: accountType === "local" };
         for (const fieldName of Object.keys(this._config.additionalFields.registerEndpoint)) {
             user[fieldName] = (body as any)[fieldName];
         }

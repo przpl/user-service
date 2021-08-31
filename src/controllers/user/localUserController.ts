@@ -41,7 +41,7 @@ export default class LocalUserController extends UserController {
             throw error;
         }
 
-        await this.pushNewUser(userId, req.body, credentials);
+        await this.pushNewUser(userId, req.body, "local", credentials);
 
         if (login.email) {
             await this.pushEmailCode(userId, credentials.email);
