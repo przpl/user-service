@@ -1,29 +1,18 @@
-import bcrypt from "bcrypt";
+import argon2id from "argon2";
 import { singleton } from "tsyringe";
-
-import { Config } from "../utils/config/config";
-import { isNullOrUndefined } from "../utils/isNullOrUndefined";
 
 @singleton()
 export class PasswordService {
-    private _bcryptRounds: number;
-
-    constructor(config: Config) {
-        this._bcryptRounds = config.security.bcryptRounds;
-        if (this._bcryptRounds < 12) {
-            throw new Error("Minimum count of bcrypt rounds is 12. Smaller number is considered unsafe.");
-        }
-    }
-
-    public hash(password: string): Promise<string> {
-        if (isNullOrUndefined(password)) {
+    public async hash(password: string): Promise<string> {
+        if (!password) {
             throw new Error("Cannot hash null or undefined password.");
         }
 
-        return bcrypt.hash(password, this._bcryptRounds);
+        // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+        return await argon2id.hash(password, { memoryCost: 4096 * 2, timeCost: 4, parallelism: 1 });
     }
 
-    public verify(password: string, expectedHash: string): Promise<boolean> {
-        return bcrypt.compare(password, expectedHash);
+    public async verify(password: string, expectedHash: string): Promise<boolean> {
+        return await argon2id.verify(expectedHash, password);
     }
 }

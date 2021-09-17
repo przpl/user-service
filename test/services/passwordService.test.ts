@@ -1,21 +1,24 @@
 import { PasswordService } from "../../src/services/passwordService";
-import { mockConfig } from "../mocks/mockConfig";
 
-const sut = new PasswordService(mockConfig());
+const sut = new PasswordService();
 
-describe("hash()", () => {
-    it("should throw exception if password is undefined", async () => {
-        expect(() => sut.hash(undefined)).toThrowError("Cannot hash null or undefined password.");
-    });
-
-    it("should throw exception if password is null", async () => {
-        expect(() => sut.hash(null)).toThrowError("Cannot hash null or undefined password.");
+describe("hash", () => {
+    it("should throw Error if password is missing", async () => {
+        await expect(sut.hash(undefined)).rejects.toThrow(Error);
     });
 
     it("should hash password", async () => {
-        const hash = await sut.hash("password");
-        const result = await sut.verify("password", hash);
+        expect(await sut.hash("password")).toHaveLength(95);
+    });
+});
 
-        expect(result).toBe(true);
+describe("verify", () => {
+    it("should verify password", async () => {
+        expect(
+            await sut.verify("password", "$argon2i$v=19$m=8192,t=4,p=1$qiODzvUuIg0qf2ulweAadw$nFip6/Vh2U7BlIdCnGYTTaKCk15N8NxmYTk2Sr/sPUI")
+        ).toBe(true);
+        expect(
+            await sut.verify(" password", "$argon2i$v=19$m=8192,t=4,p=1$qiODzvUuIg0qf2ulweAadw$nFip6/Vh2U7BlIdCnGYTTaKCk15N8NxmYTk2Sr/sPUI")
+        ).toBe(false);
     });
 });

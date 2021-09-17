@@ -17,7 +17,6 @@ export class Config {
             loginTokenTTLSeconds: number;
             maxInvalidAttempts: number;
         };
-        bcryptRounds: number;
         reCaptcha: {
             enabled: boolean;
             ssl: boolean;

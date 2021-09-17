@@ -11,7 +11,6 @@
             "loginTokenTTLSeconds": 300,
             "maxInvalidAttempts": 3
         },
-        "bcryptRounds": 12,
         "reCaptcha": {
             "enabled": true,
             "ssl": true,
