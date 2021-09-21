@@ -28,3 +28,10 @@ Migrations
 =============================================================================================================================
 
 Session token is constructed from user id and session id: "<userId>:<sessionId>"
+
+=============================================================================================================================
+
+Docker
+
+1. Build: `docker build . -t user-service`
+2. Run: `docker run -p 3000:3000 -v "$(pwd)/.env:/home/node/.env" -v "$(pwd)/config.json:/home/node/config.json" --name user-service user-service`

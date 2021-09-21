@@ -1,6 +1,7 @@
 .idea
 .vscode
 .env
+.env.docker
 *.log
 *.bat
 node_modules

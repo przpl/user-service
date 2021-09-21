@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { ErrorResponse } from "../interfaces/errorResponse";
 import { captureExceptionWithSentry } from "./sentryUtils";
 
-export function forwardInternalError(next: NextFunction, originalError: object) {
+export function forwardInternalError(next: NextFunction, originalError: any) {
     forwardError(next, [], StatusCodes.INTERNAL_SERVER_ERROR, originalError);
 }
 
@@ -12,7 +12,7 @@ export function forwardError(
     next: NextFunction,
     errors: ErrorResponse | ErrorResponse[] | string,
     responseStatusCode: number,
-    originalError?: object
+    originalError?: any
 ) {
     let errorsArray: ErrorResponse[] = [];
     if (typeof errors === "string") {
