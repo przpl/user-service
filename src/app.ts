@@ -95,6 +95,11 @@ async function connectToDb() {
         process.exit(1);
     }
 
+    const args = process.argv.slice(2);
+    if (args.includes("-migrate")) {
+        await conn.runMigrations();
+    }
+
     if (await conn.showMigrations()) {
         const msg = "There are pending migrations to be executed using `typeorm migration:run`.";
         printError(msg);

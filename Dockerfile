@@ -17,4 +17,5 @@ COPY --from=builder --chown=node:node /app/dist/ ./dist
 
 EXPOSE 3000
 
-CMD ["node", "dist/app.js"]
+# we need to pass optional '-migrate' command line argument
+ENTRYPOINT ["node", "dist/app.js"]
