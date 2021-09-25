@@ -12,8 +12,8 @@ ENV NODE_ENV production
 USER node
 WORKDIR /app
 COPY --from=builder /app/package*.json ./
-RUN npm ci
 COPY --from=builder --chown=node:node /app/dist/ ./dist
+RUN npm ci
 
 EXPOSE 3000
 
