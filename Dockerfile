@@ -1,4 +1,4 @@
-FROM node:16-alpine as builder
+FROM node:16.10.0-alpine3.14 as builder
 ENV NODE_ENV build
 USER node
 WORKDIR /app
@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build-ts
 
-FROM node:16-alpine
+FROM node:16.10.0-alpine3.14
 ENV NODE_ENV production
 USER node
 WORKDIR /app
