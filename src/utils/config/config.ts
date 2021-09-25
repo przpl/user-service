@@ -9,6 +9,7 @@ export class Config {
     redis: {
         host: string;
         port: number;
+        password?: string;
     };
     security: {
         mfa: {

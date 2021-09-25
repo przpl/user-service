@@ -145,7 +145,10 @@ async function start() {
     container.registerInstance(Config, config);
     container.registerInstance(MessageBroker, messageBroker);
     container.registerType("UserIdGenerator", UsernameBasedIdGenerator);
-    container.registerInstance(redis.RedisClient, redis.createClient(config.redis.port || 6379, config.redis.host || "127.0.0.1"));
+    container.registerInstance(
+        redis.RedisClient,
+        redis.createClient(config.redis.port || 6379, config.redis.host || "127.0.0.1", { password: config.redis.password })
+    );
     if (config.mode === "session") {
         container.registerType(BaseSessionManager.name, CookieSessionManager);
     } else if (config.mode === "jwt") {
