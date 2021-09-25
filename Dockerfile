@@ -1,16 +1,18 @@
 FROM node:16-alpine as builder
 ENV NODE_ENV build
 USER node
-WORKDIR /home/node
-COPY . /home/node
-RUN npm ci && npm run build-ts
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build-ts
 
 FROM node:16-alpine
 ENV NODE_ENV production
 USER node
-WORKDIR /home/node
-COPY --from=builder /home/node/package*.json /home/node/
-COPY --from=builder /home/node/dist/ /home/node/dist/
+WORKDIR /app
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist/ ./dist
 RUN npm ci
 
 EXPOSE 3000
