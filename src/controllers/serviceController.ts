@@ -31,6 +31,16 @@ export default class ServiceController {
         res.send(data);
     }
 
+    public sentryTest(req: Request, res: Response, next: NextFunction) {
+        if (this._env.administrationKey && this._env.administrationKey !== req.query.administrationKey) {
+            return res.status(StatusCodes.FORBIDDEN).send();
+        }
+
+        res.send("Sentry test OK");
+
+        throw new Error("Exception created to test Sentry reporting.");
+    }
+
     private formatMemoryUsage(usage: NodeJS.MemoryUsage) {
         return {
             rss: this.bytesToMb(usage.rss),

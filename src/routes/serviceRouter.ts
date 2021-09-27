@@ -10,6 +10,8 @@ export default class ServiceRouter {
 
         router.get("/status", (req: Request, res: Response, next: NextFunction) => ctrl.status(req, res, next));
 
+        router.get("/sentry-test", (req: Request, res: Response, next: NextFunction) => ctrl.sentryTest(req, res, next));
+
         return router;
     }
 }
