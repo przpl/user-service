@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { CookieOptions, NextFunction, Request, Response } from "express";
 import moment from "moment";
 import { container, singleton } from "tsyringe";
 
@@ -79,22 +79,16 @@ export default class UserController {
 
     protected async respondWithSessionOrJwt(req: Request, res: Response, userId: string) {
         const sessionCookie = await this._sessionManager.issueSession(userId, req.ip, this.mapUserAgent(req.userAgent));
-        res.cookie(SESSION_COOKIE_NAME, sessionCookie, {
-            path: "/",
-            sameSite: this._config.session.cookie.sameSite,
-            maxAge: this._config.session.TTLHours * 60 * 60 * 1000,
-            secure: this._config.session.cookie.secure,
-            httpOnly: true,
-        });
-        res.cookie(SESSION_STATE_COOKIE_NAME, "true", {
-            path: "/",
-            sameSite: this._config.session.cookie.sameSite,
-            maxAge: this._config.session.TTLHours * 60 * 60 * 1000,
-            secure: this._config.session.cookie.secure,
-            httpOnly: false,
-        });
-
         if (this._config.mode === "session") {
+            const cookieOptions: CookieOptions = {
+                path: "/",
+                sameSite: this._config.session.cookie.sameSite,
+                maxAge: this._config.session.TTLHours * 60 * 60 * 1000,
+                secure: this._config.session.cookie.secure,
+                domain: this._config.session.cookie.domain,
+            };
+            res.cookie(SESSION_COOKIE_NAME, sessionCookie, { ...cookieOptions, httpOnly: true });
+            res.cookie(SESSION_STATE_COOKIE_NAME, "true", cookieOptions);
             res.json({ user: { id: userId }, csrfToken: this._csrf.generate(sessionCookie) });
         } else if (this._config.mode === "jwt") {
             const roles = await this._roleManager.getRoles(userId);

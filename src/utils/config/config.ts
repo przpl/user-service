@@ -39,6 +39,7 @@ export class Config {
         cookie: {
             sameSite: "none" | "lax";
             secure: boolean;
+            domain?: string;
         };
         cacheExpirationSeconds: number;
     };
