@@ -10,6 +10,7 @@ export function removeSessionCookie(res: Response) {
     const cookieOptions: CookieOptions = {
         sameSite: config.session.cookie.sameSite,
         secure: config.session.cookie.secure,
+        domain: config.session.cookie.domain,
     };
     res.clearCookie(SESSION_COOKIE_NAME, cookieOptions);
     res.clearCookie(SESSION_STATE_COOKIE_NAME, cookieOptions);
