@@ -69,7 +69,7 @@ export default class UserController {
             this._securityLogger.info(
                 `User ${removedSession.userId} session revoked by ${req.ip}. Created by: ${removedSession.createIp} at ${moment(
                     removedSession.lastUseAt
-                ).unix()}, last refresh by ${removedSession.lastRefreshIp}`
+                ).unix()}`
             );
         }
         removeSessionCookie(res);

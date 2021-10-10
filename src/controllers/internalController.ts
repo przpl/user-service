@@ -74,7 +74,7 @@ export default class InternalController {
 
     public async tryToRecacheSession(req: Request, res: Response, next: NextFunction) {
         const sessionCookie = req.params.sessionId as string;
-        const userId = await this._cookieSessionManager.tryToRecacheSession(sessionCookie, req.ip);
+        const userId = await this._cookieSessionManager.tryToRecacheSession(sessionCookie);
         res.send(userId);
     }
 

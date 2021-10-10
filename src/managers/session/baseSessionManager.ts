@@ -16,14 +16,13 @@ export abstract class BaseSessionManager {
 
     constructor(private _cacheStrategy: SessionCacheStrategy, private _connection: Connection, private _config: Config) {}
 
-    public abstract getUserIdFromSession(sessionId: string, ip: string): Promise<string>;
+    public abstract getUserIdFromSession(sessionId: string): Promise<string>;
 
     public async issueSession(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
         const session = new SessionEntity();
         session.id = generateSessionId();
         session.userId = userId;
         session.createIp = ip;
-        session.lastRefreshIp = ip;
         session.browser = userAgent.browser;
         session.os = userAgent.os;
         session.osVersion = userAgent.osVersion;
@@ -56,7 +55,7 @@ export abstract class BaseSessionManager {
         return session.id;
     }
 
-    public async refreshJwt(sessionId: string, ip: string): Promise<Session> {
+    public async refreshJwt(sessionId: string): Promise<Session> {
         guardNotUndefinedOrNull(sessionId);
 
         const session = await this._repo.findOne(sessionId);
@@ -64,7 +63,6 @@ export abstract class BaseSessionManager {
             return null;
         }
 
-        session.lastRefreshIp = ip;
         session.lastUseAt = moment().toDate();
         await session.save();
 
@@ -127,6 +125,6 @@ export abstract class BaseSessionManager {
     }
 
     private toSessionModel(entity: SessionEntity): Session {
-        return new Session(entity.id, entity.userId, entity.lastUseAt, entity.createIp, entity.lastRefreshIp, entity.createdAt);
+        return new Session(entity.id, entity.userId, entity.lastUseAt, entity.createIp, entity.createdAt);
     }
 }

@@ -1,7 +1,7 @@
 import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class Init1626639368977 implements MigrationInterface {
-    name = 'Init1626639368977'
+export class Init1633893610464 implements MigrationInterface {
+    name = 'Init1633893610464'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "user" ("id" character varying NOT NULL, "username" character varying NOT NULL, "sessionIds" text array NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`);
@@ -12,7 +12,7 @@ export class Init1626639368977 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "mfa" ("userId" character varying NOT NULL, "method" smallint NOT NULL, "enabled" boolean NOT NULL DEFAULT false, "secret" character varying NOT NULL, "ip" character varying NOT NULL, "invalidAttempts" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "REL_e114d31b2c228a8291db8cbf47" UNIQUE ("userId"), CONSTRAINT "PK_e114d31b2c228a8291db8cbf474" PRIMARY KEY ("userId"))`);
         await queryRunner.query(`CREATE TABLE "password-reset" ("userId" character varying NOT NULL, "code" character varying NOT NULL, "method" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "REL_db45a9bc4faa806148d698e1ed" UNIQUE ("userId"), CONSTRAINT "PK_db45a9bc4faa806148d698e1edd" PRIMARY KEY ("userId"))`);
         await queryRunner.query(`CREATE TABLE "role" ("userId" character varying NOT NULL, "role" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_3aadba006ba9534ff3c23319e56" PRIMARY KEY ("userId", "role"))`);
-        await queryRunner.query(`CREATE TABLE "session" ("id" character varying NOT NULL, "userId" character varying NOT NULL, "createIp" character varying NOT NULL, "lastRefreshIp" character varying NOT NULL, "browser" character varying, "os" character varying, "osVersion" character varying, "lastUseAt" TIMESTAMP NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "session" ("id" character varying NOT NULL, "userId" character varying NOT NULL, "createIp" character varying NOT NULL, "browser" character varying, "os" character varying, "osVersion" character varying, "lastUseAt" TIMESTAMP NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "confirmation" ADD CONSTRAINT "FK_74f1ebea7c18510697c0e2a6be4" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "external-login" ADD CONSTRAINT "FK_fdb688ff063cbce7a742818ad14" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "local-login" ADD CONSTRAINT "FK_60523794271ca8bcaf8b5418155" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);

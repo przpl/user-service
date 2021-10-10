@@ -17,9 +17,6 @@ export class SessionEntity extends BaseEntity {
     @Column()
     createIp: string;
 
-    @Column()
-    lastRefreshIp: string;
-
     @Column({ nullable: true })
     browser: string;
 

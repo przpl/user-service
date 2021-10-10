@@ -85,7 +85,7 @@ export default class AuthMiddleware {
             return forwardError(next, "missingSessionCookie", StatusCodes.UNAUTHORIZED);
         }
 
-        const userId = await this._sessionManager.getUserIdFromSession(cookie, req.ip);
+        const userId = await this._sessionManager.getUserIdFromSession(cookie);
         if (!userId) {
             removeSessionCookie(res);
             return sessionDoesNotExist(next);

@@ -3,15 +3,13 @@ export class Session {
     private _userId: string;
     private _lastUseAt: Date;
     private _createIp: string;
-    private _lastRefreshIp: string;
     private _createdAt: Date;
 
-    constructor(id: string, userId: string, lastUseAt: Date, createIp: string, lastRefreshIp: string, createdAt: Date) {
+    constructor(id: string, userId: string, lastUseAt: Date, createIp: string, createdAt: Date) {
         this._id = id;
         this._userId = userId;
         this._lastUseAt = lastUseAt;
         this._createIp = createIp;
-        this._lastRefreshIp = lastRefreshIp;
         this._createdAt = createdAt;
     }
 
@@ -29,10 +27,6 @@ export class Session {
 
     public get createIp(): string {
         return this._createIp;
-    }
-
-    public get lastRefreshIp(): string {
-        return this._lastRefreshIp;
     }
 
     public get createdAt(): Date {

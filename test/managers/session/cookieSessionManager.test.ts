@@ -40,7 +40,7 @@ describe("CookieSessionManager", () => {
 
     describe("getUserIdFromSession()", () => {
         it("not existing session should return null", async () => {
-            const userId = await sut.getUserIdFromSession("cookie1", "127.0.0.1");
+            const userId = await sut.getUserIdFromSession("cookie1");
             expect(userId).toBeNull();
         });
 
@@ -48,11 +48,10 @@ describe("CookieSessionManager", () => {
             const sid = await sut.issueSession("user1", "127.0.0.1", mockUserAgent());
             await cacheDb.removeSession(sid);
 
-            const userIdFromDb = await sut.getUserIdFromSession(sid, "127.0.0.2");
+            const userIdFromDb = await sut.getUserIdFromSession(sid);
 
             expect(userIdFromDb).toBe("user1");
             const session = await sessionRepo.findOne();
-            expect(session.lastRefreshIp).toBe("127.0.0.2");
             expect(session.lastUseAt).toBeTruthy();
             expect(await cacheDb.getSession(sid)).toBe("user1");
         });
@@ -61,7 +60,7 @@ describe("CookieSessionManager", () => {
             const sid = await sut.issueSession("user1", "127.0.0.1", mockUserAgent());
             await sessionRepo.clear();
 
-            const userIdFromCache = await sut.getUserIdFromSession(sid, "127.0.0.1");
+            const userIdFromCache = await sut.getUserIdFromSession(sid);
 
             expect(userIdFromCache).toBe("user1");
             expect(await sessionRepo.findOne()).toBeFalsy();
@@ -70,22 +69,21 @@ describe("CookieSessionManager", () => {
 
     describe("getUserIdFromSession()", () => {
         it("should throw error if sessionId is null", async () => {
-            expect(() => sut.tryToRecacheSession(null, "127.0.0.1")).rejects.toThrow(NullOrUndefinedException);
+            expect(() => sut.tryToRecacheSession(null)).rejects.toThrow(NullOrUndefinedException);
         });
 
         it("not existing session should return null", async () => {
-            const userId = await sut.tryToRecacheSession("cookie1", "127.0.0.1");
+            const userId = await sut.tryToRecacheSession("cookie1");
             expect(userId).toBeNull();
         });
 
         it("should get session from db", async () => {
             const sid = await sut.issueSession("user1", "127.0.0.1", mockUserAgent());
 
-            const userIdFromDb = await sut.tryToRecacheSession(sid, "127.0.0.2");
+            const userIdFromDb = await sut.tryToRecacheSession(sid);
 
             expect(userIdFromDb).toBe("user1");
             const session = await sessionRepo.findOne();
-            expect(session.lastRefreshIp).toBe("127.0.0.2");
             expect(session.lastUseAt).toBeTruthy();
             expect(await cacheDb.getSession(sid)).toBe("user1");
         });
@@ -99,7 +97,6 @@ describe("CookieSessionManager", () => {
             expect(session.id).toHaveLength(SESSION_ID_LENGTH);
             expect(session.userId).toBe("user1");
             expect(session.createIp).toBe("127.0.0.1");
-            expect(session.lastRefreshIp).toBe("127.0.0.1");
             const ua = mockUserAgent();
             expect(session.browser).toBe(ua.browser);
             expect(session.os).toBe(ua.os);

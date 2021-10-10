@@ -18,22 +18,21 @@ export class CookieSessionManager extends BaseSessionManager {
         this._cacheExpiration = TimeSpan.fromSeconds(config.session.cacheExpirationSeconds);
     }
 
-    public async getUserIdFromSession(sessionId: string, ip: string): Promise<string> {
+    public async getUserIdFromSession(sessionId: string): Promise<string> {
         const userId = await this._cacheDb.getSession(sessionId);
         if (userId) {
             return userId;
         }
 
-        return await this.tryToRecacheSession(sessionId, ip);
+        return await this.tryToRecacheSession(sessionId);
     }
 
-    public async tryToRecacheSession(sessionId: string, ip: string) {
+    public async tryToRecacheSession(sessionId: string) {
         guardNotUndefinedOrNull(sessionId);
 
         const sessionInDb = await this._repo.findOne(sessionId);
         if (sessionInDb) {
             await this._cacheDb.setSession(sessionId, sessionInDb.userId, this._cacheExpiration);
-            sessionInDb.lastRefreshIp = ip;
             sessionInDb.lastUseAt = moment().toDate();
             await sessionInDb.save();
             return sessionInDb.userId;

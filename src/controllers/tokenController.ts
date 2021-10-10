@@ -23,7 +23,7 @@ export default class TokenController {
 
         let session: Session;
         try {
-            session = await this._sessionManager.refreshJwt(sessionCookie, req.ip);
+            session = await this._sessionManager.refreshJwt(sessionCookie);
         } catch (error) {
             return forwardInternalError(next, error);
         }
