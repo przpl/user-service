@@ -2,6 +2,8 @@ import { singleton } from "tsyringe";
 
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
+const disallowedUsernames = ["admin", "administrator", "administrators", "moderator", "webmaster", "help", "support", "helpdesk"];
+
 // source: https://github.com/disposable/disposable
 @singleton()
 export class SpamProtector {
@@ -17,6 +19,10 @@ export class SpamProtector {
         const domain = parts[1].toLowerCase();
         const list = this.getList();
         return Boolean(list[domain]);
+    }
+
+    public isDisallowedUsername(username: string): boolean {
+        return disallowedUsernames.includes(username);
     }
 
     private getList(): Record<string, boolean> {

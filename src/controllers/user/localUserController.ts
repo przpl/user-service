@@ -10,7 +10,7 @@ import { Phone } from "../../models/phone";
 import { extractCredentials } from "../../models/utils/toModelMappers";
 import { SpamProtector } from "../../services/spamProtector";
 import * as errors from "../commonErrors";
-import { disallowedEmailDomain } from "../commonErrors";
+import { disallowedEmailDomain, usernameTaken } from "../commonErrors";
 import UserController from "./userController";
 
 @singleton()
@@ -22,9 +22,13 @@ export default class LocalUserController extends UserController {
     public async register(req: Request, res: Response, next: NextFunction) {
         const credentials = extractCredentials(req.body);
 
-        if (this._spamProtector.isDisallowedEmail(credentials.email)) {
+        if (this._spamProtector.isDisallowedEmail(credentials.email) === true) {
             this._securityLogger.warn(`Disallowed email provider for user ${credentials.username} with email ${credentials.email}.`);
             return disallowedEmailDomain(next);
+        }
+
+        if (this._config.localLogin.username.required && this._spamProtector.isDisallowedUsername(req.body.username) === true) {
+            return usernameTaken(next);
         }
 
         if ((await this.handleLoginDuplicate(next, credentials)) === false) {

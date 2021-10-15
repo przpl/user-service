@@ -8,6 +8,7 @@ import { UserManager } from "../../managers/userManger";
 import { ExternalUser } from "../../middleware/passport";
 import { Credentials } from "../../models/credentials";
 import { ExternalUserJwtService } from "../../services/externalUserJwtService";
+import { SpamProtector } from "../../services/spamProtector";
 import { RequestBody } from "../../types/express/requestBody";
 import { forwardError } from "../../utils/expressUtils";
 import { usernameTaken } from "../commonErrors";
@@ -18,7 +19,8 @@ export default class ExternalUserController extends UserController {
     constructor(
         private _userManager: UserManager,
         private _loginManager: ExternalLoginManager,
-        private _externalJwtService: ExternalUserJwtService
+        private _externalJwtService: ExternalUserJwtService,
+        private _spamProtector: SpamProtector
     ) {
         super();
     }
@@ -43,8 +45,13 @@ export default class ExternalUserController extends UserController {
     }
 
     public async finishRegistration(req: Request, res: Response, next: NextFunction) {
-        if (this._config.localLogin.username.required && (await this._userManager.doesUsernameExist(req.body.username)) === true) {
-            return usernameTaken(next);
+        if (this._config.localLogin.username.required) {
+            if (
+                this._spamProtector.isDisallowedUsername(req.body.username) === true ||
+                (await this._userManager.doesUsernameExist(req.body.username)) === true
+            ) {
+                return usernameTaken(next);
+            }
         }
 
         const tokenData = this._externalJwtService.decodeToken(req.body.token);
