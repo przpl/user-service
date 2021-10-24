@@ -1,4 +1,4 @@
-FROM node:16.11.1-alpine3.14 as builder
+FROM node:16.12.0-alpine3.14 as builder
 ENV NODE_ENV build
 USER node
 WORKDIR /home/node
@@ -10,7 +10,7 @@ RUN npm run build-ts
 USER root
 RUN npm prune --production
 
-FROM node:16.11.1-alpine3.14
+FROM node:16.12.0-alpine3.14
 ENV NODE_ENV production
 USER node
 WORKDIR /home/node
