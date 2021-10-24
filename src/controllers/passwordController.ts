@@ -43,17 +43,20 @@ export default class PasswordController {
         const credentials = extractCredentialsWithoutUsername(req.body);
         const login = await this._loginManager.getByCredentials(credentials);
         if (!login) {
-            return res.json({ result: true });
+            res.json({ result: true });
+            return;
         }
 
         if (await this._lockManager.getActive(login.userId)) {
-            return res.json({ result: true });
+            res.json({ result: true });
+            return;
         }
 
         const method = this._config.passwordReset.method;
         const code = await this._loginManager.generatePasswordResetCode(login.userId, method);
         if (!code) {
-            return res.json({ result: true });
+            res.json({ result: true });
+            return;
         }
 
         if (method === "email") {

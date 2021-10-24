@@ -25,7 +25,7 @@ export default class ExternalUserController extends UserController {
         super();
     }
 
-    public async registerOrLogin(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider) {
+    public async registerOrLogin(req: Request, res: Response, next: NextFunction, provider: ExternalLoginProvider): Promise<void> {
         const externalUser = req.user as ExternalUser;
         let userId = await this._loginManager.getUserId(externalUser.id, provider);
         if (!userId) {
@@ -34,7 +34,8 @@ export default class ExternalUserController extends UserController {
                 this._config.localLogin.phone.required ||
                 Object.keys(this._config.additionalFields.registerEndpoint).length > 0
             ) {
-                return res.json({ registrationToken: this._externalJwtService.issueToken(externalUser, provider) });
+                res.json({ registrationToken: this._externalJwtService.issueToken(externalUser, provider) });
+                return;
             }
             userId = await this.register(req.body, externalUser.id, externalUser.email, provider);
         } else if ((await this.handleUserLock(next, userId)) === false) {

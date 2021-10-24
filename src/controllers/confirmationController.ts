@@ -36,11 +36,14 @@ export default class ConfirmationController {
             code = await this._loginManager.getConfirmationCode(subject.value, subject.type);
         } catch (error) {
             if (error instanceof ResendCodeLimitException) {
-                return errors.limitExceeded(next);
+                errors.limitExceeded(next);
+                return;
             } else if (error instanceof ResendCodeTimeLimitException) {
-                return res.json({ result: true, tooOften: true });
+                res.json({ result: true, tooOften: true });
+                return;
             }
-            return forwardInternalError(next, error);
+            forwardInternalError(next, error);
+            return;
         }
 
         if (subject.type === ConfirmationType.email) {
