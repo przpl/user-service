@@ -8,4 +8,4 @@ export const CONFIRMATION_CODE_LENGTH = 6;
 
 export const SESSION_COOKIE_NAME = "session-id";
 export const SESSION_STATE_COOKIE_NAME = "session-id-state";
-export const CSRF_TOKEN_COOKIE_NAME = "XSRF-TOKEN";
+export const XSRF_TOKEN_COOKIE_NAME = "XSRF-TOKEN";

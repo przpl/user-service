@@ -62,8 +62,8 @@ export default class Env {
         return process.env.JWT_PRIVATE_KEY;
     }
 
-    public get csrfKey(): string {
-        return process.env.CSRF_KEY;
+    public get xsrfKey(): string {
+        return process.env.XSRF_KEY;
     }
 
     public get reCaptchaSiteKey(): string {

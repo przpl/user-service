@@ -1,8 +1,8 @@
-import { Csrf } from "../../src/services/csrf";
+import { Xsrf } from "../../src/services/xsrf";
 import { mockEnv } from "../mocks/mockEnv";
 
 const env = mockEnv();
-const sut = new Csrf(env);
+const sut = new Xsrf(env);
 
 describe("generate()", () => {
     it("should generate token", () => {

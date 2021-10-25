@@ -4,10 +4,10 @@ import { container } from "tsyringe";
 
 import PasswordController from "../controllers/passwordController";
 import AuthMiddleware from "../middleware/authMiddleware";
-import CsrfMiddleware from "../middleware/csrfMiddleware";
 import { emptyMiddleware } from "../middleware/emptyMiddleware";
 import ReCaptchaMiddleware from "../middleware/reCaptchaMiddleware";
 import Validator from "../middleware/validator/validator";
+import XsrfMiddleware from "../middleware/xsrfMiddleware";
 import { Config } from "../utils/config/config";
 
 export default class PasswordRouter {
@@ -15,7 +15,7 @@ export default class PasswordRouter {
         const router = express.Router();
         const ctrl = container.resolve(PasswordController);
         const auth = container.resolve(AuthMiddleware);
-        const csrf = container.resolve(CsrfMiddleware);
+        const xsrf = container.resolve(XsrfMiddleware);
         const validator = container.resolve(Validator);
         const config = container.resolve(Config);
         const captcha = container.resolve(ReCaptchaMiddleware);
@@ -25,7 +25,7 @@ export default class PasswordRouter {
             "/change",
             (req: Request, res: Response, next: NextFunction) => auth.authenticate(config.mode, req, res, next),
             (req: Request, res: Response, next: NextFunction) =>
-                config.mode === "session" ? csrf.validate(req, res, next) : emptyMiddleware(req, res, next),
+                config.mode === "session" ? xsrf.validate(req, res, next) : emptyMiddleware(req, res, next),
             validator.changePassword,
             asyncHandler((req: Request, res: Response, next: NextFunction) => ctrl.changePassword(req, res, next))
         );

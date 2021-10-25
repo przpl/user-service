@@ -2,7 +2,7 @@ import { CookieOptions, Response } from "express";
 import { container } from "tsyringe";
 
 import { Config } from "./config/config";
-import { CSRF_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME } from "./globalConsts";
+import { SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME, XSRF_TOKEN_COOKIE_NAME } from "./globalConsts";
 
 export function removeSessionCookie(res: Response) {
     const config = container.resolve(Config);
@@ -14,5 +14,5 @@ export function removeSessionCookie(res: Response) {
     };
     res.clearCookie(SESSION_COOKIE_NAME, cookieOptions);
     res.clearCookie(SESSION_STATE_COOKIE_NAME, cookieOptions);
-    res.clearCookie(CSRF_TOKEN_COOKIE_NAME, cookieOptions);
+    res.clearCookie(XSRF_TOKEN_COOKIE_NAME, cookieOptions);
 }

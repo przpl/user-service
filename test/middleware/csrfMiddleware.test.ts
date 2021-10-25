@@ -1,16 +1,16 @@
-import CsrfMiddleware from "../../src/middleware/csrfMiddleware";
-import { Csrf } from "../../src/services/csrf";
+import XsrfMiddleware from "../../src/middleware/xsrfMiddleware";
+import { Xsrf } from "../../src/services/xsrf";
 import { mockEnv } from "../mocks/mockEnv";
 
-describe("CsrfMiddleware", () => {
+describe("XsrfMiddleware", () => {
     let logger: any;
-    let sut: CsrfMiddleware;
+    let sut: XsrfMiddleware;
 
     beforeEach(() => {
         logger = {
             error: jest.fn(),
         };
-        sut = new CsrfMiddleware(logger, new Csrf(mockEnv()));
+        sut = new XsrfMiddleware(logger, new Xsrf(mockEnv()));
     });
 
     describe("validate()", () => {
@@ -21,7 +21,7 @@ describe("CsrfMiddleware", () => {
             expect(() => sut.validate(request, null, next)).toThrowError();
         });
 
-        it("should forward missingCSRFToken error if token is missing", () => {
+        it("should forward missingXSRFToken error if token is missing", () => {
             const request: any = {
                 sessionId: "123",
                 headers: {},
@@ -33,13 +33,13 @@ describe("CsrfMiddleware", () => {
             expect(next).toBeCalledTimes(1);
             expect(next).toBeCalledWith({
                 originalError: undefined,
-                responseErrorsList: [{ id: "missingCSRFToken" }],
+                responseErrorsList: [{ id: "missingXSRFToken" }],
                 responseStatusCode: 401,
             });
             expect(next).not.toBeCalledWith();
         });
 
-        it("should forward invalidCSRFToken error if token is invalid", () => {
+        it("should forward invalidXSRFToken error if token is invalid", () => {
             const request: any = {
                 sessionId: "123",
                 headers: { "x-xsrf-token": "123" },
@@ -51,7 +51,7 @@ describe("CsrfMiddleware", () => {
             expect(next).toBeCalledTimes(1);
             expect(next).toBeCalledWith({
                 originalError: undefined,
-                responseErrorsList: [{ id: "invalidCSRFToken" }],
+                responseErrorsList: [{ id: "invalidXSRFToken" }],
                 responseStatusCode: 401,
             });
             expect(next).not.toBeCalledWith();

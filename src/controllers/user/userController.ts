@@ -10,12 +10,12 @@ import { RoleManager } from "../../managers/roleManager";
 import { BaseSessionManager } from "../../managers/session/baseSessionManager";
 import { Credentials } from "../../models/credentials";
 import { Session } from "../../models/session";
-import { Csrf } from "../../services/csrf";
 import { JwtService } from "../../services/jwtService";
 import { MessageBroker } from "../../services/messageBroker";
+import { Xsrf } from "../../services/xsrf";
 import { RequestBody } from "../../types/express/requestBody";
 import { Config } from "../../utils/config/config";
-import { CSRF_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME } from "../../utils/globalConsts";
+import { SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME, XSRF_TOKEN_COOKIE_NAME } from "../../utils/globalConsts";
 import { isNullOrUndefined } from "../../utils/isNullOrUndefined";
 import { removeSessionCookie } from "../../utils/removeSessionCookie";
 import SecurityLogger from "../../utils/securityLogger";
@@ -32,7 +32,7 @@ export default class UserController {
     protected _queueService = container.resolve(MessageBroker);
     protected _config = container.resolve(Config);
     protected _securityLogger = container.resolve(SecurityLogger);
-    protected _csrf = container.resolve(Csrf);
+    protected _xsrf = container.resolve(Xsrf);
 
     public async loginWithMfa(req: Request, res: Response, next: NextFunction) {
         const { mfaLoginToken, oneTimePassword, userId } = req.body;
@@ -89,7 +89,7 @@ export default class UserController {
             };
             res.cookie(SESSION_COOKIE_NAME, sessionCookie, { ...cookieOptions, httpOnly: true });
             res.cookie(SESSION_STATE_COOKIE_NAME, "true", cookieOptions);
-            res.cookie(CSRF_TOKEN_COOKIE_NAME, this._csrf.generate(sessionCookie), cookieOptions);
+            res.cookie(XSRF_TOKEN_COOKIE_NAME, this._xsrf.generate(sessionCookie), cookieOptions);
             res.json({ user: { id: userId } });
         } else if (this._config.mode === "jwt") {
             const roles = await this._roleManager.getRoles(userId);
