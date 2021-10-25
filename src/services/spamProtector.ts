@@ -2,7 +2,17 @@ import { singleton } from "tsyringe";
 
 import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
-const disallowedUsernames = ["admin", "administrator", "administrators", "moderator", "webmaster", "help", "support", "helpdesk"];
+const disallowedUsernames = [
+    "admin",
+    "administrator",
+    "administrators",
+    "moderator",
+    "webmaster",
+    "help",
+    "support",
+    "helpdesk",
+    "nostwave",
+];
 
 // source: https://github.com/disposable/disposable
 @singleton()
