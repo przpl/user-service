@@ -19,7 +19,7 @@ export default class CsrfMiddleware {
             throw new Error("Missing session id. Csrf middleware is probably used without prior authentication.");
         }
 
-        const token = req.headers["x-csrf-token"] as string;
+        const token = req.headers["x-xsrf-token"] as string;
         if (!token) {
             return forwardError(next, "missingCSRFToken", StatusCodes.UNAUTHORIZED);
         }

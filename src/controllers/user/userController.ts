@@ -15,7 +15,7 @@ import { JwtService } from "../../services/jwtService";
 import { MessageBroker } from "../../services/messageBroker";
 import { RequestBody } from "../../types/express/requestBody";
 import { Config } from "../../utils/config/config";
-import { SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME } from "../../utils/globalConsts";
+import { CSRF_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME, SESSION_STATE_COOKIE_NAME } from "../../utils/globalConsts";
 import { isNullOrUndefined } from "../../utils/isNullOrUndefined";
 import { removeSessionCookie } from "../../utils/removeSessionCookie";
 import SecurityLogger from "../../utils/securityLogger";
@@ -89,7 +89,8 @@ export default class UserController {
             };
             res.cookie(SESSION_COOKIE_NAME, sessionCookie, { ...cookieOptions, httpOnly: true });
             res.cookie(SESSION_STATE_COOKIE_NAME, "true", cookieOptions);
-            res.json({ user: { id: userId }, csrfToken: this._csrf.generate(sessionCookie) });
+            res.cookie(CSRF_TOKEN_COOKIE_NAME, this._csrf.generate(sessionCookie), cookieOptions);
+            res.json({ user: { id: userId } });
         } else if (this._config.mode === "jwt") {
             const roles = await this._roleManager.getRoles(userId);
             const accessToken = this._jwtService.issueAccessToken(sessionCookie, userId, roles);

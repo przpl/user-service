@@ -42,7 +42,7 @@ describe("CsrfMiddleware", () => {
         it("should forward invalidCSRFToken error if token is invalid", () => {
             const request: any = {
                 sessionId: "123",
-                headers: { "x-csrf-token": "123" },
+                headers: { "x-xsrf-token": "123" },
             };
             const next = jest.fn();
 
@@ -60,7 +60,7 @@ describe("CsrfMiddleware", () => {
         it("should validate if token is valid", () => {
             const request: any = {
                 sessionId: "123",
-                headers: { "x-csrf-token": "DNMuG/mXu7qVZzH6WhfadcMOiq4L4O7nEwKrCcfVSxI=" },
+                headers: { "x-xsrf-token": "DNMuG/mXu7qVZzH6WhfadcMOiq4L4O7nEwKrCcfVSxI=" },
             };
             const next = jest.fn();
 
