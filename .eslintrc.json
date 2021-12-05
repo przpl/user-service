@@ -34,7 +34,6 @@
         "new-cap": 0,
         "no-invalid-this": 0,
         "unicorn/better-regex": "error",
-        "unicorn/no-await-expression-member": "warn",
         "unicorn/no-instanceof-array": "error",
         "unicorn/no-unsafe-regex": "warn"
     }
