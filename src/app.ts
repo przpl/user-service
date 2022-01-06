@@ -1,13 +1,12 @@
 import "reflect-metadata"; // required by IoC Container
 
-import path from "path";
-
 import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "node:path";
 import redis from "redis";
 import { container } from "tsyringe";
 import { Connection, createConnection } from "typeorm";

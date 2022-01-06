@@ -14,7 +14,7 @@
         "ecmaVersion": 2018,
         "sourceType": "module"
     },
-    "plugins": ["@typescript-eslint", "prettier", "unicorn"],
+    "plugins": ["@typescript-eslint", "prettier", "jest", "unicorn"],
     "rules": {
         "semi": ["error", "always"],
         "quotes": ["error", "double"],
@@ -33,8 +33,14 @@
         "@typescript-eslint/no-unused-vars": [2, { "args": "none" }],
         "new-cap": 0,
         "no-invalid-this": 0,
+        "jest/valid-expect": "error",
         "unicorn/better-regex": "error",
         "unicorn/no-instanceof-array": "error",
-        "unicorn/no-unsafe-regex": "warn"
+        "unicorn/no-unsafe-regex": "warn",
+        "unicorn/prefer-array-find": "error",
+        "unicorn/prefer-array-index-of": "error",
+        "unicorn/prefer-array-some": "error",
+        "unicorn/prefer-includes": "error",
+        "unicorn/prefer-node-protocol": "warn"
     }
 }
