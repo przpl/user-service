@@ -1,16 +1,9 @@
-import redis from "redis";
-import { singleton } from "tsyringe";
+import { inject, singleton } from "tsyringe";
 
 import { MfaLoginToken } from "../models/mfaLoginToken";
+import { RedisClient } from "../types/redisClient";
 import nameof from "../utils/nameof";
 import { TimeSpan } from "../utils/timeSpan";
-
-enum KeyFlag {
-    expireSeconds = "EX",
-    expireMilliseconds = "PX",
-    onlySetIfNotExist = "NX",
-    onlySetIfExist = "XX",
-}
 
 enum KeyName {
     mfaLoginToken = "mlt",
@@ -27,42 +20,38 @@ const FIELD_USED_BY_ASP_NET = "data";
 
 @singleton()
 export class CacheDb {
-    constructor(private _client: redis.RedisClient) {}
+    constructor(@inject("redisClient") private _client: RedisClient) {}
 
     public async setMfaLoginToken(userId: string, token: string, ip: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getMfaLoginTokenKey(userId);
-        return await this.setHashWithExpiration(key, expireTime, nameof<MfaLoginToken>("token"), token, nameof<MfaLoginToken>("ip"), ip);
+        return await this.setHashWithExpiration(key, expireTime, {
+            [nameof<MfaLoginToken>("token")]: token,
+            [nameof<MfaLoginToken>("ip")]: ip,
+        });
     }
 
     public async getMfaLoginToken(userId: string): Promise<MfaLoginToken> {
-        return new Promise((resolve, reject) => {
-            const keyName = this.getMfaLoginTokenKey(userId);
-            this._client.HGETALL(keyName, (err, reply) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                const result = new MfaLoginToken();
-                result.token = reply[nameof<MfaLoginToken>("token")];
-                result.ip = reply[nameof<MfaLoginToken>("ip")];
-                resolve(result);
-            });
-        });
+        const keyName = this.getMfaLoginTokenKey(userId);
+        const result = await this._client.hGetAll(keyName);
+        const token = new MfaLoginToken();
+        token.token = result[nameof<MfaLoginToken>("token")];
+        token.ip = result[nameof<MfaLoginToken>("ip")];
+        return token;
     }
 
     public async removeMfaLoginToken(userId: string): Promise<number> {
         const key = this.getMfaLoginTokenKey(userId);
-        return await this.delete(key);
+        return await this._client.del(key);
     }
 
     public async revokeAccessToken(userId: string, ref: string, expireTime: TimeSpan): Promise<boolean> {
         const key = this.getRevokeAccessTokenKey(userId, ref);
-        return await this.setHashWithExpiration(key, expireTime, FIELD_USED_BY_ASP_NET, "1");
+        return await this.setHashWithExpiration(key, expireTime, { [FIELD_USED_BY_ASP_NET]: "1" });
     }
 
-    public isAccessTokenRevoked(userId: string, ref: string, cb: (err: Error, reply: number) => void): void {
+    public async isAccessTokenRevoked(userId: string, ref: string): Promise<boolean> {
         const key = this.getRevokeAccessTokenKey(userId, ref);
-        this._client.EXISTS(key, cb);
+        return (await this._client.exists(key)) > 0;
     }
 
     public async setSession(cookie: string, userId: string, expireTime: TimeSpan): Promise<boolean> {
@@ -72,75 +61,24 @@ export class CacheDb {
 
     public async getSession(cookie: string): Promise<string> {
         const key = this.getSessionKey(cookie);
-        return await this.get(key);
+        return await this._client.get(key);
     }
 
     public async removeSession(session: string): Promise<number> {
         const key = this.getSessionKey(session);
-        return await this.delete(key);
+        return await this._client.del(key);
     }
 
-    private delete(key: string): Promise<number> {
-        return new Promise((resolve, reject) => {
-            this._client.del(key, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(reply);
-            });
-        });
+    private async setWithExpiration(key: string, value: string, duration: TimeSpan): Promise<boolean> {
+        return (await this._client.set(key, value, { EX: duration.seconds })) === "OK";
     }
 
-    private get(key: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            this._client.GET(key, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(reply);
-            });
-        });
-    }
-
-    private set(key: string, value: string): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this._client.SET(key, value, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(reply === "OK");
-            });
-        });
-    }
-
-    private setWithExpiration(key: string, value: string, duration: TimeSpan): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this._client.SET(key, value, KeyFlag.expireSeconds, duration.seconds, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(reply === "OK");
-            });
-        });
-    }
-
-    private setHashWithExpiration(key: string, duration: TimeSpan, ...args: string[]): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            this._client.HSET(key, ...args, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                if (!reply) {
-                    return resolve(false);
-                }
-                this._client.EXPIRE(key, duration.seconds, (expireErr, expireReply) => {
-                    if (expireErr) {
-                        return reject(err);
-                    }
-                    resolve(expireReply > 0);
-                });
-            });
-        });
+    private async setHashWithExpiration(key: string, duration: TimeSpan, keyValueMap: Record<string, string>): Promise<boolean> {
+        const result = await this._client.hSet(key, keyValueMap);
+        if (!result) {
+            return false;
+        }
+        return await this._client.expire(key, duration.seconds);
     }
 
     private getSessionKey(cookie: string): string {

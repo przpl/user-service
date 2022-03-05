@@ -7,7 +7,7 @@ import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
-import redis from "redis";
+import { createClient } from "redis";
 import { container } from "tsyringe";
 import { Connection, createConnection } from "typeorm";
 
@@ -149,10 +149,15 @@ async function start() {
     container.registerInstance(Config, config);
     container.registerInstance(MessageBroker, messageBroker);
     container.registerType("UserIdGenerator", UsernameBasedIdGenerator);
-    container.registerInstance(
-        redis.RedisClient,
-        redis.createClient(config.redis.port || 6379, config.redis.host || "127.0.0.1", { password: config.redis.password })
-    );
+
+    const redisClient = createClient({
+        socket: { host: config.redis.host || "127.0.0.1", port: config.redis.port || 6379 },
+        password: config.redis.password,
+    });
+    await redisClient.connect();
+    container.registerInstance("redisClient", redisClient);
+    console.log("Connected to Redis");
+
     if (config.mode === "session") {
         container.registerType(BaseSessionManager.name, CookieSessionManager);
     } else if (config.mode === "jwt") {

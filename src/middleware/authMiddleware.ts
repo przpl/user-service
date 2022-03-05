@@ -43,7 +43,7 @@ export default class AuthMiddleware {
         this._facebookAuthDelegate(req, res, (err: any) => this.handleExternalLogin(next, err));
     }
 
-    public jwt(req: Request, res: Response, next: NextFunction) {
+    public async jwt(req: Request, res: Response, next: NextFunction) {
         const bearerString = req.get("Authorization");
         if (!bearerString) {
             return forwardError(next, "missingAuthorizationHeader", StatusCodes.UNAUTHORIZED);
@@ -68,15 +68,16 @@ export default class AuthMiddleware {
         }
 
         const { sub, ref } = accessToken;
-        this._cacheDb.isAccessTokenRevoked(sub, ref, (error, reply) => {
-            if (error) {
-                return forwardInternalError(next, error);
-            }
-            if (reply > 0) {
+        try {
+            const revoked = await this._cacheDb.isAccessTokenRevoked(sub, ref);
+            if (revoked) {
                 return forwardError(next, "tokenRevoked", StatusCodes.UNAUTHORIZED);
             }
-            next();
-        });
+        } catch (error) {
+            return forwardInternalError(next, error);
+        }
+
+        next();
     }
 
     public async session(req: Request, res: Response, next: NextFunction) {

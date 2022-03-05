@@ -1,4 +1,3 @@
-import redis from "redis";
 import { Connection, Repository } from "typeorm";
 
 import { CacheDb } from "../../../src/dal/cacheDb";
@@ -7,6 +6,7 @@ import { UserEntity } from "../../../src/dal/entities/userEntity";
 import { NullOrUndefinedException } from "../../../src/exceptions/exceptions";
 import { CookieSessionCacheStrategy } from "../../../src/managers/session/cookieSessionCacheStrategy";
 import { CookieSessionManager } from "../../../src/managers/session/cookieSessionManager";
+import { RedisClient } from "../../../src/types/redisClient";
 import { SESSION_ID_LENGTH } from "../../../src/utils/globalConsts";
 import { mockConfig } from "../../mocks/mockConfig";
 import { mockUserAgent } from "../../mocks/mockUserAgent";
@@ -15,7 +15,7 @@ import { TestContainer } from "../../mocks/testcontainers";
 describe("CookieSessionManager", () => {
     let testContainer: TestContainer;
     let postgresConnection: Connection;
-    let redisClient: redis.RedisClient;
+    let redisClient: RedisClient;
     let cacheDb: CacheDb;
     let sessionRepo: Repository<SessionEntity>;
     let sut: CookieSessionManager;
@@ -69,7 +69,7 @@ describe("CookieSessionManager", () => {
 
     describe("getUserIdFromSession()", () => {
         it("should throw error if sessionId is null", async () => {
-            expect(() => sut.tryToRecacheSession(null)).rejects.toThrow(NullOrUndefinedException);
+            await expect(() => sut.tryToRecacheSession(null)).rejects.toThrow(NullOrUndefinedException);
         });
 
         it("not existing session should return null", async () => {
@@ -181,7 +181,7 @@ describe("CookieSessionManager", () => {
             expect(removed.id).toBe(sid2);
             expect(await sessionRepo.count()).toBe(1);
             expect((await sessionRepo.findOne()).id).toBe(sid1);
-            expect(await cacheDb.getSession(sid1)).toBeNull;
+            expect(await cacheDb.getSession(sid1)).toBeNull();
         });
 
         it("should not remove not existing session", async () => {

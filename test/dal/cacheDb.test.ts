@@ -1,12 +1,11 @@
-import redis from "redis";
-
 import { CacheDb } from "../../src/dal/cacheDb";
+import { RedisClient } from "../../src/types/redisClient";
 import { TimeSpan } from "../../src/utils/timeSpan";
 import { TestContainer } from "../mocks/testcontainers";
 
 describe("CacheDb", () => {
     let testContainer: TestContainer;
-    let redisClient: redis.RedisClient;
+    let redisClient: RedisClient;
     let sut: CacheDb;
 
     beforeEach(async () => {
@@ -42,13 +41,6 @@ describe("CacheDb", () => {
     });
 
     async function getExpirationTime(key: string): Promise<number> {
-        return new Promise((resolve, reject) => {
-            redisClient.TTL(key, (err, reply) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(reply);
-            });
-        });
+        return await redisClient.ttl(key);
     }
 });

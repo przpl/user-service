@@ -1,12 +1,14 @@
-import redis from "redis";
+import { createClient } from "redis";
 import { GenericContainer, PostgreSqlContainer, StartedPostgreSqlContainer, StartedTestContainer } from "testcontainers";
 import { Connection, createConnection } from "typeorm";
+
+import { RedisClient } from "../../src/types/redisClient";
 
 export class TestContainer {
     private _postgresContainer: StartedPostgreSqlContainer;
     private _postgresConnection: Connection;
     private _redisContainer: StartedTestContainer;
-    private _redisClient: redis.RedisClient;
+    private _redisClient: RedisClient;
 
     public async getTypeOrmConnection(showConnectionDetails: boolean = false): Promise<Connection> {
         if (this.isPostgresActive()) {
@@ -42,13 +44,16 @@ export class TestContainer {
         return this._postgresConnection;
     }
 
-    public async getRedisClient(): Promise<redis.RedisClient> {
+    public async getRedisClient(): Promise<RedisClient> {
         if (this.isRedisActive()) {
             throw new Error("Redis container is already running.");
         }
 
         this._redisContainer = await new GenericContainer("redis:6.2.5-alpine3.14").withExposedPorts(6379).start();
-        this._redisClient = redis.createClient(this._redisContainer.getMappedPort(6379), this._redisContainer.getHost());
+        this._redisClient = createClient({
+            socket: { host: this._redisContainer.getHost(), port: this._redisContainer.getMappedPort(6379) },
+        });
+        await this._redisClient.connect();
         return this._redisClient;
     }
 
@@ -61,14 +66,7 @@ export class TestContainer {
         }
 
         if (this.isRedisActive()) {
-            await new Promise((resolve, reject) => {
-                this._redisClient.quit((err, reply) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(reply === "OK");
-                });
-            });
+            await this._redisClient.quit();
             await this._redisContainer.stop();
             this._redisClient = null;
             this._redisContainer = null;
