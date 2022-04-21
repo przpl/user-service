@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import "reflect-metadata"; // required by IoC Container
 
 import * as Sentry from "@sentry/node";
@@ -222,4 +223,4 @@ function printError(msg: string) {
     console.error("\x1b[31m", msg, "\x1b[0m");
 }
 
-start();
+void start();
