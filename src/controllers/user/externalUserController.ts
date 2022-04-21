@@ -42,7 +42,7 @@ export default class ExternalUserController extends UserController {
             return;
         }
 
-        this.respondWithSessionOrJwt(req, res, userId);
+        await this.respondWithSessionOrJwt(req, res, userId);
     }
 
     public async finishRegistration(req: Request, res: Response, next: NextFunction) {
@@ -63,7 +63,7 @@ export default class ExternalUserController extends UserController {
 
         userId = await this.register(req.body, tokenData.id, tokenData.email, tokenData.provider);
 
-        this.respondWithSessionOrJwt(req, res, userId);
+        await this.respondWithSessionOrJwt(req, res, userId);
     }
 
     private async register(body: RequestBody, externalId: string, email: string, provider: ExternalLoginProvider): Promise<string> {

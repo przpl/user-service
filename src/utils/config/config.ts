@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 
 import { AuthMode } from "../../models/authMode";
 import { FieldConfig } from "./fieldConfig";
@@ -92,8 +92,6 @@ export class Config {
 }
 
 export class ConfigLoader {
-    private constructor() {}
-
     public static load(jsonConfigPath: string): Config {
         if (!fs.existsSync(jsonConfigPath)) {
             throw new Error("Cannot load config.json file");

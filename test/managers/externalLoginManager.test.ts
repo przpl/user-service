@@ -23,8 +23,8 @@ describe("ExternalLoginManager", () => {
         sut = new ExternalLoginManager(postgresConnection);
         repo = postgresConnection.getRepository(ExternalLoginEntity);
         const userRepo = postgresConnection.getRepository(UserEntity);
-        userRepo?.save(user1);
-        userRepo?.save(user2);
+        await userRepo?.save(user1);
+        await userRepo?.save(user2);
     }, 30000);
 
     afterEach(async () => {

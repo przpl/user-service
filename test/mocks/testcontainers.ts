@@ -10,7 +10,7 @@ export class TestContainer {
     private _redisContainer: StartedTestContainer;
     private _redisClient: RedisClient;
 
-    public async getTypeOrmConnection(showConnectionDetails: boolean = false): Promise<Connection> {
+    public async getTypeOrmConnection(showConnectionDetails = false): Promise<Connection> {
         if (this.isPostgresActive()) {
             throw new Error("PostgreSQL container is already running.");
         }
@@ -35,6 +35,7 @@ export class TestContainer {
             synchronize: true,
         });
         if (showConnectionDetails) {
+            // eslint-disable-next-line no-console
             console.log("Postgres connection details", {
                 host: this._postgresContainer.getHost(),
                 port: this._postgresContainer.getPort(),

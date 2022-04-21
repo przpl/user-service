@@ -36,12 +36,12 @@ export default class MfaController {
 
     public async enableMfa(req: Request, res: Response, next: NextFunction) {
         const shouldEnable = true;
-        this.changeMfa(req, res, next, shouldEnable);
+        await this.changeMfa(req, res, next, shouldEnable);
     }
 
     public async disableMfa(req: Request, res: Response, next: NextFunction) {
         const shouldEnable = false;
-        this.changeMfa(req, res, next, shouldEnable);
+        await this.changeMfa(req, res, next, shouldEnable);
     }
 
     private async changeMfa(req: Request, res: Response, next: NextFunction, enableMfa: boolean) {

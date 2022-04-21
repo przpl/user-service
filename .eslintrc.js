@@ -1,7 +1,7 @@
 module.exports = {
     parser: "@typescript-eslint/parser",
     parserOptions: {
-        project: "tsconfig.json",
+        project: ["tsconfig.json", "tsconfig.eslint.json"],
         sourceType: "module",
     },
     plugins: ["@typescript-eslint/eslint-plugin", "jest", "unicorn"],
@@ -41,13 +41,4 @@ module.exports = {
         "unicorn/prefer-includes": "error",
         "unicorn/prefer-node-protocol": "warn",
     },
-    overrides: [
-        {
-            // enable the rule specifically for TypeScript files
-            files: ["*.controller.ts"],
-            rules: {
-                "@typescript-eslint/explicit-function-return-type": "error",
-            },
-        },
-    ],
 };

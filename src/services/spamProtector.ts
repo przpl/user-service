@@ -40,6 +40,7 @@ export class SpamProtector {
             return this._list;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const listFromFile: string[] = require("../../spam-email-domains.json");
         this._list = {};
         for (const domain of listFromFile) {

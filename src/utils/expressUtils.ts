@@ -63,6 +63,7 @@ export function handleError(err: any, req: Request, res: Response, isDev: boolea
         }
 
         if (stack) {
+            // eslint-disable-next-line no-console
             console.log(stack);
         }
         response.$devOnly = { message: message, stack: stack };

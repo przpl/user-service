@@ -1,5 +1,4 @@
-import crypto from "crypto";
-
+import crypto from "node:crypto";
 import { singleton } from "tsyringe";
 
 import Env from "../utils/config/env";

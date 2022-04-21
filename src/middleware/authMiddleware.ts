@@ -98,11 +98,11 @@ export default class AuthMiddleware {
         next();
     }
 
-    public authenticate(mode: AuthMode, req: Request, res: Response, next: NextFunction) {
+    public async authenticate(mode: AuthMode, req: Request, res: Response, next: NextFunction) {
         if (mode === "session") {
-            this.session(req, res, next);
+            await this.session(req, res, next);
         } else if (mode === "jwt") {
-            this.jwt(req, res, next);
+            await this.jwt(req, res, next);
         } else {
             throw new Error("Unknown authentication mode.");
         }

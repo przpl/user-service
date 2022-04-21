@@ -5,10 +5,8 @@ describe("UsernameBasedIdGenerator", () => {
     const sut = new UsernameBasedIdGenerator(mockConfig());
 
     describe("generate()", () => {
-        it("should generate id", async () => {
-            const result = await sut.generate("username1");
-
-            expect(result).toBe("mZ18gJzL8tG1/4");
+        it("should generate id", () => {
+            expect(sut.generate("username1")).toBe("mZ18gJzL8tG1/4");
         });
     });
 });

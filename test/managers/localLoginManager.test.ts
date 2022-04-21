@@ -44,9 +44,9 @@ describe("LocalLoginManager", () => {
         confirmRepo = postgresConnection.getRepository(ConfirmationEntity);
         localLoginRepo = postgresConnection.getRepository(LocalLoginEntity);
         passResetRepo = postgresConnection.getRepository(PasswordResetEntity);
-        userRepo?.save(user1);
-        userRepo?.save(user2);
-        userRepo?.save(user3);
+        await userRepo?.save(user1);
+        await userRepo?.save(user2);
+        await userRepo?.save(user3);
     }, 30000);
 
     afterEach(async () => {

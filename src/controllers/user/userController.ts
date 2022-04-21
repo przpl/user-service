@@ -52,9 +52,9 @@ export default class UserController {
             return errors.invalidOneTimePassword(next);
         }
 
-        this._mfaManager.revokeLoginToken(userId);
+        await this._mfaManager.revokeLoginToken(userId);
 
-        this.respondWithSessionOrJwt(req, res, userId);
+        await this.respondWithSessionOrJwt(req, res, userId);
     }
 
     public async logout(req: Request, res: Response, next: NextFunction) {
@@ -112,7 +112,7 @@ export default class UserController {
     protected async handleMfa(req: Request, res: Response, userId: string): Promise<boolean> {
         const mfaMethod = await this._mfaManager.getActiveMethod(userId);
         if (mfaMethod !== MfaMethod.none) {
-            this.sendMfaLoginToken(req, res, userId);
+            void this.sendMfaLoginToken(req, res, userId);
             return false;
         }
         return true;

@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import moment from "moment";
 
 import { ExternalLoginProvider } from "../../src/dal/entities/externalLoginEntity";
@@ -36,16 +36,8 @@ describe("ExternalUserJwtService", () => {
         it("should throw exception if key is invalid", async () => {
             const token =
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJlbWFpbCI6ImVtYWlsIiwiZmlyc3ROYW1lIjoiZmlyc3QiLCJsYXN0TmFtZSI6Imxhc3QiLCJwcm92aWRlciI6MSwidHlwZSI6ImV4dGVybmFsVXNlclJlZ2lzdHJhdGlvbiIsImlhdCI6MTU5NDE0NDQ5OH0.S79jPYHUYutKEW9lZovQC9_Cnh34GZ7NU2_WkzS78qU";
-            let thrown = false;
 
-            try {
-                sut.decodeToken(token);
-            } catch (error) {
-                thrown = true;
-                expect(error.name).toBe("JsonWebTokenError");
-            }
-
-            expect(thrown).toBe(true);
+            expect(() => sut.decodeToken(token)).toThrow(JsonWebTokenError);
         });
 
         it("should throw exception if type is invalid", async () => {
@@ -67,16 +59,8 @@ describe("ExternalUserJwtService", () => {
                 exp: moment().subtract(1, "minutes").unix(),
             } as ExternalUserRegistrationJwt;
             const token = jwt.sign(dataToSign, key);
-            let thrown = false;
 
-            try {
-                sut.decodeToken(token);
-            } catch (error) {
-                thrown = true;
-                expect(error.name).toBe("TokenExpiredError");
-            }
-
-            expect(thrown).toBe(true);
+            expect(() => sut.decodeToken(token)).toThrow(TokenExpiredError);
         });
 
         it("should decode token", async () => {

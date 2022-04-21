@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import moment from "moment";
 
 import { AccessTokenDto } from "../../src/models/dtos/accessTokenDto";
@@ -25,16 +25,8 @@ describe("decodeToken()", () => {
     it("should throw exception if key is invalid", async () => {
         const token =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMSIsInJlZiI6InJlZnJlIiwicm9sIjpbImFkbWluIl0sImlhdCI6MTU5NDE0ODMxNCwiZXhwIjoxNTk0MTQ4OTE0fQ.1auDpnCyDE5Bum4wUgjj-TgJ8InK5BCD9scOKzceQRw";
-        let thrown = false;
 
-        try {
-            sut.decodeAccessToken(token);
-        } catch (error) {
-            thrown = true;
-            expect(error.name).toBe("JsonWebTokenError");
-        }
-
-        expect(thrown).toBe(true);
+        expect(() => sut.decodeAccessToken(token)).toThrow(JsonWebTokenError);
     });
 
     it("should throw exception if type is invalid", async () => {
@@ -58,16 +50,8 @@ describe("decodeToken()", () => {
             exp: moment().subtract(1, "minutes").unix(),
         } as AccessTokenDto;
         const token = jwt.sign(dataToSign, env.jwtPrivateKey);
-        let thrown = false;
 
-        try {
-            sut.decodeAccessToken(token);
-        } catch (error) {
-            thrown = true;
-            expect(error.name).toBe("TokenExpiredError");
-        }
-
-        expect(thrown).toBe(true);
+        expect(() => sut.decodeAccessToken(token)).toThrow(TokenExpiredError);
     });
 
     it("should decode token", async () => {

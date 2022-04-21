@@ -1,6 +1,5 @@
-import { EventEmitter } from "events";
-
 import amqp from "amqplib";
+import { EventEmitter } from "node:events";
 
 import { Phone } from "../models/phone";
 
@@ -45,8 +44,8 @@ export class MessageBroker extends EventEmitter {
         });
         this._channel = await connection.createChannel();
 
-        this.createUserQueues();
-        this.createCodeQueues();
+        await this.createUserQueues();
+        await this.createCodeQueues();
     }
 
     public pushEmailCode(email: string, code: string, type: "confirmAccount" | "forgotPassword") {
