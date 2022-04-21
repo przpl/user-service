@@ -19,7 +19,9 @@ import { Phone } from "../../src/models/phone";
 import { PasswordService } from "../../src/services/passwordService";
 import { CONFIRMATION_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../../src/utils/globalConsts";
 import { mockConfig } from "../mocks/mockConfig";
+import { mockConnection } from "../mocks/mockConnection";
 import { TestContainer } from "../mocks/testcontainers";
+import { shouldStartPostgresContainer } from "../testUtils";
 
 const user1 = new UserEntity("1", "user1");
 const user2 = new UserEntity("2", "user2");
@@ -36,15 +38,15 @@ describe("LocalLoginManager", () => {
 
     beforeEach(async () => {
         testContainer = new TestContainer();
-        postgresConnection = await testContainer.getTypeOrmConnection();
+        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockConnection();
         sut = new LocalLoginManager(postgresConnection, new PasswordService(), mockConfig());
         userRepo = postgresConnection.getRepository(UserEntity);
         confirmRepo = postgresConnection.getRepository(ConfirmationEntity);
         localLoginRepo = postgresConnection.getRepository(LocalLoginEntity);
         passResetRepo = postgresConnection.getRepository(PasswordResetEntity);
-        userRepo.save(user1);
-        userRepo.save(user2);
-        userRepo.save(user3);
+        userRepo?.save(user1);
+        userRepo?.save(user2);
+        userRepo?.save(user3);
     }, 30000);
 
     afterEach(async () => {
@@ -52,7 +54,7 @@ describe("LocalLoginManager", () => {
     }, 15000);
 
     describe("isDuplicate()", () => {
-        it("should return none if there is not duplicate", async () => {
+        it("should return none if there is not duplicate [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             await sut.create(new Credentials("user2@email.com", "user2", new Phone("+48", "2")), user2.id, "password");
             await sut.create(new Credentials("user3@email.com", "user3", new Phone("+48", "3")), user3.id, "password");
@@ -65,7 +67,7 @@ describe("LocalLoginManager", () => {
             expect(results.every((r) => r === LoginDuplicateType.none)).toBeTruthy();
         });
 
-        it("should return email duplicate type if there is duplicate", async () => {
+        it("should return email duplicate type if there is duplicate [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "password");
 
             const result = await sut.isDuplicate(new Credentials("user1@email.com", "user2", null));
@@ -73,7 +75,7 @@ describe("LocalLoginManager", () => {
             expect(result).toBe(LoginDuplicateType.email);
         });
 
-        it("should return username duplicate type if there is duplicate", async () => {
+        it("should return username duplicate type if there is duplicate [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "password");
 
             const result = await sut.isDuplicate(new Credentials("user2@email.com", "user1", null));
@@ -81,7 +83,7 @@ describe("LocalLoginManager", () => {
             expect(result).toBe(LoginDuplicateType.username);
         });
 
-        it("should return phone duplicate type if there is duplicate", async () => {
+        it("should return phone duplicate type if there is duplicate [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
 
             const result = await sut.isDuplicate(new Credentials("user2@email.com", "user2", new Phone("+48", "1")));
@@ -91,7 +93,7 @@ describe("LocalLoginManager", () => {
     });
 
     describe("create()", () => {
-        it("should create with phone number", async () => {
+        it("should create with phone number [withPostgresContainer]", async () => {
             const result = await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
 
             expect(result.userId).toBe(user1.id);
@@ -101,7 +103,7 @@ describe("LocalLoginManager", () => {
             expect(result.phone.number).toBe("1");
         });
 
-        it("should create without phone number", async () => {
+        it("should create without phone number [withPostgresContainer]", async () => {
             const result = await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "password");
 
             expect(result.userId).toBe(user1.id);
@@ -112,7 +114,7 @@ describe("LocalLoginManager", () => {
     });
 
     describe("authenticate()", () => {
-        it("should return userNotFound if user does not exist", async () => {
+        it("should return userNotFound if user does not exist [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             await sut.create(new Credentials("user2@email.com", "user2", new Phone("+48", "2")), user2.id, "password");
             await sut.create(new Credentials("user3@email.com", "user3", new Phone("+48", "3")), user3.id, "password");
@@ -125,7 +127,7 @@ describe("LocalLoginManager", () => {
             expect(results.every((r) => r.result === LoginResult.userNotFound && !r.login)).toBeTruthy();
         });
 
-        it("should return invalidPassword if password does not match", async () => {
+        it("should return invalidPassword if password does not match [withPostgresContainer]", async () => {
             const credentials = new Credentials("user1@email.com", null, null);
             await sut.create(credentials, user1.id, "password");
 
@@ -134,7 +136,7 @@ describe("LocalLoginManager", () => {
             expect(result.result).toBe(LoginResult.invalidPassword);
         });
 
-        it("should return emailNotConfirmed if email is not confirmed", async () => {
+        it("should return emailNotConfirmed if email is not confirmed [withPostgresContainer]", async () => {
             const credentials = new Credentials("user1@email.com", null, null);
             await sut.create(credentials, user1.id, "password");
 
@@ -143,7 +145,7 @@ describe("LocalLoginManager", () => {
             expect(result.result).toBe(LoginResult.emailNotConfirmed);
         });
 
-        it("should login user if email is confirmed", async () => {
+        it("should login user if email is confirmed [withPostgresContainer]", async () => {
             const credentials = new Credentials("user1@email.com", null, null);
             await sut.create(credentials, user1.id, "password");
             const localLogin = await localLoginRepo.findOne();
@@ -160,7 +162,7 @@ describe("LocalLoginManager", () => {
     });
 
     describe("isLocal()", () => {
-        it("should return true if user account is local", async () => {
+        it("should return true if user account is local [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
 
             const result = await sut.isLocal(user1.id);
@@ -168,7 +170,7 @@ describe("LocalLoginManager", () => {
             expect(result).toBeTruthy();
         });
 
-        it("should return false if user account is not local", async () => {
+        it("should return false if user account is not local [withPostgresContainer]", async () => {
             const result = await sut.isLocal(user1.id);
 
             expect(result).toBeFalsy();
@@ -176,7 +178,7 @@ describe("LocalLoginManager", () => {
     });
 
     describe("getByCredentials()", () => {
-        it("should return null if user does not exist", async () => {
+        it("should return null if user does not exist [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             await sut.create(new Credentials("user2@email.com", "user2", new Phone("+48", "2")), user2.id, "password");
             await sut.create(new Credentials("user3@email.com", "user3", new Phone("+48", "3")), user3.id, "password");
@@ -189,7 +191,7 @@ describe("LocalLoginManager", () => {
             expect(results.every((r) => r === null)).toBeTruthy();
         });
 
-        it("should find by email", async () => {
+        it("should find by email [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             await sut.create(new Credentials("user2@email.com", "user2", new Phone("+48", "2")), user2.id, "password");
             await sut.create(new Credentials("user3@email.com", "user3", new Phone("+48", "3")), user3.id, "password");
@@ -199,7 +201,7 @@ describe("LocalLoginManager", () => {
             expect(result.userId).toBe(user1.id);
         });
 
-        it("should find by username", async () => {
+        it("should find by username [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             await sut.create(new Credentials("user2@email.com", "user2", new Phone("+48", "2")), user2.id, "password");
             await sut.create(new Credentials("user3@email.com", "user3", new Phone("+48", "3")), user3.id, "password");
@@ -209,7 +211,7 @@ describe("LocalLoginManager", () => {
             expect(result.userId).toBe(user2.id);
         });
 
-        it("should find by phone", async () => {
+        it("should find by phone [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             await sut.create(new Credentials("user2@email.com", "user2", new Phone("+48", "2")), user2.id, "password");
             await sut.create(new Credentials("user3@email.com", "user3", new Phone("+48", "3")), user3.id, "password");
@@ -221,7 +223,7 @@ describe("LocalLoginManager", () => {
     });
 
     describe("generateConfirmationCode()", () => {
-        it("should generate code", async () => {
+        it("should generate code [withPostgresContainer]", async () => {
             const result = await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
 
             expect(result).toHaveLength(CONFIRMATION_CODE_LENGTH);
@@ -236,7 +238,7 @@ describe("LocalLoginManager", () => {
     });
 
     describe("getConfirmationCode()", () => {
-        it("should return null if confirmation does not exist", async () => {
+        it("should return null if confirmation does not exist [withPostgresContainer]", async () => {
             await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
 
             const result = await sut.getConfirmationCode("user2@gmail.com", ConfirmationType.email);
@@ -244,7 +246,7 @@ describe("LocalLoginManager", () => {
             expect(result).toBeNull();
         });
 
-        it("should throw error if sent count is exceeded", async () => {
+        it("should throw error if sent count is exceeded [withPostgresContainer]", async () => {
             await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
             const confirmation = await confirmRepo.findOne();
             confirmation.sentCount = mockConfig().localLogin.email.resendLimit + 1;
@@ -255,7 +257,7 @@ describe("LocalLoginManager", () => {
             );
         });
 
-        it("should throw error if send is requested too often", async () => {
+        it("should throw error if send is requested too often [withPostgresContainer]", async () => {
             await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
 
             await expect(() => sut.getConfirmationCode("user1@gmail.com", ConfirmationType.email)).rejects.toThrow(
@@ -263,7 +265,7 @@ describe("LocalLoginManager", () => {
             );
         });
 
-        it("should get code", async () => {
+        it("should get code [withPostgresContainer]", async () => {
             await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
             let confirmation = await confirmRepo.findOne();
             const config = mockConfig();
@@ -283,13 +285,13 @@ describe("LocalLoginManager", () => {
     });
 
     describe("confirm()", () => {
-        it("should return false if confirmation does not exist", async () => {
+        it("should return false if confirmation does not exist [withPostgresContainer]", async () => {
             const result = await sut.confirm("user1@gmail.com", "123456", ConfirmationType.email);
 
             expect(result).toBeFalsy();
         });
 
-        it("should confirm", async () => {
+        it("should confirm [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "password");
             const code = await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
 
@@ -307,17 +309,17 @@ describe("LocalLoginManager", () => {
             await expect(() => sut.changePassword(null, "oldPass", "newPass")).rejects.toThrow(NullOrUndefinedException);
         });
 
-        it("should throw error if user does not exist", async () => {
+        it("should throw error if user does not exist [withPostgresContainer]", async () => {
             await expect(() => sut.changePassword(user1.id, "oldPass", "newPass")).rejects.toThrow(UserNotLocalException);
         });
 
-        it("should throw error if old password does not match", async () => {
+        it("should throw error if old password does not match [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "password");
 
             await expect(() => sut.changePassword(user1.id, "oldPass", "newPass")).rejects.toThrow(InvalidPasswordException);
         });
 
-        it("should change password", async () => {
+        it("should change password [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "oldPass");
             const oldHash = (await localLoginRepo.findOne()).passwordHash;
 
@@ -329,17 +331,17 @@ describe("LocalLoginManager", () => {
     });
 
     describe("resetPassword()", () => {
-        it("should throw error if code wasn't generated", async () => {
+        it("should throw error if code wasn't generated [withPostgresContainer]", async () => {
             await expect(() => sut.resetPassword("code", "newPass")).rejects.toThrow(NotFoundException);
         });
 
-        it("should throw error if code is invalid", async () => {
+        it("should throw error if code is invalid [withPostgresContainer]", async () => {
             await sut.generatePasswordResetCode(user1.id, "email");
 
             await expect(() => sut.resetPassword("code", "newPass")).rejects.toThrow(NotFoundException);
         });
 
-        it("should throw error if code is expired", async () => {
+        it("should throw error if code is expired [withPostgresContainer]", async () => {
             const code = await sut.generatePasswordResetCode(user1.id, "email");
             const passReset = await passResetRepo.findOne();
             const config = mockConfig();
@@ -352,7 +354,7 @@ describe("LocalLoginManager", () => {
             await expect(() => sut.resetPassword(code, "newPass")).rejects.toThrow(ExpiredResetCodeException);
         });
 
-        it("should change password", async () => {
+        it("should change password [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             const code = await sut.generatePasswordResetCode(user1.id, "email");
             const oldHash = (await localLoginRepo.findOne()).passwordHash;
@@ -371,7 +373,7 @@ describe("LocalLoginManager", () => {
             await expect(() => sut.generatePasswordResetCode(null, "email")).rejects.toThrow(NullOrUndefinedException);
         });
 
-        it("should generate new code if old does not exist", async () => {
+        it("should generate new code if old does not exist [withPostgresContainer]", async () => {
             const code = await sut.generatePasswordResetCode(user1.id, "email");
 
             expect(code).toHaveLength(PASSWORD_RESET_CODE_LENGTH);
@@ -381,7 +383,7 @@ describe("LocalLoginManager", () => {
             expect(passReset.code).toBe(code);
         });
 
-        it("should update code if old exists", async () => {
+        it("should update code if old exists [withPostgresContainer]", async () => {
             const oldCode = await sut.generatePasswordResetCode(user1.id, "email");
             const passReset = await passResetRepo.findOne();
             passReset.createdAt = moment(passReset.createdAt).subtract(61, "seconds").toDate();
@@ -392,7 +394,7 @@ describe("LocalLoginManager", () => {
             expect(await passResetRepo.count()).toBe(1);
         });
 
-        it("should not update code if old was generated less than 60 seconds before", async () => {
+        it("should not update code if old was generated less than 60 seconds before [withPostgresContainer]", async () => {
             const oldCode = await sut.generatePasswordResetCode(user1.id, "email");
             const newCode = await sut.generatePasswordResetCode(user1.id, "email");
 
@@ -408,20 +410,20 @@ describe("LocalLoginManager", () => {
             await expect(() => sut.verifyPassword(null, "password")).rejects.toThrow(NullOrUndefinedException);
         });
 
-        it("should return false if user does not exist", async () => {
+        it("should return false if user does not exist [withPostgresContainer]", async () => {
             const result = await sut.verifyPassword("otherUser", "password");
 
             expect(result).toBe(false);
         });
 
-        it("should return false if password does not match", async () => {
+        it("should return false if password does not match [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             const result = await sut.verifyPassword(user1.id, "otherPassword");
 
             expect(result).toBe(false);
         });
 
-        it("should return true if password matches", async () => {
+        it("should return true if password matches [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             const result = await sut.verifyPassword(user1.id, "password");
 
