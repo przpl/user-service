@@ -15,7 +15,7 @@ export class TestContainer {
             throw new Error("PostgreSQL container is already running.");
         }
 
-        this._postgresContainer = await new PostgreSqlContainer("postgres:13.4-alpine3.14")
+        this._postgresContainer = await new PostgreSqlContainer("postgres:14.2-alpine3.15")
             .withEnv("TZ", "Europe/Warsaw") // fix problem with clock skew in Linux container running on top of Windows // TODO won't work in different timezones
             .withUsername("test")
             .withPassword("test")
@@ -49,7 +49,7 @@ export class TestContainer {
             throw new Error("Redis container is already running.");
         }
 
-        this._redisContainer = await new GenericContainer("redis:6.2.5-alpine3.14").withExposedPorts(6379).start();
+        this._redisContainer = await new GenericContainer("redis:6.2.6-alpine3.15").withExposedPorts(6379).start();
         this._redisClient = createClient({
             socket: { host: this._redisContainer.getHost(), port: this._redisContainer.getMappedPort(6379) },
         });
