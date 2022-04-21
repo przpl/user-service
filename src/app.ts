@@ -4,14 +4,15 @@ import "reflect-metadata"; // required by IoC Container
 import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
 import { createClient } from "redis";
 import { container } from "tsyringe";
-import { Connection, createConnection } from "typeorm";
+import { DataSource } from "typeorm";
 
+import { dataSource } from "./dataSource";
 import { BaseSessionManager } from "./managers/session/baseSessionManager";
 import { CookieSessionManager } from "./managers/session/cookieSessionManager";
 import { JwtSessionManager } from "./managers/session/jwtSessionManager";
@@ -82,9 +83,8 @@ function loadConfig() {
 }
 
 async function connectToDb() {
-    let conn: Connection;
     try {
-        conn = await createConnection();
+        await dataSource.initialize();
     } catch (error) {
         printError(error.message);
         logger.error(error.message);
@@ -93,17 +93,17 @@ async function connectToDb() {
 
     const args = process.argv.slice(2);
     if (args.includes("-migrate")) {
-        await conn.runMigrations();
+        await dataSource.runMigrations();
     }
 
-    if (await conn.showMigrations()) {
+    if (await dataSource.showMigrations()) {
         const msg = "There are pending migrations to be executed using `typeorm migration:run`.";
         printError(msg);
         logger.error(msg);
         process.exit(1);
     }
 
-    return conn;
+    return dataSource;
 }
 
 async function connectToMessageBroker(env: Env) {
@@ -138,10 +138,10 @@ async function start() {
     container.registerInstance(Logger, logger);
     container.registerInstance(SecurityLogger, new SecurityLogger(false));
 
-    const dbConnection = await connectToDb();
+    const dataSource = await connectToDb();
     const messageBroker = await connectToMessageBroker(env);
 
-    container.registerInstance(Connection, dbConnection);
+    container.registerInstance(DataSource, dataSource);
     container.registerInstance(Env, env);
     container.registerInstance(Config, config);
     container.registerInstance(MessageBroker, messageBroker);
@@ -187,8 +187,8 @@ async function start() {
     app.use("/api/user/token", TokenRouter.getExpressRouter());
     app.use("/api/user/mfa", MfaRouter.getExpressRouter());
 
-    app.use((req, res, next) => handleNotFoundError(res, env.isDev()));
-    app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, req, res, env.isDev(), env.sentryKey));
+    app.use((req, res) => handleNotFoundError(res, env.isDev()));
+    app.use((err: any, req: Request, res: Response) => handleError(err, req, res, env.isDev(), env.sentryKey));
 
     app.disable("x-powered-by");
 
@@ -197,11 +197,11 @@ async function start() {
     })
         .on("error", async (e) => {
             printError(`Cannot run app: ${e.message}`);
-            await dbConnection.close();
+            await dataSource.destroy();
             process.exit(1);
         })
         .on("close", async () => {
-            await dbConnection.close();
+            await dataSource.destroy();
         });
 
     process.on("unhandledRejection", (err: any) => {

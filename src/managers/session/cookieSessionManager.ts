@@ -1,6 +1,6 @@
 import moment from "moment";
 import { singleton } from "tsyringe";
-import { Connection } from "typeorm";
+import { DataSource } from "typeorm";
 
 import { CacheDb } from "../../dal/cacheDb";
 import { Config } from "../../utils/config/config";
@@ -13,8 +13,8 @@ import { CookieSessionCacheStrategy } from "./cookieSessionCacheStrategy";
 export class CookieSessionManager extends BaseSessionManager {
     private _cacheExpiration: TimeSpan;
 
-    constructor(private _cacheDb: CacheDb, cacheStrategy: CookieSessionCacheStrategy, connection: Connection, config: Config) {
-        super(cacheStrategy, connection, config);
+    constructor(private _cacheDb: CacheDb, cacheStrategy: CookieSessionCacheStrategy, dataSource: DataSource, config: Config) {
+        super(cacheStrategy, dataSource, config);
         this._cacheExpiration = TimeSpan.fromSeconds(config.session.cacheExpirationSeconds);
     }
 
@@ -30,7 +30,7 @@ export class CookieSessionManager extends BaseSessionManager {
     public async tryToRecacheSession(sessionId: string) {
         guardNotUndefinedOrNull(sessionId);
 
-        const sessionInDb = await this._repo.findOne(sessionId);
+        const sessionInDb = await this._repo.findOneBy({ id: sessionId });
         if (sessionInDb) {
             await this._cacheDb.setSession(sessionId, sessionInDb.userId, this._cacheExpiration);
             sessionInDb.lastUseAt = moment().toDate();

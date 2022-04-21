@@ -1,5 +1,5 @@
 import moment from "moment";
-import { Connection, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 
 import { ConfirmationEntity, ConfirmationType } from "../../src/dal/entities/confirmationEntity";
 import { LocalLoginEntity } from "../../src/dal/entities/localLoginEntity";
@@ -19,7 +19,7 @@ import { Phone } from "../../src/models/phone";
 import { PasswordService } from "../../src/services/passwordService";
 import { CONFIRMATION_CODE_LENGTH, PASSWORD_RESET_CODE_LENGTH } from "../../src/utils/globalConsts";
 import { mockConfig } from "../mocks/mockConfig";
-import { mockConnection } from "../mocks/mockConnection";
+import { mockDataSource } from "../mocks/mockConnection";
 import { TestContainer } from "../mocks/testcontainers";
 import { shouldStartPostgresContainer } from "../testUtils";
 
@@ -29,7 +29,7 @@ const user3 = new UserEntity("3", "user3");
 
 describe("LocalLoginManager", () => {
     let testContainer: TestContainer;
-    let postgresConnection: Connection;
+    let postgresConnection: DataSource;
     let userRepo: Repository<UserEntity>;
     let confirmRepo: Repository<ConfirmationEntity>;
     let localLoginRepo: Repository<LocalLoginEntity>;
@@ -38,7 +38,7 @@ describe("LocalLoginManager", () => {
 
     beforeEach(async () => {
         testContainer = new TestContainer();
-        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockConnection();
+        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockDataSource();
         sut = new LocalLoginManager(postgresConnection, new PasswordService(), mockConfig());
         userRepo = postgresConnection.getRepository(UserEntity);
         confirmRepo = postgresConnection.getRepository(ConfirmationEntity);
@@ -148,7 +148,7 @@ describe("LocalLoginManager", () => {
         it("should login user if email is confirmed [withPostgresContainer]", async () => {
             const credentials = new Credentials("user1@email.com", null, null);
             await sut.create(credentials, user1.id, "password");
-            const localLogin = await localLoginRepo.findOne();
+            const [localLogin] = await localLoginRepo.find();
             localLogin.emailConfirmed = true;
             await localLogin.save();
 
@@ -227,7 +227,7 @@ describe("LocalLoginManager", () => {
             const result = await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
 
             expect(result).toHaveLength(CONFIRMATION_CODE_LENGTH);
-            const confirmation = await confirmRepo.findOne();
+            const [confirmation] = await confirmRepo.find();
             expect(confirmation.userId).toBe(user1.id);
             expect(confirmation.subject).toBe("user1@gmail.com");
             expect(confirmation.code).toBe(result);
@@ -248,7 +248,7 @@ describe("LocalLoginManager", () => {
 
         it("should throw error if sent count is exceeded [withPostgresContainer]", async () => {
             await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
-            const confirmation = await confirmRepo.findOne();
+            const [confirmation] = await confirmRepo.find();
             confirmation.sentCount = mockConfig().localLogin.email.resendLimit + 1;
             await confirmation.save();
 
@@ -267,7 +267,7 @@ describe("LocalLoginManager", () => {
 
         it("should get code [withPostgresContainer]", async () => {
             await sut.generateConfirmationCode(user1.id, "user1@gmail.com", ConfirmationType.email);
-            let confirmation = await confirmRepo.findOne();
+            let [confirmation] = await confirmRepo.find();
             const config = mockConfig();
             const lastSendRequestAt = moment()
                 .subtract(config.localLogin.email.resendTimeLimitSeconds + 1, "seconds")
@@ -278,7 +278,7 @@ describe("LocalLoginManager", () => {
             const result = await sut.getConfirmationCode("user1@gmail.com", ConfirmationType.email);
 
             expect(result).toBe(confirmation.code);
-            confirmation = await confirmRepo.findOne();
+            [confirmation] = await confirmRepo.find();
             expect(confirmation.lastSendRequestAt).not.toBe(lastSendRequestAt);
             expect(confirmation.sentCount).toBe(2);
         });
@@ -321,11 +321,12 @@ describe("LocalLoginManager", () => {
 
         it("should change password [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", null), user1.id, "oldPass");
-            const oldHash = (await localLoginRepo.findOne()).passwordHash;
+            let [localLogin] = await localLoginRepo.find();
+            const oldHash = localLogin.passwordHash;
 
             await sut.changePassword(user1.id, "oldPass", "newPass");
 
-            const localLogin = await localLoginRepo.findOne();
+            [localLogin] = await localLoginRepo.find();
             expect(localLogin.passwordHash).not.toBe(oldHash);
         });
     });
@@ -343,7 +344,7 @@ describe("LocalLoginManager", () => {
 
         it("should throw error if code is expired [withPostgresContainer]", async () => {
             const code = await sut.generatePasswordResetCode(user1.id, "email");
-            const passReset = await passResetRepo.findOne();
+            const [passReset] = await passResetRepo.find();
             const config = mockConfig();
             passReset.createdAt = moment(passReset.createdAt)
                 .subtract(config.passwordReset.codeExpirationTimeInMinutes, "minutes")
@@ -357,12 +358,13 @@ describe("LocalLoginManager", () => {
         it("should change password [withPostgresContainer]", async () => {
             await sut.create(new Credentials("user1@email.com", "user1", new Phone("+48", "1")), user1.id, "password");
             const code = await sut.generatePasswordResetCode(user1.id, "email");
-            const oldHash = (await localLoginRepo.findOne()).passwordHash;
+            let [localLogin] = await localLoginRepo.find();
+            const oldHash = localLogin.passwordHash;
 
             const userId = await sut.resetPassword(code, "newPass");
 
             expect(await passResetRepo.count()).toBe(0);
-            const localLogin = await localLoginRepo.findOne();
+            [localLogin] = await localLoginRepo.find();
             expect(localLogin.passwordHash).not.toBe(oldHash);
             expect(userId).toBe(user1.id);
         });
@@ -377,7 +379,7 @@ describe("LocalLoginManager", () => {
             const code = await sut.generatePasswordResetCode(user1.id, "email");
 
             expect(code).toHaveLength(PASSWORD_RESET_CODE_LENGTH);
-            const passReset = await passResetRepo.findOne();
+            const [passReset] = await passResetRepo.find();
             expect(passReset.userId).toBe(user1.id);
             expect(passReset.method).toBe(PasswordResetMethod.email);
             expect(passReset.code).toBe(code);
@@ -385,7 +387,7 @@ describe("LocalLoginManager", () => {
 
         it("should update code if old exists [withPostgresContainer]", async () => {
             const oldCode = await sut.generatePasswordResetCode(user1.id, "email");
-            const passReset = await passResetRepo.findOne();
+            const [passReset] = await passResetRepo.find();
             passReset.createdAt = moment(passReset.createdAt).subtract(61, "seconds").toDate();
             await passReset.save();
             const newCode = await sut.generatePasswordResetCode(user1.id, "email");
@@ -400,7 +402,7 @@ describe("LocalLoginManager", () => {
 
             expect(newCode).toBeFalsy();
             expect(await passResetRepo.count()).toBe(1);
-            const passReset = await passResetRepo.findOne();
+            const [passReset] = await passResetRepo.find();
             expect(passReset.code).toBe(oldCode);
         });
     });

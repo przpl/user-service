@@ -1,7 +1,7 @@
 import moment from "moment";
 import speakeasy from "speakeasy";
 import { singleton } from "tsyringe";
-import { getRepository } from "typeorm";
+import { DataSource } from "typeorm";
 
 import { CacheDb } from "../dal/cacheDb";
 import { MfaEntity, MfaMethod } from "../dal/entities/mfaEntity";
@@ -22,11 +22,11 @@ export enum MfaVerificationResult {
 
 @singleton()
 export class MfaManager {
-    private _repo = getRepository(MfaEntity);
+    private _repo = this._dataSource.getRepository(MfaEntity);
     private _mfaLoginTTL: TimeSpan;
     private _attemptsLimit: number;
 
-    constructor(private _cache: CacheDb, config: Config) {
+    constructor(private _dataSource: DataSource, private _cache: CacheDb, config: Config) {
         if (!_cache) {
             throw new Error("Cache is required.");
         }
@@ -144,7 +144,7 @@ export class MfaManager {
 
     private getByUserId(userId: string): Promise<MfaEntity> {
         guardNotUndefinedOrNull(userId);
-        return this._repo.findOne(userId);
+        return this._repo.findOneBy({ userId });
     }
 
     private verifyTotpToken(secret: string, otp: string): boolean {

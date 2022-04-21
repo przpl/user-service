@@ -1,10 +1,10 @@
-import { Connection, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 
 import { ExternalLoginEntity, ExternalLoginProvider } from "../../src/dal/entities/externalLoginEntity";
 import { UserEntity } from "../../src/dal/entities/userEntity";
 import { NullOrUndefinedException } from "../../src/exceptions/exceptions";
 import { ExternalLoginManager } from "../../src/managers/externalLoginManager";
-import { mockConnection } from "../mocks/mockConnection";
+import { mockDataSource } from "../mocks/mockConnection";
 import { TestContainer } from "../mocks/testcontainers";
 import { shouldStartPostgresContainer } from "../testUtils";
 
@@ -13,13 +13,13 @@ const user2 = new UserEntity("2", "user2");
 
 describe("ExternalLoginManager", () => {
     let testContainer: TestContainer;
-    let postgresConnection: Connection;
+    let postgresConnection: DataSource;
     let repo: Repository<ExternalLoginEntity>;
     let sut: ExternalLoginManager;
 
     beforeEach(async () => {
         testContainer = new TestContainer();
-        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockConnection();
+        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockDataSource();
         sut = new ExternalLoginManager(postgresConnection);
         repo = postgresConnection.getRepository(ExternalLoginEntity);
         const userRepo = postgresConnection.getRepository(UserEntity);

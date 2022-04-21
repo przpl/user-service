@@ -1,4 +1,4 @@
-import { Connection, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 
 import { CacheDb } from "../../../src/dal/cacheDb";
 import { SessionEntity } from "../../../src/dal/entities/sessionEntity";
@@ -9,14 +9,14 @@ import { CookieSessionManager } from "../../../src/managers/session/cookieSessio
 import { RedisClient } from "../../../src/types/redisClient";
 import { SESSION_ID_LENGTH } from "../../../src/utils/globalConsts";
 import { mockConfig } from "../../mocks/mockConfig";
-import { mockConnection } from "../../mocks/mockConnection";
+import { mockDataSource } from "../../mocks/mockConnection";
 import { mockUserAgent } from "../../mocks/mockUserAgent";
 import { TestContainer } from "../../mocks/testcontainers";
 import { shouldStartPostgresContainer, shouldStartRedisContainer } from "../../testUtils";
 
 describe("CookieSessionManager", () => {
     let testContainer: TestContainer;
-    let postgresConnection: Connection;
+    let postgresConnection: DataSource;
     let redisClient: RedisClient;
     let cacheDb: CacheDb;
     let sessionRepo: Repository<SessionEntity>;
@@ -24,7 +24,7 @@ describe("CookieSessionManager", () => {
 
     beforeEach(async () => {
         testContainer = new TestContainer();
-        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockConnection();
+        postgresConnection = shouldStartPostgresContainer() ? await testContainer.getTypeOrmConnection() : mockDataSource();
         redisClient = shouldStartRedisContainer() && (await testContainer.getRedisClient());
 
         cacheDb = new CacheDb(redisClient);
@@ -55,7 +55,7 @@ describe("CookieSessionManager", () => {
             const userIdFromDb = await sut.getUserIdFromSession(sid);
 
             expect(userIdFromDb).toBe("user1");
-            const session = await sessionRepo.findOne();
+            const [session] = await sessionRepo.find();
             expect(session.lastUseAt).toBeTruthy();
             expect(await cacheDb.getSession(sid)).toBe("user1");
         });
@@ -67,7 +67,8 @@ describe("CookieSessionManager", () => {
             const userIdFromCache = await sut.getUserIdFromSession(sid);
 
             expect(userIdFromCache).toBe("user1");
-            expect(await sessionRepo.findOne()).toBeFalsy();
+            const [session] = await sessionRepo.find();
+            expect(session).toBeFalsy();
         });
     });
 
@@ -87,7 +88,7 @@ describe("CookieSessionManager", () => {
             const userIdFromDb = await sut.tryToRecacheSession(sid);
 
             expect(userIdFromDb).toBe("user1");
-            const session = await sessionRepo.findOne();
+            const [session] = await sessionRepo.find();
             expect(session.lastUseAt).toBeTruthy();
             expect(await cacheDb.getSession(sid)).toBe("user1");
         });
@@ -97,7 +98,7 @@ describe("CookieSessionManager", () => {
         it("should issue session [withPostgresContainer][withRedisContainer]", async () => {
             const sid = await sut.issueSession("user1", "127.0.0.1", mockUserAgent());
 
-            const session = await sessionRepo.findOne();
+            const [session] = await sessionRepo.find();
             expect(session.id).toHaveLength(SESSION_ID_LENGTH);
             expect(session.userId).toBe("user1");
             expect(session.createIp).toBe("127.0.0.1");
@@ -147,7 +148,8 @@ describe("CookieSessionManager", () => {
             await sut.removeAllSessions("user1");
 
             expect(await sessionRepo.count()).toBe(1);
-            expect((await sessionRepo.findOne()).userId).toBe("user2");
+            const [session] = await sessionRepo.find();
+            expect(session.userId).toBe("user2");
             expect(await cacheDb.getSession(sid1)).toBeNull();
             expect(await cacheDb.getSession(sid2)).toBeNull();
         });
@@ -158,7 +160,8 @@ describe("CookieSessionManager", () => {
             await sut.removeAllSessions("user2");
 
             expect(await sessionRepo.count()).toBe(1);
-            expect((await sessionRepo.findOne()).id).toBe(sid1);
+            const [session] = await sessionRepo.find();
+            expect(session.id).toBe(sid1);
             expect(await cacheDb.getSession(sid1)).toBe("user1");
         });
     });
@@ -172,7 +175,8 @@ describe("CookieSessionManager", () => {
 
             expect(removed.id).toBe(sid1);
             expect(await sessionRepo.count()).toBe(1);
-            expect((await sessionRepo.findOne()).id).toBe(sid2);
+            const [session] = await sessionRepo.find();
+            expect(session.id).toBe(sid2);
             expect(await cacheDb.getSession(sid2)).toBe("user1");
         });
 
@@ -184,7 +188,8 @@ describe("CookieSessionManager", () => {
 
             expect(removed.id).toBe(sid2);
             expect(await sessionRepo.count()).toBe(1);
-            expect((await sessionRepo.findOne()).id).toBe(sid1);
+            const [session] = await sessionRepo.find();
+            expect(session.id).toBe(sid1);
             expect(await cacheDb.getSession(sid1)).toBeNull();
         });
 

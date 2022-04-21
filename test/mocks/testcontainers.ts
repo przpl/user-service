@@ -1,16 +1,16 @@
 import { createClient } from "redis";
 import { GenericContainer, PostgreSqlContainer, StartedPostgreSqlContainer, StartedTestContainer } from "testcontainers";
-import { Connection, createConnection } from "typeorm";
+import { DataSource } from "typeorm";
 
 import { RedisClient } from "../../src/types/redisClient";
 
 export class TestContainer {
     private _postgresContainer: StartedPostgreSqlContainer;
-    private _postgresConnection: Connection;
+    private _postgresConnection: DataSource;
     private _redisContainer: StartedTestContainer;
     private _redisClient: RedisClient;
 
-    public async getTypeOrmConnection(showConnectionDetails = false): Promise<Connection> {
+    public async getTypeOrmConnection(showConnectionDetails = false): Promise<DataSource> {
         if (this.isPostgresActive()) {
             throw new Error("PostgreSQL container is already running.");
         }
@@ -26,7 +26,7 @@ export class TestContainer {
             password: this._postgresContainer.getPassword(),
             database: this._postgresContainer.getDatabase(),
         };
-        this._postgresConnection = await createConnection({
+        this._postgresConnection = new DataSource({
             type: "postgres",
             host: this._postgresContainer.getHost(),
             port: this._postgresContainer.getPort(),
@@ -34,6 +34,7 @@ export class TestContainer {
             entities: ["src/dal/entities/**/**.ts"],
             synchronize: true,
         });
+        await this._postgresConnection.initialize();
         if (showConnectionDetails) {
             // eslint-disable-next-line no-console
             console.log("Postgres connection details", {
@@ -60,7 +61,7 @@ export class TestContainer {
 
     public async cleanup() {
         if (this.isPostgresActive()) {
-            await this._postgresConnection.close();
+            await this._postgresConnection.destroy();
             await this._postgresContainer.stop();
             this._postgresConnection = null;
             this._postgresContainer = null;

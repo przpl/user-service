@@ -1,4 +1,4 @@
-import { Connection, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 
 import { UserEntity } from "../../src/dal/entities/userEntity";
 import { UserManager } from "../../src/managers/userManger";
@@ -16,7 +16,7 @@ const idGenerator: UserIdGenerator = {
 
 describe("UserManager", () => {
     let testContainer: TestContainer;
-    let postgresConnection: Connection;
+    let postgresConnection: DataSource;
     let userRepo: Repository<UserEntity>;
     let sut: UserManager;
 
@@ -35,7 +35,7 @@ describe("UserManager", () => {
         it("should create user", async () => {
             await sut.create("user1");
 
-            const user = await userRepo.findOne();
+            const [user] = await userRepo.find();
             expect(user.id).toBe("generatedId");
             expect(user.username).toBe("user1");
         });

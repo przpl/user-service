@@ -1,7 +1,7 @@
-import { Connection } from "typeorm";
+import { DataSource } from "typeorm";
 
-export function mockConnection(): Connection {
+export function mockDataSource(): DataSource {
     return {
         getRepository: jest.fn(),
-    } as unknown as Connection;
+    } as unknown as DataSource;
 }

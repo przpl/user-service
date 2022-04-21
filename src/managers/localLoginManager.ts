@@ -1,6 +1,6 @@
 import moment from "moment";
 import { singleton } from "tsyringe";
-import { Connection, FindConditions } from "typeorm";
+import { DataSource, FindOptionsWhere } from "typeorm";
 
 import { ConfirmationEntity, ConfirmationType } from "../dal/entities/confirmationEntity";
 import { LocalLoginEntity } from "../dal/entities/localLoginEntity";
@@ -44,16 +44,16 @@ interface ConfirmationLimit {
 
 @singleton()
 export class LocalLoginManager {
-    private _loginRepo = this._connection.getRepository(LocalLoginEntity);
-    private _confirmRepo = this._connection.getRepository(ConfirmationEntity);
-    private _passResetRepo = this._connection.getRepository(PasswordResetEntity);
+    private _loginRepo = this._dataSource.getRepository(LocalLoginEntity);
+    private _confirmRepo = this._dataSource.getRepository(ConfirmationEntity);
+    private _passResetRepo = this._dataSource.getRepository(PasswordResetEntity);
     private _resendLimit: {
         email: ConfirmationLimit;
         phone: ConfirmationLimit;
     };
     private _passResetCodeTTL: TimeSpan;
 
-    constructor(private _connection: Connection, private _passService: PasswordService, private _config: Config) {
+    constructor(private _dataSource: DataSource, private _passService: PasswordService, private _config: Config) {
         this._resendLimit = {
             email: {
                 count: _config.localLogin.email.resendLimit,
@@ -125,7 +125,7 @@ export class LocalLoginManager {
     }
 
     public async getByCredentials(credentials: Credentials): Promise<LocalLogin> {
-        const entity = await this._loginRepo.findOne(this.findByPrimaryConditions(credentials));
+        const entity = await this._loginRepo.findOneBy(this.findByPrimaryConditions(credentials));
         if (!entity) {
             return null;
         }
@@ -148,7 +148,7 @@ export class LocalLoginManager {
         guardNotUndefinedOrNull(subject);
         guardNotUndefinedOrNull(type);
 
-        const entity = await this._confirmRepo.findOne({ subject: subject, type: type });
+        const entity = await this._confirmRepo.findOneBy({ subject, type });
         if (!entity) {
             return null;
         }
@@ -173,7 +173,7 @@ export class LocalLoginManager {
         guardNotUndefinedOrNull(subject);
         guardNotUndefinedOrNull(code);
 
-        const confirm = await this._confirmRepo.findOne({ subject: subject, code: code });
+        const confirm = await this._confirmRepo.findOneBy({ subject, code });
         if (!confirm) {
             return false;
         }
@@ -184,7 +184,7 @@ export class LocalLoginManager {
         } else {
             update.phoneConfirmed = true;
         }
-        await this._connection.manager.transaction(async (manager) => {
+        await this._dataSource.manager.transaction(async (manager) => {
             const userId = confirm.userId; // confirm reference will be null after remove()
             await manager.remove(confirm);
             await manager.update(LocalLoginEntity, { userId }, update);
@@ -196,7 +196,7 @@ export class LocalLoginManager {
     public async changePassword(userId: string, oldPassword: string, newPassword: string) {
         guardNotUndefinedOrNull(userId);
 
-        const entity = await this._loginRepo.findOne(userId);
+        const entity = await this._loginRepo.findOneBy({ userId });
         if (!entity) {
             throw new UserNotLocalException();
         }
@@ -212,7 +212,7 @@ export class LocalLoginManager {
     public async resetPassword(code: string, password: string): Promise<string> {
         guardNotUndefinedOrNull(code);
 
-        const passReset = await this._passResetRepo.findOne({ code: code.toUpperCase() });
+        const passReset = await this._passResetRepo.findOneBy({ code: code.toUpperCase() });
         if (!passReset) {
             throw new NotFoundException();
         }
@@ -233,7 +233,7 @@ export class LocalLoginManager {
     public async generatePasswordResetCode(userId: string, method: "email" | "phone"): Promise<string> {
         guardNotUndefinedOrNull(userId);
 
-        let entity = await this._passResetRepo.findOne(userId);
+        let entity = await this._passResetRepo.findOneBy({ userId });
         if (entity) {
             if (!moment(entity.createdAt).add(60, "seconds").isBefore()) {
                 return null;
@@ -253,7 +253,7 @@ export class LocalLoginManager {
     public async verifyPassword(userId: string, password: string): Promise<boolean> {
         guardNotUndefinedOrNull(userId);
 
-        const entity = await this._loginRepo.findOne(userId);
+        const entity = await this._loginRepo.findOneBy({ userId });
         if (!entity) {
             return false;
         }
@@ -292,7 +292,7 @@ export class LocalLoginManager {
     }
 
     private findByConditions(credentials: Credentials) {
-        const conditions: FindConditions<LocalLoginEntity>[] = [];
+        const conditions: FindOptionsWhere<LocalLoginEntity>[] = [];
         if (credentials.email) {
             conditions.push({ email: credentials.email });
         }
@@ -309,7 +309,7 @@ export class LocalLoginManager {
     }
 
     private findByPrimaryConditions(credentials: Credentials) {
-        const conditions: FindConditions<LocalLoginEntity> = {};
+        const conditions: FindOptionsWhere<LocalLoginEntity> = {};
         const primary = credentials.getPrimary();
         if (primary === PrimaryLoginType.email) {
             conditions.email = credentials.email;

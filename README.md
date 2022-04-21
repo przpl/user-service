@@ -30,17 +30,11 @@ There is no documentation of how to communicate with this service, so you have t
 
 ## Database migrations
 
-1. Build app to make sure .js code in dist directory is up to date so TypeORM can detect all entities
-   npm run build-ts
+1. Create migration:
+   npm run migration:generate ./src/dal/migrations/<NAME>
 
-2. Create migration:
-   typeorm migration:generate -n AddSomeColumnToSome
-
-3. Build app to compile new migration:
-   npm run build-ts
-
-4. Run all migrations:
-   typeorm migration:run
+2. Run all migrations:
+   npm run migration:run
 
 # Docker
 

@@ -1,5 +1,5 @@
 import moment from "moment";
-import { Connection } from "typeorm";
+import { DataSource } from "typeorm";
 
 import { SessionEntity } from "../../dal/entities/sessionEntity";
 import { UserEntity } from "../../dal/entities/userEntity";
@@ -11,10 +11,10 @@ import { guardNotUndefinedOrNull } from "../../utils/guardClauses";
 import { SessionCacheStrategy } from "./sessionCacheStrategy";
 
 export abstract class BaseSessionManager {
-    protected _repo = this._connection.getRepository(SessionEntity);
-    protected _userRepo = this._connection.getRepository(UserEntity);
+    protected _repo = this._dataSource.getRepository(SessionEntity);
+    protected _userRepo = this._dataSource.getRepository(UserEntity);
 
-    constructor(private _cacheStrategy: SessionCacheStrategy, private _connection: Connection, private _config: Config) {}
+    constructor(private _cacheStrategy: SessionCacheStrategy, private _dataSource: DataSource, private _config: Config) {}
 
     public abstract getUserIdFromSession(sessionId: string): Promise<string>;
 
@@ -28,7 +28,7 @@ export abstract class BaseSessionManager {
         session.osVersion = userAgent.osVersion;
         session.lastUseAt = moment().toDate();
 
-        const user = await this._userRepo.findOneOrFail(userId);
+        const user = await this._userRepo.findOneByOrFail({ id: userId });
         let sessionsOverLimit: SessionEntity[] = null;
         let sessionIds = user.sessionIds;
         if (sessionIds.length >= this._config.session.maxPerUser) {
@@ -44,7 +44,7 @@ export abstract class BaseSessionManager {
         sessionIds.push(session.id);
         user.sessionIds = sessionIds;
 
-        await this._connection.manager.transaction(async (manager) => {
+        await this._dataSource.manager.transaction(async (manager) => {
             await manager.save(session);
             await manager.save(user);
             if (sessionsOverLimit) {
@@ -58,7 +58,7 @@ export abstract class BaseSessionManager {
     public async refreshJwt(sessionId: string): Promise<Session> {
         guardNotUndefinedOrNull(sessionId);
 
-        const session = await this._repo.findOne(sessionId);
+        const session = await this._repo.findOneBy({ id: sessionId });
         if (!session) {
             return null;
         }
@@ -77,12 +77,12 @@ export abstract class BaseSessionManager {
             return false;
         }
 
-        const user = await this._userRepo.findOneOrFail(userId);
+        const user = await this._userRepo.findOneByOrFail({ id: userId });
         user.sessionIds = [];
 
         await this._cacheStrategy.removeMany(sessions);
 
-        await this._connection.manager.transaction(async (manager) => {
+        await this._dataSource.manager.transaction(async (manager) => {
             await manager.remove(sessions);
             await manager.save(user);
         });
@@ -93,17 +93,17 @@ export abstract class BaseSessionManager {
     public async removeSession(sessionId: string): Promise<Session> {
         guardNotUndefinedOrNull(sessionId);
 
-        const session = await this._repo.findOne(sessionId);
+        const session = await this._repo.findOneBy({ id: sessionId });
         if (!session) {
             return null;
         }
 
-        const user = await this._userRepo.findOneOrFail(session.userId);
+        const user = await this._userRepo.findOneByOrFail({ id: session.userId });
         user.sessionIds = user.sessionIds.filter((i) => i !== session.id);
 
         await this._cacheStrategy.remove(session);
 
-        await this._connection.manager.transaction(async (manager) => {
+        await this._dataSource.manager.transaction(async (manager) => {
             await manager.remove(session);
             await manager.save(user);
         });

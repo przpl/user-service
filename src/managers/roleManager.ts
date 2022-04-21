@@ -1,12 +1,14 @@
 import { singleton } from "tsyringe";
-import { getRepository } from "typeorm";
+import { DataSource } from "typeorm";
 
 import { RoleEntity } from "../dal/entities/roleEntity";
 import { NotFoundException } from "../exceptions/userExceptions";
 
 @singleton()
 export class RoleManager {
-    private _repo = getRepository(RoleEntity);
+    private _repo = this._dataSource.getRepository(RoleEntity);
+
+    constructor(private _dataSource: DataSource) {}
 
     public async addRole(userId: string, role: string) {
         const entity = new RoleEntity();

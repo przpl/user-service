@@ -1,6 +1,6 @@
 import moment from "moment";
 import { singleton } from "tsyringe";
-import { getRepository } from "typeorm";
+import { DataSource } from "typeorm";
 
 import { LockEntity } from "../dal/entities/lockEntity";
 import { Lock } from "../models/lock";
@@ -8,7 +8,9 @@ import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class LockManager {
-    private _repo = getRepository(LockEntity);
+    private _repo = this._dataSource.getRepository(LockEntity);
+
+    constructor(private _dataSource: DataSource) {}
 
     public async getActive(userId: string): Promise<Lock> {
         const entity = await this.getByUserId(userId);
@@ -44,7 +46,7 @@ export class LockManager {
 
     private getByUserId(userId: string): Promise<LockEntity> {
         guardNotUndefinedOrNull(userId);
-        return this._repo.findOne(userId);
+        return this._repo.findOneBy({ userId });
     }
 
     private toLockModel(entity: LockEntity): Lock {
