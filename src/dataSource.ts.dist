@@ -1,0 +1,12 @@
+import { DataSource } from "typeorm";
+
+export const dataSource = new DataSource({
+    type: "postgres",
+    host: "127.0.0.1",
+    port: 5432,
+    username: "postgres",
+    password: "",
+    database: "userService",
+    entities: ["src/dal/entities/**/**.ts"],
+    migrations: ["src/dal/migrations/*.ts"],
+});
