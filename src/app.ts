@@ -83,8 +83,6 @@ async function connectToDb() {
         logger.error(msg);
         process.exit(1);
     }
-
-    return dataSource;
 }
 
 async function connectToMessageBroker(env: Env) {
@@ -119,7 +117,7 @@ async function start() {
     container.registerInstance(Logger, logger);
     container.registerInstance(SecurityLogger, new SecurityLogger(false));
 
-    const dataSource = await connectToDb();
+    await connectToDb();
     const messageBroker = await connectToMessageBroker(env);
 
     container.registerInstance(DataSource, dataSource);
