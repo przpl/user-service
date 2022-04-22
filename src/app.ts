@@ -40,12 +40,7 @@ let logger: Logger;
 function loadEnv() {
     const envPath = path.resolve(__dirname, "..", ".env");
     const env = new Env();
-    try {
-        env.load(envPath);
-    } catch (error) {
-        console.error(error.message);
-        process.exit(1);
-    }
+    env.load(envPath);
 
     process.env.TYPEORM_ENTITIES = "dist/dal/entities/**/*.js";
     process.env.TYPEORM_MIGRATIONS = "dist/dal/migrations/*.js";
@@ -71,25 +66,11 @@ function loadEnv() {
 
 function loadConfig() {
     const configPath = path.resolve(__dirname, "..", "config.json");
-    let config: Config;
-    try {
-        config = ConfigLoader.load(configPath);
-    } catch (error) {
-        console.error(error.message);
-        process.exit(1);
-    }
-
-    return config;
+    return ConfigLoader.load(configPath);
 }
 
 async function connectToDb() {
-    try {
-        await dataSource.initialize();
-    } catch (error) {
-        printError(error.message);
-        logger.error(error.message);
-        process.exit(1);
-    }
+    await dataSource.initialize();
 
     const args = process.argv.slice(2);
     if (args.includes("-migrate")) {
