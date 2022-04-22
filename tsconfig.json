@@ -9,7 +9,6 @@
         "strictNullChecks": false,
         "noImplicitAny": true,
         "moduleResolution": "node",
-        "resolveJsonModule": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "sourceMap": true,
