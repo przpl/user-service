@@ -1,33 +1,13 @@
-import { DataSource } from "typeorm";
+import { DataSource, DataSourceOptions } from "typeorm";
 
-import { ConfirmationEntity } from "./dal/entities/confirmationEntity";
-import { ExternalLoginEntity } from "./dal/entities/externalLoginEntity";
-import { LocalLoginEntity } from "./dal/entities/localLoginEntity";
-import { LockEntity } from "./dal/entities/lockEntity";
-import { MfaEntity } from "./dal/entities/mfaEntity";
-import { PasswordResetEntity } from "./dal/entities/passwordResetEntity";
-import { RoleEntity } from "./dal/entities/roleEntity";
-import { SessionEntity } from "./dal/entities/sessionEntity";
-import { UserEntity } from "./dal/entities/userEntity";
-import { Init1633893610464 } from "./dal/migrations/1633893610464-Init";
+import { dataSourceOptions } from "./dal/typeOrmConfig";
 
-export const dataSource = new DataSource({
-    type: "postgres",
+// Used by TypeORM CLI to connect to the database, can't use process.env variables here?
+export const AppDataSource = new DataSource({
     host: "127.0.0.1",
     port: 5432,
     username: "postgres",
     password: "",
     database: "userService",
-    entities: [
-        UserEntity,
-        ConfirmationEntity,
-        ExternalLoginEntity,
-        LocalLoginEntity,
-        LockEntity,
-        MfaEntity,
-        PasswordResetEntity,
-        RoleEntity,
-        SessionEntity,
-    ],
-    migrations: [Init1633893610464],
-});
+    ...dataSourceOptions,
+} as DataSourceOptions);

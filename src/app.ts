@@ -10,9 +10,9 @@ import morgan from "morgan";
 import path from "node:path";
 import { createClient } from "redis";
 import { container } from "tsyringe";
-import { DataSource } from "typeorm";
+import { DataSource, DataSourceOptions } from "typeorm";
 
-import { dataSource } from "./dataSource";
+import { dataSourceOptions } from "./dal/typeOrmConfig";
 import { BaseSessionManager } from "./managers/session/baseSessionManager";
 import { CookieSessionManager } from "./managers/session/cookieSessionManager";
 import { JwtSessionManager } from "./managers/session/jwtSessionManager";
@@ -42,9 +42,6 @@ function loadEnv() {
     const env = new Env();
     env.load(envPath);
 
-    process.env.TYPEORM_ENTITIES = "dist/dal/entities/**/*.js";
-    process.env.TYPEORM_MIGRATIONS = "dist/dal/migrations/*.js";
-
     let atLeastOneError = false;
     const configValidationResult = env.validate();
     if (configValidationResult.length > 0) {
@@ -69,7 +66,16 @@ function loadConfig() {
     return ConfigLoader.load(configPath);
 }
 
-async function connectToDb() {
+async function connectToDb(env: Env) {
+    const dataSource = new DataSource({
+        host: env.database.host,
+        port: env.database.port,
+        username: env.database.username,
+        password: env.database.password,
+        database: env.database.database,
+        ...dataSourceOptions,
+    } as DataSourceOptions);
+
     await dataSource.initialize();
 
     const args = process.argv.slice(2);
@@ -83,6 +89,8 @@ async function connectToDb() {
         logger.error(msg);
         process.exit(1);
     }
+
+    return dataSource;
 }
 
 async function connectToMessageBroker(env: Env) {
@@ -117,7 +125,7 @@ async function start() {
     container.registerInstance(Logger, logger);
     container.registerInstance(SecurityLogger, new SecurityLogger(false));
 
-    await connectToDb();
+    const dataSource = await connectToDb(env);
     const messageBroker = await connectToMessageBroker(env);
 
     container.registerInstance(DataSource, dataSource);

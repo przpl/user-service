@@ -27,13 +27,14 @@ There is no documentation of how to communicate with this service, so you have t
 
 1. Copy config.json.dist to config.json (same directory).
 2. Copy .env.dist to .env (same directory).
+3. If you need to use TypeORM CLI, copy dataSource.ts.dist to ./src/dataSource.ts.
 
 ## Database migrations
 
 1. Create migration:
    npm run migration:generate ./src/dal/migrations/<NAME>
 
-2. Include migration in dataSource.ts
+2. Include migration in typeOrmConfig.ts
 
 3. Run all migrations:
    npm run migration:run
