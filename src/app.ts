@@ -4,7 +4,7 @@ import "reflect-metadata"; // required by IoC Container
 import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "node:path";
@@ -175,7 +175,8 @@ async function start() {
     app.use("/api/user/mfa", MfaRouter.getExpressRouter());
 
     app.use((req, res) => handleNotFoundError(res, env.isDev()));
-    app.use((err: any, req: Request, res: Response) => handleError(err, req, res, env.isDev(), env.sentryKey));
+    // all 4 arguments are required, otherwise error handler won't be called
+    app.use((err: any, req: Request, res: Response, next: NextFunction) => handleError(err, req, res, env.isDev(), env.sentryKey));
 
     app.disable("x-powered-by");
 
