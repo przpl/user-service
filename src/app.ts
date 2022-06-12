@@ -183,14 +183,12 @@ async function start() {
     app.listen(env.port, () => {
         console.log(`App is running at port ${env.port} in ${app.get("env")} mode`);
     })
-        .on("error", async (e) => {
+        .on("error", (e) => {
             printError(`Cannot run app: ${e.message}`);
-            await dataSource.destroy();
+            void dataSource.destroy();
             process.exit(1);
         })
-        .on("close", async () => {
-            await dataSource.destroy();
-        });
+        .on("close", void dataSource.destroy);
 
     process.on("unhandledRejection", (err: any) => {
         if (env.isDev()) {
