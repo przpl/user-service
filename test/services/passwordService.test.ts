@@ -8,7 +8,7 @@ describe("hash", () => {
     });
 
     it("should hash password", async () => {
-        expect(await sut.hash("password")).toHaveLength(95);
+        expect(await sut.hash("password")).toHaveLength(96);
     });
 });
 
