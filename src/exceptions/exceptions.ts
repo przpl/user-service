@@ -25,10 +25,3 @@ export class MfaException extends Error {
         Object.setPrototypeOf(this, MfaException.prototype);
     }
 }
-
-export class NullOrUndefinedException extends Error {
-    constructor(message?: string) {
-        super(message);
-        Object.setPrototypeOf(this, NullOrUndefinedException.prototype);
-    }
-}

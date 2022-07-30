@@ -1,9 +1,9 @@
+import { AssertionError } from "node:assert";
 import { DataSource, Repository } from "typeorm";
 
 import { CacheDb } from "../../../src/dal/cacheDb";
 import { SessionEntity } from "../../../src/dal/entities/sessionEntity";
 import { UserEntity } from "../../../src/dal/entities/userEntity";
-import { NullOrUndefinedException } from "../../../src/exceptions/exceptions";
 import { CookieSessionCacheStrategy } from "../../../src/managers/session/cookieSessionCacheStrategy";
 import { CookieSessionManager } from "../../../src/managers/session/cookieSessionManager";
 import { RedisClient } from "../../../src/types/redisClient";
@@ -74,7 +74,7 @@ describe("CookieSessionManager", () => {
 
     describe("tryToRecacheSession()", () => {
         it("should throw error if sessionId is null", async () => {
-            await expect(() => sut.tryToRecacheSession(null)).rejects.toThrow(NullOrUndefinedException);
+            await expect(() => sut.tryToRecacheSession(null)).rejects.toThrow(AssertionError);
         });
 
         it("not existing session should return null [withPostgresContainer]", async () => {

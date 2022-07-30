@@ -147,7 +147,7 @@ export class LocalLoginManager {
 
     public async getConfirmationCode(subject: string, type: ConfirmationType): Promise<string> {
         assert(subject);
-        assert(type);
+        assert(type >= 0);
 
         const entity = await this._confirmRepo.findOneBy({ subject, type });
         if (!entity) {

@@ -1,8 +1,8 @@
+import { AssertionError } from "node:assert";
 import { DataSource, Repository } from "typeorm";
 
 import { ExternalLoginEntity, ExternalLoginProvider } from "../../src/dal/entities/externalLoginEntity";
 import { UserEntity } from "../../src/dal/entities/userEntity";
-import { NullOrUndefinedException } from "../../src/exceptions/exceptions";
 import { ExternalLoginManager } from "../../src/managers/externalLoginManager";
 import { mockDataSource } from "../mocks/mockConnection";
 import { TestContainer } from "../mocks/testcontainers";
@@ -42,7 +42,7 @@ describe("ExternalLoginManager", () => {
 
     describe("getUserId()", () => {
         it("should throw error if user id param is falsy", async () => {
-            await expect(() => sut.getUserId(null, ExternalLoginProvider.facebook)).rejects.toThrow(NullOrUndefinedException);
+            await expect(() => sut.getUserId(null, ExternalLoginProvider.facebook)).rejects.toThrow(AssertionError);
         });
 
         it("should return null if user does not exist [withPostgresContainer]", async () => {

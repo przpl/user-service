@@ -1,4 +1,4 @@
-import { NullOrUndefinedException } from "../../src/exceptions/exceptions";
+import { AssertionError } from "node:assert";
 import { SpamProtector } from "../../src/services/spamProtector";
 
 describe("SpamProtector", () => {
@@ -17,8 +17,8 @@ describe("SpamProtector", () => {
             expect(() => sut.isDisallowedEmail("emailgmail.com")).toThrow(Error);
             expect(() => sut.isDisallowedEmail("@")).toThrow(Error);
             expect(() => sut.isDisallowedEmail("")).toThrow(Error);
-            expect(() => sut.isDisallowedEmail(null)).toThrow(NullOrUndefinedException);
-            expect(() => sut.isDisallowedEmail(undefined)).toThrow(NullOrUndefinedException);
+            expect(() => sut.isDisallowedEmail(null)).toThrow(AssertionError);
+            expect(() => sut.isDisallowedEmail(undefined)).toThrow(AssertionError);
         });
     });
 });

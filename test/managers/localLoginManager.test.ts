@@ -1,16 +1,12 @@
 import moment from "moment";
+import { AssertionError } from "node:assert";
 import { DataSource, Repository } from "typeorm";
 
 import { ConfirmationEntity, ConfirmationType } from "../../src/dal/entities/confirmationEntity";
 import { LocalLoginEntity } from "../../src/dal/entities/localLoginEntity";
 import { PasswordResetEntity, PasswordResetMethod } from "../../src/dal/entities/passwordResetEntity";
 import { UserEntity } from "../../src/dal/entities/userEntity";
-import {
-    ExpiredResetCodeException,
-    NullOrUndefinedException,
-    ResendCodeLimitException,
-    ResendCodeTimeLimitException,
-} from "../../src/exceptions/exceptions";
+import { ExpiredResetCodeException, ResendCodeLimitException, ResendCodeTimeLimitException } from "../../src/exceptions/exceptions";
 import { InvalidPasswordException, NotFoundException, UserNotLocalException } from "../../src/exceptions/userExceptions";
 import { LocalLoginManager, LoginDuplicateType, LoginOperationResult, LoginResult } from "../../src/managers/localLoginManager";
 import { Credentials } from "../../src/models/credentials";
@@ -306,7 +302,7 @@ describe("LocalLoginManager", () => {
 
     describe("changePassword()", () => {
         it("should throw error if user id param is falsy", async () => {
-            await expect(() => sut.changePassword(null, "oldPass", "newPass")).rejects.toThrow(NullOrUndefinedException);
+            await expect(() => sut.changePassword(null, "oldPass", "newPass")).rejects.toThrow(AssertionError);
         });
 
         it("should throw error if user does not exist [withPostgresContainer]", async () => {
@@ -372,7 +368,7 @@ describe("LocalLoginManager", () => {
 
     describe("generatePasswordResetCode()", () => {
         it("should throw error if user id param is falsy", async () => {
-            await expect(() => sut.generatePasswordResetCode(null, "email")).rejects.toThrow(NullOrUndefinedException);
+            await expect(() => sut.generatePasswordResetCode(null, "email")).rejects.toThrow(AssertionError);
         });
 
         it("should generate new code if old does not exist [withPostgresContainer]", async () => {
@@ -409,7 +405,7 @@ describe("LocalLoginManager", () => {
 
     describe("verifyPassword()", () => {
         it("should throw error if user id param is falsy", async () => {
-            await expect(() => sut.verifyPassword(null, "password")).rejects.toThrow(NullOrUndefinedException);
+            await expect(() => sut.verifyPassword(null, "password")).rejects.toThrow(AssertionError);
         });
 
         it("should return false if user does not exist [withPostgresContainer]", async () => {
