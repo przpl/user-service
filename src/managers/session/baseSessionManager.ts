@@ -19,6 +19,7 @@ export abstract class BaseSessionManager {
     public abstract getUserIdFromSession(sessionId: string): Promise<string>;
 
     public async issueSession(userId: string, ip: string, userAgent: UserAgent): Promise<string> {
+        assert(userId);
         const session = new SessionEntity();
         session.id = generateSessionId();
         session.userId = userId;
@@ -72,7 +73,7 @@ export abstract class BaseSessionManager {
     public async removeAllSessions(userId: string): Promise<boolean> {
         assert(userId);
 
-        const sessions = await this._repo.find({ where: { userId } });
+        const sessions = await this._repo.findBy({ userId });
         if (sessions.length === 0) {
             return false;
         }

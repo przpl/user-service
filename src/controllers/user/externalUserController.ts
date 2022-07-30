@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 
 import { ExternalLoginProvider } from "../../dal/entities/externalLoginEntity";
@@ -69,6 +70,7 @@ export default class ExternalUserController extends UserController {
     private async register(body: RequestBody, externalId: string, email: string, provider: ExternalLoginProvider): Promise<string> {
         const username = this._config.localLogin.username.required ? body.username : null;
         const userId = await this._userManager.create(username);
+        assert(userId);
         try {
             await this._loginManager.create(userId, externalId, email, provider);
         } catch (error) {

@@ -36,7 +36,8 @@ export class LockManager {
     }
 
     public async unlock(userId: string): Promise<boolean> {
-        const result = await this._repo.delete({ userId: userId });
+        assert(userId);
+        const result = await this._repo.delete({ userId });
         return result.affected > 0;
     }
 

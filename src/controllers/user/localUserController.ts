@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 
 import { ConfirmationType } from "../../dal/entities/confirmationEntity";
@@ -37,6 +38,7 @@ export default class LocalUserController extends UserController {
 
         const username = this._config.localLogin.username.required ? req.body.username : null;
         const userId = await this._userManager.create(username);
+        assert(userId);
         let login: LocalLogin = null;
         try {
             login = await this._loginManager.create(credentials, userId, req.body.password);

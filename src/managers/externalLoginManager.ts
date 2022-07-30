@@ -17,6 +17,7 @@ export class ExternalLoginManager {
 
     public async getUserId(externalUserId: string, provider: ExternalLoginProvider): Promise<string> {
         assert(externalUserId);
+        assert(provider);
 
         const entity = await this._repo.findOneBy({ externalUserId, provider }); // search also by provider to make sure there aren't two different users across platforms with same user id
         if (!entity) {

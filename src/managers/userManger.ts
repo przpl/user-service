@@ -19,6 +19,7 @@ export class UserManager {
     }
 
     public async delete(id: string) {
+        assert(id);
         await this._repo.delete(id);
     }
 

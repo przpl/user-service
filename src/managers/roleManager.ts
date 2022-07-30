@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 import { DataSource } from "typeorm";
 
@@ -25,12 +26,15 @@ export class RoleManager {
     }
 
     public async removeRole(userId: string, role: string): Promise<boolean> {
-        const result = await this._repo.delete({ userId: userId, role: role });
+        assert(userId);
+        assert(role);
+        const result = await this._repo.delete({ userId, role });
         return result.affected > 0;
     }
 
     public async getRoles(userId: string): Promise<string[]> {
-        const roles = await this._repo.find({ where: { userId: userId } });
+        assert(userId);
+        const roles = await this._repo.findBy({ userId });
         return roles.map((i) => i.role);
     }
 }

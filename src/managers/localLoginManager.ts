@@ -120,7 +120,8 @@ export class LocalLoginManager {
     }
 
     public async isLocal(userId: string): Promise<boolean> {
-        const entity = await this._loginRepo.findOne({ where: { userId: userId }, select: ["userId"] });
+        assert(userId);
+        const entity = await this._loginRepo.findOne({ where: { userId }, select: ["userId"] });
         return Boolean(entity);
     }
 
