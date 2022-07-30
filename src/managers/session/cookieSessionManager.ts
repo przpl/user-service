@@ -1,10 +1,10 @@
 import moment from "moment";
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 import { DataSource } from "typeorm";
 
 import { CacheDb } from "../../dal/cacheDb";
 import { Config } from "../../utils/config/config";
-import { guardNotUndefinedOrNull } from "../../utils/guardClauses";
 import { TimeSpan } from "../../utils/timeSpan";
 import { BaseSessionManager } from "./baseSessionManager";
 import { CookieSessionCacheStrategy } from "./cookieSessionCacheStrategy";
@@ -28,7 +28,7 @@ export class CookieSessionManager extends BaseSessionManager {
     }
 
     public async tryToRecacheSession(sessionId: string) {
-        guardNotUndefinedOrNull(sessionId);
+        assert(sessionId);
 
         const sessionInDb = await this._repo.findOneBy({ id: sessionId });
         if (sessionInDb) {

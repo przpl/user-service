@@ -1,4 +1,5 @@
 import moment from "moment";
+import assert from "node:assert";
 import { DataSource } from "typeorm";
 
 import { SessionEntity } from "../../dal/entities/sessionEntity";
@@ -7,7 +8,6 @@ import { UserAgent } from "../../interfaces/userAgent";
 import { Session } from "../../models/session";
 import { generateSessionId } from "../../services/generator";
 import { Config } from "../../utils/config/config";
-import { guardNotUndefinedOrNull } from "../../utils/guardClauses";
 import { SessionCacheStrategy } from "./sessionCacheStrategy";
 
 export abstract class BaseSessionManager {
@@ -56,7 +56,7 @@ export abstract class BaseSessionManager {
     }
 
     public async refreshJwt(sessionId: string): Promise<Session> {
-        guardNotUndefinedOrNull(sessionId);
+        assert(sessionId);
 
         const session = await this._repo.findOneBy({ id: sessionId });
         if (!session) {
@@ -70,7 +70,7 @@ export abstract class BaseSessionManager {
     }
 
     public async removeAllSessions(userId: string): Promise<boolean> {
-        guardNotUndefinedOrNull(userId);
+        assert(userId);
 
         const sessions = await this._repo.find({ where: { userId } });
         if (sessions.length === 0) {
@@ -91,7 +91,7 @@ export abstract class BaseSessionManager {
     }
 
     public async removeSession(sessionId: string): Promise<Session> {
-        guardNotUndefinedOrNull(sessionId);
+        assert(sessionId);
 
         const session = await this._repo.findOneBy({ id: sessionId });
         if (!session) {

@@ -1,10 +1,10 @@
 import moment from "moment";
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 import { DataSource } from "typeorm";
 
 import { LockEntity } from "../dal/entities/lockEntity";
 import { Lock } from "../models/lock";
-import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class LockManager {
@@ -45,7 +45,7 @@ export class LockManager {
     }
 
     private getByUserId(userId: string): Promise<LockEntity> {
-        guardNotUndefinedOrNull(userId);
+        assert(userId);
         return this._repo.findOneBy({ userId });
     }
 

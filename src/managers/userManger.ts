@@ -1,9 +1,9 @@
+import assert from "node:assert";
 import { inject, singleton } from "tsyringe";
 import { DataSource } from "typeorm";
 
 import { UserEntity } from "../dal/entities/userEntity";
 import { UserIdGenerator } from "../services/generators/userIdGenerator";
-import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class UserManager {
@@ -23,13 +23,13 @@ export class UserManager {
     }
 
     public async exists(id: string): Promise<boolean> {
-        guardNotUndefinedOrNull(id);
+        assert(id);
         const user = await this._repo.findOne({ where: { id }, select: ["id"] }); // select [] always returns null
         return Boolean(user);
     }
 
     public async doesUsernameExist(username: string): Promise<boolean> {
-        guardNotUndefinedOrNull(username);
+        assert(username);
         const user = await this._repo.findOne({ where: { username }, select: ["id"] });
         return Boolean(user);
     }

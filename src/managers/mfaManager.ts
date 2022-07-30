@@ -1,4 +1,5 @@
 import moment from "moment";
+import assert from "node:assert";
 import speakeasy from "speakeasy";
 import { singleton } from "tsyringe";
 import { DataSource } from "typeorm";
@@ -9,7 +10,6 @@ import { MfaException } from "../exceptions/exceptions";
 import { InvalidPasswordException } from "../exceptions/userExceptions";
 import { generateMfaLoginToken } from "../services/generator";
 import { Config } from "../utils/config/config";
-import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 import { TimeSpan } from "../utils/timeSpan";
 
 const SECRET_ENCODING = "base32";
@@ -143,7 +143,7 @@ export class MfaManager {
     }
 
     private getByUserId(userId: string): Promise<MfaEntity> {
-        guardNotUndefinedOrNull(userId);
+        assert(userId);
         return this._repo.findOneBy({ userId });
     }
 

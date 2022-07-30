@@ -1,4 +1,5 @@
 import moment from "moment";
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 import { DataSource, FindOptionsWhere } from "typeorm";
 
@@ -14,7 +15,6 @@ import { Phone } from "../models/phone";
 import { generateConfirmationCode, generatePasswordResetCode } from "../services/generator";
 import { PasswordService } from "../services/passwordService";
 import { Config } from "../utils/config/config";
-import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 import { TimeSpan } from "../utils/timeSpan";
 
 export enum LoginDuplicateType {
@@ -145,8 +145,8 @@ export class LocalLoginManager {
     }
 
     public async getConfirmationCode(subject: string, type: ConfirmationType): Promise<string> {
-        guardNotUndefinedOrNull(subject);
-        guardNotUndefinedOrNull(type);
+        assert(subject);
+        assert(type);
 
         const entity = await this._confirmRepo.findOneBy({ subject, type });
         if (!entity) {
@@ -170,8 +170,8 @@ export class LocalLoginManager {
     }
 
     public async confirm(subject: string, code: string, type: ConfirmationType): Promise<boolean> {
-        guardNotUndefinedOrNull(subject);
-        guardNotUndefinedOrNull(code);
+        assert(subject);
+        assert(code);
 
         const confirm = await this._confirmRepo.findOneBy({ subject, code });
         if (!confirm) {
@@ -194,7 +194,7 @@ export class LocalLoginManager {
     }
 
     public async changePassword(userId: string, oldPassword: string, newPassword: string) {
-        guardNotUndefinedOrNull(userId);
+        assert(userId);
 
         const entity = await this._loginRepo.findOneBy({ userId });
         if (!entity) {
@@ -210,7 +210,7 @@ export class LocalLoginManager {
     }
 
     public async resetPassword(code: string, password: string): Promise<string> {
-        guardNotUndefinedOrNull(code);
+        assert(code);
 
         const passReset = await this._passResetRepo.findOneBy({ code: code.toUpperCase() });
         if (!passReset) {
@@ -231,7 +231,7 @@ export class LocalLoginManager {
     }
 
     public async generatePasswordResetCode(userId: string, method: "email" | "phone"): Promise<string> {
-        guardNotUndefinedOrNull(userId);
+        assert(userId);
 
         let entity = await this._passResetRepo.findOneBy({ userId });
         if (entity) {
@@ -251,7 +251,7 @@ export class LocalLoginManager {
     }
 
     public async verifyPassword(userId: string, password: string): Promise<boolean> {
-        guardNotUndefinedOrNull(userId);
+        assert(userId);
 
         const entity = await this._loginRepo.findOneBy({ userId });
         if (!entity) {

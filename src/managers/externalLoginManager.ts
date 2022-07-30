@@ -1,8 +1,8 @@
+import assert from "node:assert";
 import { singleton } from "tsyringe";
 import { DataSource } from "typeorm";
 
 import { ExternalLoginEntity, ExternalLoginProvider } from "../dal/entities/externalLoginEntity";
-import { guardNotUndefinedOrNull } from "../utils/guardClauses";
 
 @singleton()
 export class ExternalLoginManager {
@@ -16,7 +16,7 @@ export class ExternalLoginManager {
     }
 
     public async getUserId(externalUserId: string, provider: ExternalLoginProvider): Promise<string> {
-        guardNotUndefinedOrNull(externalUserId);
+        assert(externalUserId);
 
         const entity = await this._repo.findOneBy({ externalUserId, provider }); // search also by provider to make sure there aren't two different users across platforms with same user id
         if (!entity) {
