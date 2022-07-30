@@ -1,15 +1,9 @@
-import { throwCtorArgError } from "../utils/commonErrors";
-import nameof from "../utils/nameof";
+import assert from "node:assert";
 
 export class Phone {
     constructor(private _code: string, private _number: string) {
-        if (!_code) {
-            throwCtorArgError(nameof<Phone>("code"));
-        }
-
-        if (!_number) {
-            throwCtorArgError(nameof<Phone>("number"));
-        }
+        assert(_code);
+        assert(_number);
     }
 
     public get code(): string {
