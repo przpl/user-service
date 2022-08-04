@@ -1,4 +1,4 @@
-import { ValidationChain, body, cookie, param } from "express-validator";
+import { body, cookie, param, ValidationChain } from "express-validator";
 
 import {
     CONFIRMATION_CODE_LENGTH,
@@ -104,7 +104,7 @@ export const fieldValidators = {
         .isString()
         .withMessage(FIELD_ERROR_MSG.isString)
         .trim()
-        .isLength({ min: 10, max: 500 })
+        .isLength({ min: 10, max: 1000 })
         .withMessage(FIELD_ERROR_MSG.isLength),
     externalUserRegistrationJwt: body("token")
         .isString()
