@@ -25,7 +25,7 @@
     },
     "license": "ISC",
     "devDependencies": {
-        "@swc/core": "^1.2.220",
+        "@swc/core": "^1.2.233",
         "@swc/jest": "^0.2.22",
         "@types/amqplib": "^0.8.2",
         "@types/cookie-parser": "^1.4.3",
