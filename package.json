@@ -42,7 +42,7 @@
         "@types/speakeasy": "^2.0.7",
         "@types/ua-parser-js": "^0.7.36",
         "@typescript-eslint/eslint-plugin": "^5.33.0",
-        "@typescript-eslint/parser": "^5.33.0",
+        "@typescript-eslint/parser": "^5.35.1",
         "concurrently": "^7.3.0",
         "eslint": "^8.22.0",
         "eslint-config-prettier": "^8.5.0",
