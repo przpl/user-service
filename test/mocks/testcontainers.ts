@@ -5,10 +5,10 @@ import { DataSource } from "typeorm";
 import { RedisClient } from "../../src/types/redisClient";
 
 export class TestContainer {
-    private _postgresContainer: StartedPostgreSqlContainer;
-    private _postgresConnection: DataSource;
-    private _redisContainer: StartedTestContainer;
-    private _redisClient: RedisClient;
+    private _postgresContainer: StartedPostgreSqlContainer | null;
+    private _postgresConnection: DataSource | null;
+    private _redisContainer: StartedTestContainer | null;
+    private _redisClient: RedisClient | null;
 
     public async getTypeOrmConnection(showConnectionDetails = false): Promise<DataSource> {
         if (this.isPostgresActive()) {
@@ -16,7 +16,9 @@ export class TestContainer {
         }
 
         this._postgresContainer = await new PostgreSqlContainer("postgres:14.2-alpine3.15")
-            .withEnv("TZ", "Europe/Warsaw") // fix problem with clock skew in Linux container running on top of Windows // TODO won't work in different timezones
+            .withEnvironment({
+                TZ: "Europe/Warsaw", // fix problem with clock skew in Linux container running on top of Windows // TODO won't work in different timezones
+            })
             .withUsername("test")
             .withPassword("test")
             .withDatabase("test")
@@ -61,15 +63,15 @@ export class TestContainer {
 
     public async cleanup() {
         if (this.isPostgresActive()) {
-            await this._postgresConnection.destroy();
-            await this._postgresContainer.stop();
+            await this._postgresConnection!.destroy();
+            await this._postgresContainer!.stop();
             this._postgresConnection = null;
             this._postgresContainer = null;
         }
 
         if (this.isRedisActive()) {
-            await this._redisClient.quit();
-            await this._redisContainer.stop();
+            await this._redisClient!.quit();
+            await this._redisContainer!.stop();
             this._redisClient = null;
             this._redisContainer = null;
         }
