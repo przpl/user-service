@@ -15,7 +15,7 @@ export class TestContainer {
             throw new Error("PostgreSQL container is already running.");
         }
 
-        this._postgresContainer = await new PostgreSqlContainer("postgres:14.2-alpine3.15")
+        this._postgresContainer = await new PostgreSqlContainer("postgres:14.6-alpine3.17")
             .withEnvironment({
                 TZ: "Europe/Warsaw", // fix problem with clock skew in Linux container running on top of Windows // TODO won't work in different timezones
             })
