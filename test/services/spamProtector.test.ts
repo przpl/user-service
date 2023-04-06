@@ -16,7 +16,7 @@ describe("SpamProtector", () => {
         it("should throw error if email is invalid", () => {
             expect(() => sut.isDisallowedEmail("emailgmail.com")).toThrow(Error);
             expect(() => sut.isDisallowedEmail("@")).toThrow(Error);
-            expect(() => sut.isDisallowedEmail("")).toThrow(Error);
+            expect(() => sut.isDisallowedEmail("")).toThrow(AssertionError);
             expect(() => sut.isDisallowedEmail(null)).toThrow(AssertionError);
             expect(() => sut.isDisallowedEmail(undefined)).toThrow(AssertionError);
         });
