@@ -85,7 +85,7 @@
         "rimraf": "^4.4.1",
         "speakeasy": "^2.0.0",
         "tsyringe": "^4.7.0",
-        "typeorm": "^0.3.11",
+        "typeorm": "^0.3.14",
         "ua-parser-js": "^1.0.35",
         "winston": "^3.8.2"
     },
